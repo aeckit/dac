@@ -1,11 +1,12 @@
 {
   "name": "dac-vsix",
-  "displayName": "Parametric 2D Detail Visualizer",
+  "displayName": "aeckit DaC",
   "description": "IDE extension for real-time visualization of parametric CAD details.",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "publisher": "aeckit",
   "icon": "icon.png",
   "repository": "https://github.com/aeckit/dac",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.80.0"
   },
