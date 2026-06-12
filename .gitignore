@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Compilation / Build outputs
+dist/
+out/
+lib/
+
+# Generated VS Code Extension Packages
+*.vsix
+
+# OS/System files
+.DS_Store
+Thumbs.db
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temp / Scratch files
+scratch/
+
+# VS Code personal settings and logs (keeps launch.json for debugging)
+.vscode/settings.json
+.vscode/*.log
+
+# LLM configs and notes
+.gemini/

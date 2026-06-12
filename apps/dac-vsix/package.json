@@ -1,0 +1,60 @@
+{
+  "name": "dac-vsix",
+  "displayName": "Parametric 2D Detail Visualizer",
+  "description": "IDE extension for real-time visualization of parametric CAD details.",
+  "version": "1.0.0",
+  "publisher": "aeckit",
+  "icon": "icon.png",
+  "repository": "https://github.com/aeckit/dac",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:dac.openPreview"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dac.openPreview",
+        "title": "DAC: Open Preview"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceExtname == .json",
+          "command": "dac.openPreview",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "when": "resourceExtname == .json",
+          "command": "dac.openPreview",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "build": "node esbuild.js --production"
+  },
+  "devDependencies": {
+    "@types/node": "^18.17.0",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.20.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@aeckit/core-solver": "^1.0.0",
+    "@aeckit/ui-components": "^1.0.0"
+  }
+}

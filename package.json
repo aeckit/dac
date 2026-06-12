@@ -1,0 +1,18 @@
+{
+  "name": "detail-visualizer-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for parametric 2D CAD visualizer VS Code extension",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "compile": "npm run compile --workspaces --if-present",
+    "watch": "npm run watch --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

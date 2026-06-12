@@ -1,0 +1,140 @@
+{
+  "version": "dac/v1",
+  "scale": "1/2\\",
+  "parameters": {
+    "sillPlateOffset": {
+      "type": "Number",
+      "default": 1.5,
+      "min": -8,
+      "max": 8,
+      "label": "Horizontal Offset (in)",
+      "componentId": "sill_plate_1",
+      "value": 0
+    },
+    "sillPlateVisible": {
+      "type": "Boolean",
+      "default": true,
+      "label": "Sill Plate Visible",
+      "componentId": "sill_plate_1",
+      "value": true
+    },
+    "anchorBoltOffset": {
+      "type": "Number",
+      "default": 0,
+      "min": -3,
+      "max": 3,
+      "label": "Bolt Local Offset (in)",
+      "componentId": "anchor_bolt_1",
+      "value": -1.5
+    }
+  },
+  "geometry": [
+    {
+      "id": "foundation_wall_rect",
+      "type": "AEC::Shape::Rectangle",
+      "componentId": "foundation_wall_1",
+      "componentType": "AEC::Component::ConcreteWall",
+      "x": 18,
+      "y": 22,
+      "width": 24,
+      "height": 16,
+      "hatch": "Concrete"
+    },
+    {
+      "id": "sill_plate_rect",
+      "type": "AEC::Shape::Rectangle",
+      "componentId": "sill_plate_1",
+      "componentType": "AEC::Component::SillPlate",
+      "x": "30 + {parameters.sillPlateOffset} - 7",
+      "y": 18.2,
+      "width": 14,
+      "height": 3.8,
+      "hatch": "TimberCross",
+      "visible": "{parameters.sillPlateVisible}"
+    },
+    {
+      "id": "anchor_bolt_assembly",
+      "type": "AEC::Shape::Rectangle",
+      "componentId": "anchor_bolt_1",
+      "componentType": "AEC::Component::AnchorBolt",
+      "x": "30 + {parameters.sillPlateOffset} + {parameters.anchorBoltOffset} - 0.375",
+      "y": 12,
+      "width": 0.75,
+      "height": 10,
+      "fill": "#64748b",
+      "color": "#cbd5e1"
+    },
+    {
+      "id": "anchor_bolt_washer",
+      "type": "AEC::Shape::Rectangle",
+      "componentId": "anchor_bolt_1",
+      "componentType": "AEC::Component::AnchorBolt",
+      "x": "30 + {parameters.sillPlateOffset} + {parameters.anchorBoltOffset} - 1.0",
+      "y": 17.5,
+      "width": 2,
+      "height": 0.25,
+      "fill": "#94a3b8",
+      "color": "#e2e8f0"
+    },
+    {
+      "id": "anchor_bolt_nut",
+      "type": "AEC::Shape::Rectangle",
+      "componentId": "anchor_bolt_1",
+      "componentType": "AEC::Component::AnchorBolt",
+      "x": "30 + {parameters.sillPlateOffset} + {parameters.anchorBoltOffset} - 0.6",
+      "y": 16.7,
+      "width": 1.2,
+      "height": 0.8,
+      "fill": "#475569",
+      "color": "#cbd5e1"
+    },
+    {
+      "id": "center_cross_h",
+      "type": "AEC::Shape::Line",
+      "componentId": "anchor_crosshair_1",
+      "componentType": "AEC::Component::ReferenceAnchor",
+      "x1": 29,
+      "y1": 22,
+      "x2": 31,
+      "y2": 22,
+      "color": "#f43f5e",
+      "strokeWidth": 1.5
+    },
+    {
+      "id": "center_cross_v",
+      "type": "AEC::Shape::Line",
+      "componentId": "anchor_crosshair_1",
+      "componentType": "AEC::Component::ReferenceAnchor",
+      "x1": 30,
+      "y1": 21,
+      "x2": 30,
+      "y2": 23,
+      "color": "#f43f5e",
+      "strokeWidth": 1.5
+    },
+    {
+      "id": "center_cross_c",
+      "type": "AEC::Shape::Circle",
+      "componentId": "anchor_crosshair_1",
+      "componentType": "AEC::Component::ReferenceAnchor",
+      "cx": 30,
+      "cy": 22,
+      "r": 0.3,
+      "color": "#f43f5e",
+      "strokeWidth": 1.5
+    },
+    {
+      "id": "offset_dimension_line",
+      "type": "AEC::Annotation::Dimension",
+      "componentId": "dimension_1",
+      "componentType": "AEC::Annotation::OffsetDimension",
+      "x1": 30,
+      "y1": 22,
+      "x2": "30 + {parameters.sillPlateOffset}",
+      "y2": 22,
+      "offset": -60,
+      "text": "{parameters.sillPlateOffset} in",
+      "visible": "{parameters.sillPlateVisible}"
+    }
+  ]
+}
