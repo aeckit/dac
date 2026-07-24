@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { DetailDocument } from '@aeckit/core-solver';
+import { DetailDocument, DrawingSetDocument, SheetDocument } from '@aeckit/core-solver';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('DAC Visualizer Extension is active!');
@@ -11,18 +11,87 @@ export function activate(context: vscode.ExtensionContext) {
   let lastWebviewDoc: DetailDocument | null = null;
   let isWebviewUpdating = false;
 
-  // Helper to parse the JSON drawing document
-  function parseDocument(document: vscode.TextDocument): DetailDocument | null {
+  // Helper to parse the JSON drawing document and load dependencies if it's a DrawingSet
+  async function parseAndLoadDocument(document: vscode.TextDocument): Promise<{ doc: any, viewportsMap?: Record<string, any>, titleBlockMap?: Record<string, any> } | null> {
     const text = document.getText();
     try {
-      const doc = JSON.parse(text) as DetailDocument;
-      // Basic validation to check it contains parameters and geometry
-      if (doc && typeof doc === 'object' && doc.parameters && doc.geometry) {
-        return doc;
+      const doc = JSON.parse(text);
+      if (!doc || typeof doc !== 'object') return null;
+      
+      const baseDir = path.dirname(document.fileName);
+
+      if (doc.type === 'CAD::DrawingSet' || doc.type === 'CAD::Sheet') {
+        let ds = doc as DrawingSetDocument;
+        
+        // If a Sheet is opened directly, wrap it in a dummy DrawingSet for the visualizer
+        if (doc.type === 'CAD::Sheet') {
+          const c = doc as SheetDocument;
+          ds = {
+            type: 'CAD::DrawingSet',
+            project: 'Preview Sheet',
+            titleBlockData: {
+              projectName: "PREVIEW PROJECT",
+              projectAddress: "PREVIEW ADDRESS",
+              sheetNumber: c.sheetNumber || "S-XXX"
+            },
+            sheets: [c]
+          };
+        }
+        const viewportsMap: Record<string, any> = {};
+        const titleBlockMap: Record<string, any> = {};
+        
+        // Load sheets
+        for (let i = 0; i < ds.sheets.length; i++) {
+          let sheet = ds.sheets[i];
+          let sheetBaseDir = baseDir;
+          
+          if (typeof sheet === 'string') {
+            try {
+              const sheetPath = path.join(baseDir, sheet);
+              sheetBaseDir = path.dirname(sheetPath);
+              const sheetContent = fs.readFileSync(sheetPath, 'utf8');
+              sheet = JSON.parse(sheetContent) as SheetDocument;
+              ds.sheets[i] = sheet; // Inline it for the webview
+            } catch (e) {
+              console.error('Failed to load sheet:', sheet);
+              continue;
+            }
+          }
+          
+          if (typeof sheet !== 'string') {
+            // Load title block
+            if (sheet.titleBlock && typeof sheet.titleBlock === 'string') {
+              try {
+                const tbPath = path.join(sheetBaseDir, sheet.titleBlock);
+                const tbContent = fs.readFileSync(tbPath, 'utf8');
+                titleBlockMap[sheet.titleBlock] = JSON.parse(tbContent);
+              } catch (e) {
+                console.error('Failed to load title block:', sheet.titleBlock);
+              }
+            }
+            // Load viewports
+            if (sheet.viewports) {
+              for (const vp of sheet.viewports) {
+                if (typeof vp.detail === 'string' && !viewportsMap[vp.detail]) {
+                  try {
+                    const vpPath = path.join(sheetBaseDir, vp.detail);
+                    const vpContent = fs.readFileSync(vpPath, 'utf8');
+                    viewportsMap[vp.detail] = JSON.parse(vpContent);
+                  } catch (e) {
+                    console.error('Failed to load viewport detail:', vp.detail);
+                  }
+                }
+              }
+            }
+          }
+        }
+        return { doc: ds, viewportsMap, titleBlockMap };
+      } else if (doc.parameters && doc.geometry) {
+        return { doc };
       }
       return null;
     } catch (err) {
-      console.error('Failed to parse Detail JSON:', err);
+      console.error('Failed to parse JSON:', err);
       return null;
     }
   }
@@ -74,9 +143,9 @@ export function activate(context: vscode.ExtensionContext) {
       // Listen to messages from Webview
       panel.webview.onDidReceiveMessage(async (message) => {
         if (message.type === 'ready') {
-          const doc = parseDocument(document!);
-          if (doc) {
-            panel.webview.postMessage({ type: 'loadConfig', config: doc });
+          const data = await parseAndLoadDocument(document!);
+          if (data) {
+            panel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap });
           }
         } else if (message.type === 'updateConfig') {
           const updatedDoc = message.config as DetailDocument;
@@ -121,28 +190,28 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(openVisualizerCommand);
 
   // File watcher: updates visualizer on editor changes/saves
-  const onSaveSubscription = vscode.workspace.onDidSaveTextDocument((document) => {
+  const onSaveSubscription = vscode.workspace.onDidSaveTextDocument(async (document) => {
     if (activePanel && activeDocument && document.uri.toString() === activeDocument.uri.toString()) {
-      const doc = parseDocument(document);
-      if (doc) {
+      const data = await parseAndLoadDocument(document);
+      if (data) {
         // Prevent refresh cycles if changes originated from webview itself
-        if (JSON.stringify(doc) !== JSON.stringify(lastWebviewDoc)) {
-          activePanel.webview.postMessage({ type: 'loadConfig', config: doc });
+        if (JSON.stringify(data.doc) !== JSON.stringify(lastWebviewDoc)) {
+          activePanel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap });
         }
       }
     }
   });
 
-  const onChangeSubscription = vscode.workspace.onDidChangeTextDocument((event) => {
+  const onChangeSubscription = vscode.workspace.onDidChangeTextDocument(async (event) => {
     if (activePanel && activeDocument && event.document.uri.toString() === activeDocument.uri.toString()) {
       if (isWebviewUpdating) {
         isWebviewUpdating = false;
         return;
       }
-      const doc = parseDocument(event.document);
-      if (doc) {
-        if (JSON.stringify(doc) !== JSON.stringify(lastWebviewDoc)) {
-          activePanel.webview.postMessage({ type: 'loadConfig', config: doc });
+      const data = await parseAndLoadDocument(event.document);
+      if (data) {
+        if (JSON.stringify(data.doc) !== JSON.stringify(lastWebviewDoc)) {
+          activePanel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap });
         }
       }
     }
@@ -169,11 +238,12 @@ function getWebviewHtml(webview: vscode.Webview, context: vscode.ExtensionContex
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>DAC Visualizer</title>
-      <link rel="stylesheet" nonce="${nonce}" href="${styleUri}">
-      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' 'unsafe-eval'; img-src ${webview.cspSource} data:;">
+      <link rel="stylesheet" href="${styleUri}">
+      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' 'unsafe-eval'; img-src ${webview.cspSource} data: https:;">
+      <style> body { background: #000; color: #fff; margin: 0; padding: 0; } </style>
     </head>
     <body>
-      <div id="root"></div>
+      <div id="root" style="width: 100vw; height: 100vh;">Loading DAC Visualizer...</div>
       <script nonce="${nonce}" src="${scriptUri}"></script>
     </body>
     </html>

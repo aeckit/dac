@@ -1,7 +1,6 @@
-node_modules/
-src/
-.vscode/
-tsconfig.json
-esbuild.js
-package-lock.json
-*.vsix
+*
+!dist/**
+!package.json
+!readme.md
+!LICENSE.txt
+!icon.png

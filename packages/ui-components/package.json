@@ -5,6 +5,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "compile": "tsc",
+    "build": "tsc",
     "watch": "tsc -w"
   },
   "dependencies": {
