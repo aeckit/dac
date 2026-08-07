@@ -1,0 +1,232 @@
+import { PropertyEditor, ParametricEditorContext } from './types';
+import { DetailDocument, SheetDocument, DrawingSetDocument } from '@aeckit/core-solver';
+
+export interface DocumentEditorContext {
+  container: HTMLElement;
+  getLatestDoc: () => DetailDocument | SheetDocument | DrawingSetDocument | null;
+  getActiveSheet?: () => SheetDocument | null;
+  updateAndNotify: () => void;
+}
+
+export const DocumentEditor = {
+  renderHTML(doc: DetailDocument | SheetDocument | DrawingSetDocument, activeSheet?: SheetDocument | null): string {
+    if (doc.type === 'CAD::Detail') {
+      return `
+        <div class="form-group" data-doc-prop="scale">
+          <div class="control-label-row">
+            <label class="control-label">Scale</label>
+            <input type="text" class="precise-input doc-scale-input" value="${doc.scale}" />
+          </div>
+        </div>
+      `;
+    }
+
+    if (doc.type === 'CAD::DrawingSet' || doc.type === 'CAD::Sheet') {
+      const isSheet = doc.type === 'CAD::Sheet';
+      const sheet = isSheet ? (doc as SheetDocument) : (activeSheet || null);
+      const dset = !isSheet ? (doc as DrawingSetDocument) : null;
+      
+      let html = '';
+      if (dset) {
+        html += `
+          <div class="form-group" data-doc-prop="project">
+            <div class="control-label-row">
+              <label class="control-label">Project Name</label>
+              <input type="text" class="precise-input doc-project-input" value="${dset.project || ''}" />
+            </div>
+          </div>
+        `;
+        
+        let dsetTbName = typeof dset.titleBlock === 'string' ? dset.titleBlock : '';
+        let dsetTbX = dset.titleBlockOffsetX || 0;
+        let dsetTbY = dset.titleBlockOffsetY || 0;
+        
+        html += `
+          <div class="sidebar-section-title" style="margin-top: 16px; margin-bottom: 8px;">GLOBAL TITLE BLOCK</div>
+          <div class="form-group" data-doc-prop="titleBlock">
+            <div class="control-label-row">
+              <label class="control-label">Source File</label>
+              <input type="text" class="precise-input doc-titleblock-input" data-target="dset" placeholder="e.g. titleblock.json" value="${dsetTbName}" />
+            </div>
+            <div class="control-label-row" style="margin-top: 8px;">
+              <label class="control-label">Origin X</label>
+              <input type="number" class="precise-input doc-tbx-input" data-target="dset" value="${dsetTbX}" style="width: 80px;" />
+            </div>
+            <div class="control-label-row" style="margin-top: 8px;">
+              <label class="control-label">Origin Y</label>
+              <input type="number" class="precise-input doc-tby-input" data-target="dset" value="${dsetTbY}" style="width: 80px;" />
+            </div>
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--vscode-panel-border); margin: 16px 0;" />
+        `;
+      }
+
+      if (sheet) {
+        html += `
+          <div class="sidebar-section-title" style="margin-bottom: 8px;">${dset ? 'ACTIVE SHEET PROPERTIES' : 'SHEET PROPERTIES'}</div>
+          <div class="form-group" data-doc-prop="sheetName">
+            <div class="control-label-row">
+              <label class="control-label">Sheet Name</label>
+              <input type="text" class="precise-input doc-sheetname-input" value="${sheet.sheetName || ''}" />
+            </div>
+          </div>
+          <div class="form-group" data-doc-prop="sheetNumber">
+            <div class="control-label-row">
+              <label class="control-label">Sheet Number</label>
+              <input type="text" class="precise-input doc-sheetnum-input" value="${sheet.sheetNumber || ''}" />
+            </div>
+          </div>
+          <div class="form-group" data-doc-prop="paperSize">
+            <div class="control-label-row">
+              <label class="control-label">Paper Size</label>
+              <select class="precise-input doc-papersize-input">
+                <option value="ARCH D" ${sheet.paperSize === 'ARCH D' ? 'selected' : ''}>ARCH D</option>
+                <option value="ARCH E" ${sheet.paperSize === 'ARCH E' ? 'selected' : ''}>ARCH E</option>
+                <option value="A1" ${sheet.paperSize === 'A1' ? 'selected' : ''}>A1</option>
+                <option value="A0" ${sheet.paperSize === 'A0' ? 'selected' : ''}>A0</option>
+              </select>
+            </div>
+          </div>
+        `;
+        
+        let sheetTbName = typeof sheet.titleBlock === 'string' ? sheet.titleBlock : '';
+        let sheetTbX = sheet.titleBlockOffsetX || 0;
+        let sheetTbY = sheet.titleBlockOffsetY || 0;
+        
+        html += `
+          <div class="sidebar-section-title" style="margin-top: 16px;">TITLE BLOCK OVERRIDE</div>
+          ${dset ? '<div style="font-size: 10px; color: var(--vscode-descriptionForeground); margin-bottom: 8px;">Inherits from Drawing Set if left empty.</div>' : ''}
+          <div class="form-group" data-doc-prop="titleBlock">
+            <div class="control-label-row">
+              <label class="control-label">Source File</label>
+              <input type="text" class="precise-input doc-titleblock-input" data-target="sheet" placeholder="e.g. titleblock.json" value="${sheetTbName}" />
+            </div>
+            <div class="control-label-row" style="margin-top: 8px;">
+              <label class="control-label">Origin X</label>
+              <input type="number" class="precise-input doc-tbx-input" data-target="sheet" value="${sheetTbX}" style="width: 80px;" />
+            </div>
+            <div class="control-label-row" style="margin-top: 8px;">
+              <label class="control-label">Origin Y</label>
+              <input type="number" class="precise-input doc-tby-input" data-target="sheet" value="${sheetTbY}" style="width: 80px;" />
+            </div>
+          </div>
+        `;
+      }
+      return html;
+    }
+
+    return '';
+  },
+
+  bindListeners(context: DocumentEditorContext): void {
+    const { container, getLatestDoc, getActiveSheet, updateAndNotify } = context;
+
+    // Helper to safely get and update the document
+    const updateDoc = (updater: (doc: any) => void) => {
+      const doc = getLatestDoc();
+      if (doc) {
+        updater(doc);
+        updateAndNotify();
+      }
+    };
+    
+    // Helper to safely get and update the active sheet
+    const updateSheet = (updater: (sheet: SheetDocument) => void) => {
+      if (getActiveSheet) {
+        const sheet = getActiveSheet();
+        if (sheet) {
+          updater(sheet);
+          updateAndNotify();
+        }
+      } else {
+        updateDoc((doc) => { if (doc.type === 'CAD::Sheet') updater(doc); });
+      }
+    };
+
+    // Detail Listeners
+    const scaleInput = container.querySelector('.doc-scale-input') as HTMLInputElement;
+    if (scaleInput) {
+      scaleInput.addEventListener('change', () => {
+        updateDoc((doc) => { if (doc.type === 'CAD::Detail') doc.scale = scaleInput.value; });
+      });
+    }
+
+    // DrawingSet Listeners
+    const projectInput = container.querySelector('.doc-project-input') as HTMLInputElement;
+    if (projectInput) {
+      projectInput.addEventListener('change', () => {
+        updateDoc((doc) => { if (doc.type === 'CAD::DrawingSet') doc.project = projectInput.value; });
+      });
+    }
+
+    // Sheet Listeners
+    const sheetNameInput = container.querySelector('.doc-sheetname-input') as HTMLInputElement;
+    if (sheetNameInput) {
+      sheetNameInput.addEventListener('change', () => {
+        updateSheet((sheet) => sheet.sheetName = sheetNameInput.value);
+      });
+    }
+
+    const sheetNumInput = container.querySelector('.doc-sheetnum-input') as HTMLInputElement;
+    if (sheetNumInput) {
+      sheetNumInput.addEventListener('change', () => {
+        updateSheet((sheet) => sheet.sheetNumber = sheetNumInput.value);
+      });
+    }
+
+    const paperSizeInput = container.querySelector('.doc-papersize-input') as HTMLSelectElement;
+    if (paperSizeInput) {
+      paperSizeInput.addEventListener('change', () => {
+        updateSheet((sheet) => sheet.paperSize = paperSizeInput.value);
+      });
+    }
+
+    // Title Block Listeners
+    const titleBlockInputs = container.querySelectorAll('.doc-titleblock-input');
+    const tbXInputs = container.querySelectorAll('.doc-tbx-input');
+    const tbYInputs = container.querySelectorAll('.doc-tby-input');
+    
+    const bindTitleBlockGroup = (tbInput: HTMLInputElement, xInput: HTMLInputElement, yInput: HTMLInputElement, isSheetTarget: boolean) => {
+      const applyTitleBlock = (targetObj: any) => {
+        const name = tbInput?.value || '';
+        const x = parseFloat(xInput?.value || '0');
+        const y = parseFloat(yInput?.value || '0');
+        
+        if (!name) {
+          delete targetObj.titleBlock;
+          delete targetObj.titleBlockOffsetX;
+          delete targetObj.titleBlockOffsetY;
+        } else {
+          targetObj.titleBlock = name;
+          targetObj.titleBlockOffsetX = isNaN(x) ? 0 : x;
+          targetObj.titleBlockOffsetY = isNaN(y) ? 0 : y;
+        }
+      };
+
+      const handler = () => {
+        if (isSheetTarget) {
+          updateSheet(applyTitleBlock);
+        } else {
+          updateDoc((doc) => {
+            if (doc.type === 'CAD::DrawingSet' || doc.type === 'CAD::Sheet') applyTitleBlock(doc);
+          });
+        }
+      };
+
+      if (tbInput) tbInput.addEventListener('change', handler);
+      if (xInput) xInput.addEventListener('change', handler);
+      if (yInput) yInput.addEventListener('change', handler);
+    };
+
+    // The document might have 1 or 2 title block sections (one for DSET, one for ACTIVE SHEET)
+    // We bind them iteratively and check their data-target
+    for (let i = 0; i < titleBlockInputs.length; i++) {
+      const tbInput = titleBlockInputs[i] as HTMLInputElement;
+      const xInput = tbXInputs[i] as HTMLInputElement;
+      const yInput = tbYInputs[i] as HTMLInputElement;
+      const isSheetTarget = tbInput.getAttribute('data-target') === 'sheet';
+      
+      bindTitleBlockGroup(tbInput, xInput, yInput, isSheetTarget);
+    }
+  }
+};
