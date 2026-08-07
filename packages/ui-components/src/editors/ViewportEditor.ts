@@ -28,6 +28,26 @@ export const ViewportEditor = {
           <label class="control-label">Origin Y</label>
           <input type="number" class="precise-input vp-y-input" value="${viewport.y}" style="width: 80px;" />
         </div>
+        <div class="control-label-row" style="margin-top: 8px;">
+          <label class="control-label">Width</label>
+          <input type="number" class="precise-input vp-w-input" value="${viewport.width !== undefined ? viewport.width : ''}" style="width: 80px;" placeholder="Auto" />
+        </div>
+        <div class="control-label-row" style="margin-top: 8px;">
+          <label class="control-label">Height</label>
+          <input type="number" class="precise-input vp-h-input" value="${viewport.height !== undefined ? viewport.height : ''}" style="width: 80px;" placeholder="Auto" />
+        </div>
+        <div class="control-label-row" style="margin-top: 8px;">
+          <label class="control-label">Title</label>
+          <input type="text" class="precise-input vp-title-input" value="${viewport.title || ''}" style="width: 120px;" placeholder="Auto" />
+        </div>
+        <div class="control-label-row" style="margin-top: 8px; justify-content: flex-start;">
+          <input type="checkbox" class="vp-hide-title-input" ${viewport.hideTitle ? 'checked' : ''} id="hideTitle-${index}" />
+          <label class="control-label" for="hideTitle-${index}" style="margin-left: 6px;">Hide Title</label>
+        </div>
+        <div class="control-label-row" style="margin-top: 4px; justify-content: flex-start;">
+          <input type="checkbox" class="vp-hide-scale-input" ${viewport.hideScale ? 'checked' : ''} id="hideScale-${index}" />
+          <label class="control-label" for="hideScale-${index}" style="margin-left: 6px;">Hide Scale</label>
+        </div>
       </div>
     `;
   },
@@ -38,29 +58,36 @@ export const ViewportEditor = {
     if (!groupEl) return;
 
     const detailInput = groupEl.querySelector('.vp-detail-input') as HTMLInputElement;
-    const scaleInput = groupEl.querySelector('.vp-scale-input') as HTMLInputElement;
+    const scaleInput = groupEl.querySelector('.vp-scale-input') as HTMLSelectElement;
     const xInput = groupEl.querySelector('.vp-x-input') as HTMLInputElement;
     const yInput = groupEl.querySelector('.vp-y-input') as HTMLInputElement;
+    const wInput = groupEl.querySelector('.vp-w-input') as HTMLInputElement;
+    const hInput = groupEl.querySelector('.vp-h-input') as HTMLInputElement;
+    const titleInput = groupEl.querySelector('.vp-title-input') as HTMLInputElement;
+    const hideTitleInput = groupEl.querySelector('.vp-hide-title-input') as HTMLInputElement;
+    const hideScaleInput = groupEl.querySelector('.vp-hide-scale-input') as HTMLInputElement;
 
     const updateProp = (prop: keyof Viewport, value: any) => {
       const vp = getLatestShape() as unknown as Viewport;
       if (vp) {
-        (vp as any)[prop] = value;
+        if (value === '' || Number.isNaN(value) || value === null) {
+          delete (vp as any)[prop];
+        } else {
+          (vp as any)[prop] = value;
+        }
         updateAndNotify();
       }
     };
 
-    if (detailInput) {
-      detailInput.addEventListener('change', () => updateProp('detail', detailInput.value));
-    }
-    if (scaleInput) {
-      scaleInput.addEventListener('change', () => updateProp('scale', scaleInput.value));
-    }
-    if (xInput) {
-      xInput.addEventListener('change', () => updateProp('x', parseFloat(xInput.value) || 0));
-    }
-    if (yInput) {
-      yInput.addEventListener('change', () => updateProp('y', parseFloat(yInput.value) || 0));
-    }
+    if (detailInput) detailInput.addEventListener('change', () => updateProp('detail', detailInput.value));
+    if (scaleInput) scaleInput.addEventListener('change', () => updateProp('scale', scaleInput.value));
+    if (xInput) xInput.addEventListener('change', () => updateProp('x', parseFloat(xInput.value) || 0));
+    if (yInput) yInput.addEventListener('change', () => updateProp('y', parseFloat(yInput.value) || 0));
+    
+    if (wInput) wInput.addEventListener('change', () => updateProp('width', wInput.value ? parseFloat(wInput.value) : null));
+    if (hInput) hInput.addEventListener('change', () => updateProp('height', hInput.value ? parseFloat(hInput.value) : null));
+    if (titleInput) titleInput.addEventListener('change', () => updateProp('title', titleInput.value));
+    if (hideTitleInput) hideTitleInput.addEventListener('change', () => updateProp('hideTitle', hideTitleInput.checked));
+    if (hideScaleInput) hideScaleInput.addEventListener('change', () => updateProp('hideScale', hideScaleInput.checked));
   }
 };

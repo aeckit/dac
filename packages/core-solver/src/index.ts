@@ -41,6 +41,11 @@ export interface Viewport {
   x: any;
   y: any;
   scale: string;
+  width?: number;
+  height?: number;
+  title?: string;
+  hideTitle?: boolean;
+  hideScale?: boolean;
   componentId?: string;
 }
 
@@ -410,7 +415,9 @@ export function compileGeometryGroups(doc: DetailDocument, scale: number, global
 
   if (doc.parameters) {
     for (const [key, param] of Object.entries(doc.parameters)) {
-      resolvedParams[key] = param.value !== undefined ? param.value : param.default;
+      if (resolvedParams[key] === undefined) {
+        resolvedParams[key] = param.value !== undefined ? param.value : param.default;
+      }
     }
   }
 
@@ -569,10 +576,48 @@ export function renderSheet(
       const vpY = Number(vp.y);
       const vpSvgY = height - vpY - (vpCanvasHeight * vpScaleMultiplier);
       const cidAttr = vp.componentId ? ` data-component-id="${vp.componentId}" data-component-type="CAD::Viewport"` : '';
+      
+      const clipId = `clip-${vp.componentId || Math.random().toString(36).substring(7)}`;
+      const hasDimensions = vp.width !== undefined && vp.height !== undefined;
+      const clipDef = hasDimensions ? `<clipPath id="${clipId}"><rect x="0" y="${vpCanvasHeight - vp.height! / vpScaleMultiplier}" width="${vp.width! / vpScaleMultiplier}" height="${vp.height! / vpScaleMultiplier}" /></clipPath>` : '';
+      const clipAttr = hasDimensions ? ` clip-path="url(#${clipId})"` : '';
+      
+      // Compute actual Title
+      let displayTitle = vp.title || '';
+      if (!displayTitle && typeof vp.detail === 'string') {
+        // Fallback to filename (e.g. "../detail-prototype.json" -> "Detail Prototype")
+        const basename = vp.detail.split('/').pop() || '';
+        displayTitle = basename.replace('.json', '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      }
+      
+      // Title and Scale label SVG elements
+      let labelsSvg = '';
+      if (hasDimensions) {
+        const titleY = vpCanvasHeight - (vp.height! / vpScaleMultiplier) - (0.5 / vpScaleMultiplier); // Position above the bottom left origin
+        if (!vp.hideTitle) {
+          labelsSvg += `<text x="0" y="${titleY}" font-size="${0.5 / vpScaleMultiplier}" fill="#f1f5f9" font-family="monospace" font-weight="bold">${displayTitle.toUpperCase()}</text>`;
+        }
+        if (!vp.hideScale) {
+          labelsSvg += `<text x="0" y="${titleY - (0.5 / vpScaleMultiplier)}" font-size="${0.35 / vpScaleMultiplier}" fill="#94a3b8" font-family="monospace">SCALE: ${vp.scale}</text>`;
+        }
+      } else {
+        const titleY = vpCanvasHeight - (0.5 / vpScaleMultiplier);
+        if (!vp.hideTitle) {
+          labelsSvg += `<text x="0" y="${titleY}" font-size="${0.5 / vpScaleMultiplier}" fill="#f1f5f9" font-family="monospace" font-weight="bold">${displayTitle.toUpperCase()}</text>`;
+        }
+        if (!vp.hideScale) {
+          labelsSvg += `<text x="0" y="${titleY - (0.5 / vpScaleMultiplier)}" font-size="${0.35 / vpScaleMultiplier}" fill="#94a3b8" font-family="monospace">SCALE: ${vp.scale}</text>`;
+        }
+      }
 
       sheetContent += `
+        ${hasDimensions ? `<defs>${clipDef}</defs>` : ''}
         <g${cidAttr} class="${vp.componentId ? 'interactive-component pointer-cursor ' : ''}" data-viewport-id="viewport-${detailId}" transform="translate(${vpX}, ${vpSvgY}) scale(${vpScaleMultiplier})">
-          ${vpSvg}
+          <g${clipAttr}>
+            ${vpSvg}
+          </g>
+          ${labelsSvg}
+          ${hasDimensions ? `<rect x="0" y="${vpCanvasHeight - vp.height! / vpScaleMultiplier}" width="${vp.width! / vpScaleMultiplier}" height="${vp.height! / vpScaleMultiplier}" fill="none" stroke="#475569" stroke-width="${1 / 72 / vpScaleMultiplier}" stroke-dasharray="0.1, 0.1" />` : ''}
         </g>
       `;
     } else {
