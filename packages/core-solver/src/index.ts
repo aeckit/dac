@@ -41,6 +41,7 @@ export interface Viewport {
   x: any;
   y: any;
   scale: string;
+  componentId?: string;
 }
 
 export interface SheetDocument {
@@ -49,6 +50,8 @@ export interface SheetDocument {
   sheetName: string;
   paperSize: string;
   titleBlock?: string | DetailDocument;
+  titleBlockOffsetX?: number;
+  titleBlockOffsetY?: number;
   viewports: Viewport[];
 }
 
@@ -56,6 +59,9 @@ export interface DrawingSetDocument {
   type: 'CAD::DrawingSet';
   project: string;
   titleBlockData?: Record<string, any>;
+  titleBlock?: string | DetailDocument;
+  titleBlockOffsetX?: number;
+  titleBlockOffsetY?: number;
   sheets: (string | SheetDocument)[];
 }
 
@@ -69,18 +75,18 @@ export function resolveScaleMultiplier(scaleStr: string): number {
     console.warn('resolveScaleMultiplier called with non-string:', scaleStr);
     return 1.0;
   }
-  const clean = scaleStr.replace(/\s+/g, '').replace(/\\"/g, '"').replace(/'/g, '');
+  const clean = scaleStr.replace(/\s+/g, '').replace(/['"]/g, '');
   if (clean.includes('1:1') || clean.includes('FULL')) return 1.0;
 
-  if (clean === '1"=1-0') return 1.0 / 12.0;
-  if (clean === '1/2"=1-0') return 0.5 / 12.0;
-  if (clean === '1/4"=1-0') return 0.25 / 12.0;
-  if (clean === '1/8"=1-0') return 0.125 / 12.0;
-  if (clean === '3"=1-0') return 3.0 / 12.0;
-  if (clean === '1-1/2"=1-0') return 1.5 / 12.0;
-  if (clean === '3/4"=1-0') return 0.75 / 12.0;
-  if (clean === '3/8"=1-0') return 0.375 / 12.0;
-  if (clean === '3/16"=1-0') return 0.1875 / 12.0;
+  if (clean === '1=1-0') return 1.0 / 12.0;
+  if (clean === '1/2=1-0') return 0.5 / 12.0;
+  if (clean === '1/4=1-0') return 0.25 / 12.0;
+  if (clean === '1/8=1-0') return 0.125 / 12.0;
+  if (clean === '3=1-0') return 3.0 / 12.0;
+  if (clean === '1-1/2=1-0') return 1.5 / 12.0;
+  if (clean === '3/4=1-0') return 0.75 / 12.0;
+  if (clean === '3/8=1-0') return 0.375 / 12.0;
+  if (clean === '3/16=1-0') return 0.1875 / 12.0;
 
   return 1.0 / 12.0;
 }
@@ -110,26 +116,30 @@ export function evaluateExpression(expr: any, params: Record<string, number | bo
 type ShapeDrawer = (
   shape: GeometryPrimitive,
   resolvedParams: Record<string, number | boolean>,
-  scale: number
+  scale: number,
+  canvasHeight?: number
 ) => string;
 
-// SVG Line Drawer
-function drawLine(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number): string {
+// SVG Line Drawer (Cartesian +Y = UP)
+function drawLine(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
   const x1 = evaluateExpression(shape.x1, params);
-  const y1 = evaluateExpression(shape.y1, params);
+  const y1 = canvasHeight - evaluateExpression(shape.y1, params);
   const x2 = evaluateExpression(shape.x2, params);
-  const y2 = evaluateExpression(shape.y2, params);
+  const y2 = canvasHeight - evaluateExpression(shape.y2, params);
   const strokeColor = shape.color || '#f8fafc';
   const strokeWidth = ((shape.strokeWidth || 2) / 72) / scale;
   const dashArray = shape.strokeDasharray ? `stroke-dasharray="${shape.strokeDasharray}"` : '';
 
-  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${strokeColor}" stroke-width="${strokeWidth}" ${dashArray} stroke-linecap="round" />`;
+  const hitTarget = `<path d="M ${x1} ${y1} L ${x2} ${y2}" stroke="transparent" stroke-width="0.5" pointer-events="stroke" class="line-hit-target" />`;
+  const visibleLine = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${strokeColor}" stroke-width="${strokeWidth}" ${dashArray} stroke-linecap="round" />`;
+
+  return `${hitTarget}\n${visibleLine}`;
 }
 
-// SVG Circle Drawer
-function drawCircle(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number): string {
+// SVG Circle Drawer (Cartesian +Y = UP)
+function drawCircle(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
   const cx = evaluateExpression(shape.cx, params);
-  const cy = evaluateExpression(shape.cy, params);
+  const cy = canvasHeight - evaluateExpression(shape.cy, params);
   const r = evaluateExpression(shape.r, params);
   const fillColor = shape.fill || 'none';
   const strokeColor = shape.color || '#f8fafc';
@@ -138,12 +148,13 @@ function drawCircle(shape: GeometryPrimitive, params: Record<string, number | bo
   return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
 }
 
-// SVG Rectangle and Hatching Drawer
-function drawRectangle(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number): string {
+// SVG Rectangle and Hatching Drawer (Cartesian +Y = UP)
+function drawRectangle(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
   const x = evaluateExpression(shape.x, params);
-  const y = evaluateExpression(shape.y, params);
+  const rawY = evaluateExpression(shape.y, params);
   const w = evaluateExpression(shape.width, params);
   const h = evaluateExpression(shape.height, params);
+  const y = canvasHeight - (rawY + h);
   const hatch = shape.hatch;
 
   let fillStr = 'fill="none"';
@@ -154,8 +165,8 @@ function drawRectangle(shape: GeometryPrimitive, params: Record<string, number |
   } else if (hatch === 'TimberCross') {
     fillStr = 'fill="rgba(120, 53, 15, 0.15)"';
     extraGraphics = `
-      <line x1="${x}" y1="${y}" x2="${x + w}" y2="${y + h}" class="cad-hatch" stroke-width="${(1.5 / 72) / scale}" />
-      <line x1="${x + w}" y1="${y}" x2="${x}" y2="${y + h}" class="cad-hatch" stroke-width="${(1.5 / 72) / scale}" />
+      <line x1="${x}" y1="${canvasHeight - rawY}" x2="${x + w}" y2="${canvasHeight - (rawY + h)}" class="cad-hatch" stroke-width="${(1.5 / 72) / scale}" />
+      <line x1="${x + w}" y1="${canvasHeight - rawY}" x2="${x}" y2="${canvasHeight - (rawY + h)}" class="cad-hatch" stroke-width="${(1.5 / 72) / scale}" />
     `;
   } else if (shape.fill) {
     fillStr = `fill="${shape.fill}"`;
@@ -170,13 +181,14 @@ function drawRectangle(shape: GeometryPrimitive, params: Record<string, number |
   `;
 }
 
-// Annotative Dimension Line Drawer
-function drawDimension(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number): string {
+// Annotative Dimension Line Drawer (Cartesian +Y = UP)
+function drawDimension(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
   const x1 = evaluateExpression(shape.x1, params);
-  const y1 = evaluateExpression(shape.y1, params);
+  const y1 = canvasHeight - evaluateExpression(shape.y1, params);
   const x2 = evaluateExpression(shape.x2, params);
-  const y2 = evaluateExpression(shape.y2, params);
-  const offset = ((shape.offset || 20) / 72) / scale;
+  const y2 = canvasHeight - evaluateExpression(shape.y2, params);
+  const rawOffset = ((shape.offset || 20) / 72) / scale;
+  const offset = -rawOffset;
   const text = String(evaluateExpression(shape.text, params));
 
   const dx = x2 - x1;
@@ -211,7 +223,7 @@ function drawDimension(shape: GeometryPrimitive, params: Record<string, number |
   const tx = (ox1 + ox2) / 2;
   const ty = (oy1 + oy2) / 2;
 
-  const textOffset = offset > 0 ? (7 / 72) / scale : -(10 / 72) / scale;
+  const textOffset = rawOffset > 0 ? -(7 / 72) / scale : (10 / 72) / scale;
   const textX = tx + nx * textOffset;
   const textY = ty + ny * textOffset + (3 / 72) / scale;
 
@@ -229,21 +241,21 @@ function drawDimension(shape: GeometryPrimitive, params: Record<string, number |
   `;
 }
 
-// Annotation: Text
-function drawText(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number): string {
+// Annotation: Text (Cartesian +Y = UP)
+function drawText(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
   const x = evaluateExpression(shape.x, params);
-  const y = evaluateExpression(shape.y, params);
+  const y = canvasHeight - evaluateExpression(shape.y, params);
   const text = evaluateExpression(shape.text, params);
   const fontSize = ((shape.fontSize || 11) / 72) / scale;
   const color = shape.color || '#f1f5f9';
 
-  return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="hanging">${text}</text>`;
+  return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto">${text}</text>`;
 }
 
-// Annotation: TextBox (General Notes)
-function drawTextBox(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number): string {
+// Annotation: TextBox (General Notes - Cartesian +Y = UP)
+function drawTextBox(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
   const x = evaluateExpression(shape.x, params);
-  const y = evaluateExpression(shape.y, params);
+  const rawY = evaluateExpression(shape.y, params);
   const width = evaluateExpression(shape.width, params);
 
   const rawFontSize = shape.fontSize || 11;
@@ -253,6 +265,8 @@ function drawTextBox(shape: GeometryPrimitive, params: Record<string, number | b
   const text = evaluateExpression(shape.text, params);
   const color = shape.color || '#f1f5f9';
 
+  const y = canvasHeight - rawY;
+
   return `
     <foreignObject x="${x}" y="${y}" width="${width}" height="${width * 10}">
       <div xmlns="http://www.w3.org/1999/xhtml" style="font-size: ${rawFontSize}px; width: ${cssWidth}px; transform: scale(${cssScale}); transform-origin: top left; color: ${color}; font-family: monospace; white-space: pre-wrap; margin: 0; padding: 0; line-height: 1.4;">${text}</div>
@@ -260,16 +274,16 @@ function drawTextBox(shape: GeometryPrimitive, params: Record<string, number | b
   `;
 }
 
-// Annotation: Leader
-function drawLeader(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number): string {
+// Annotation: Leader (Cartesian +Y = UP)
+function drawLeader(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
   const anchorX = evaluateExpression(shape.x, params);
-  const anchorY = evaluateExpression(shape.y, params);
+  const anchorY = canvasHeight - evaluateExpression(shape.y, params);
 
   const dx = evaluateExpression(shape.dx || 0, params);
   const dy = evaluateExpression(shape.dy || 0, params);
 
   const offsetX = dx / scale;
-  const offsetY = dy / scale;
+  const offsetY = -(dy / scale);
 
   const textX = anchorX + offsetX;
   const textY = anchorY + offsetY;
@@ -285,12 +299,13 @@ function drawLeader(shape: GeometryPrimitive, params: Record<string, number | bo
   `;
 }
 
-// Annotation: Image
-function drawImage(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number): string {
+// Annotation: Image (Cartesian +Y = UP)
+function drawImage(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
   const x = evaluateExpression(shape.x, params);
-  const y = evaluateExpression(shape.y, params);
+  const rawY = evaluateExpression(shape.y, params);
   const width = evaluateExpression(shape.width, params);
   const height = evaluateExpression(shape.height, params);
+  const y = canvasHeight - (rawY + height);
   const href = shape.href;
 
   return `<image x="${x}" y="${y}" width="${width}" height="${height}" href="${href}" preserveAspectRatio="xMidYMid meet" />`;
@@ -305,6 +320,15 @@ export const L1_REGISTRY: Record<string, ShapeDrawer> = {
   "CAD::Annotation::TextBox": drawTextBox,
   "CAD::Annotation::Leader": drawLeader,
   "CAD::Annotation::Image": drawImage,
+  // Shorthand aliases for convenience
+  "line": drawLine,
+  "circle": drawCircle,
+  "rect": drawRectangle,
+  "dimension": drawDimension,
+  "text": drawText,
+  "textbox": drawTextBox,
+  "leader": drawLeader,
+  "image": drawImage,
 };
 
 function getDefs(): string {
@@ -322,6 +346,12 @@ function getDefs(): string {
       <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
         <path d="M 0 2 L 10 5 L 0 8 z" class="dimension-arrow" fill="#06b6d4" />
       </marker>
+      <marker id="origin-arrow-x" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#f43f5e" />
+      </marker>
+      <marker id="origin-arrow-y" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#38bdf8" />
+      </marker>
     </defs>
   `;
 }
@@ -338,22 +368,35 @@ function getStyles(): string {
       .dim-text { fill: #06b6d4; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; text-anchor: middle; }
       .pointer-cursor { cursor: pointer; }
       
+      .interactive-component text {
+        pointer-events: bounding-box;
+        cursor: pointer;
+      }
+
       .selected-highlight rect, 
-      .selected-highlight circle {
+      .selected-highlight circle,
+      .selected-highlight line {
         stroke: #06b6d4 !important;
-        stroke-width: 0.05 !important;
+        stroke-width: 0.06 !important;
         filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
         transition: stroke 0.2s ease, stroke-width 0.1s ease;
       }
-      .selected-highlight line {
-        stroke: #06b6d4 !important;
-        transition: stroke 0.2s ease;
+      .selected-highlight text {
+        fill: #06b6d4 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: fill 0.2s ease;
       }
       
       .interactive-component:hover rect,
-      .interactive-component:hover circle {
+      .interactive-component:hover circle,
+      .interactive-component:hover line {
         stroke: #38bdf8;
-        transition: stroke 0.15s ease;
+        stroke-width: 0.05 !important;
+        transition: stroke 0.15s ease, stroke-width 0.15s ease;
+      }
+      .interactive-component:hover text {
+        fill: #38bdf8 !important;
+        transition: fill 0.15s ease;
       }
     </style>
   `;
@@ -362,7 +405,7 @@ function getStyles(): string {
 /**
  * Evaluates geometry shapes and groups them by componentId
  */
-function compileGeometryGroups(doc: DetailDocument, scale: number, globalParams: Record<string, number | boolean> = {}): string {
+export function compileGeometryGroups(doc: DetailDocument, scale: number, globalParams: Record<string, number | boolean> = {}, canvasHeight = 18, isInteractive = true): string {
   const resolvedParams: Record<string, number | boolean> = { ...globalParams };
 
   if (doc.parameters) {
@@ -373,6 +416,7 @@ function compileGeometryGroups(doc: DetailDocument, scale: number, globalParams:
 
   const groups: Record<string, { type?: string; svgNodes: string[] }> = {};
   const renderedGroups: string[] = [];
+  let autoIndex = 0;
 
   for (const shape of doc.geometry) {
     const drawer = L1_REGISTRY[shape.type];
@@ -387,24 +431,21 @@ function compileGeometryGroups(doc: DetailDocument, scale: number, globalParams:
         if (isVisible === false || isVisible === 'false' || isVisible === 0) continue;
       }
 
-      const svg = drawer(shape, resolvedParams, scale);
-      const cid = shape.componentId;
-      const ctype = shape.componentType;
+      const svg = drawer(shape, resolvedParams, scale, canvasHeight);
+      const cid = shape.componentId || `shape_${autoIndex++}`;
+      const ctype = shape.componentType || shape.type.split('::').pop() || 'Shape';
 
-      if (cid) {
-        if (!groups[cid]) groups[cid] = { type: ctype, svgNodes: [] };
-        groups[cid].svgNodes.push(svg);
-      } else {
-        renderedGroups.push(svg);
-      }
+      if (!groups[cid]) groups[cid] = { type: ctype, svgNodes: [] };
+      groups[cid].svgNodes.push(svg);
     } catch (err) {
       console.error(`Failed to render shape type "${shape.type}":`, err);
     }
   }
 
   for (const [cid, group] of Object.entries(groups)) {
+    const interactiveClasses = isInteractive ? 'interactive-component pointer-cursor' : '';
     renderedGroups.push(`
-      <g data-component-id="${cid}" data-component-type="${group.type || ''}" class="interactive-component pointer-cursor">
+      <g data-component-id="${cid}" data-component-type="${group.type || ''}" class="${interactiveClasses}">
         ${group.svgNodes.join('\n')}
       </g>
     `);
@@ -416,16 +457,49 @@ function compileGeometryGroups(doc: DetailDocument, scale: number, globalParams:
 /**
  * Renders a single DetailDocument into a standalone SVG (legacy mode / visualizer mode)
  */
+/**
+ * Generates a CAD UCS / Origin Indicator at (0,0) of model space
+ */
+function getOriginIndicator(canvasHeight = 18, scale = 1): string {
+  const originX = 0;
+  const originY = canvasHeight; // SVG Y coordinate corresponding to Cartesian Y = 0
+  const arrowLen = 1.0 / scale; // Exactly 1 inch on paper (1 grid square)
+  const strokeWidth = (2 / 72) / scale;
+  const fontSize = (11 / 72) / scale;
+  const circleRadius = (4 / 72) / scale;
+  const labelOffsetX = (8 / 72) / scale;
+  const labelOffsetY = (14 / 72) / scale;
+
+  return `
+    <!-- CAD Origin (0,0) / UCS Axis Indicator -->
+    <g class="cad-origin-indicator" opacity="0.85" style="pointer-events: none;">
+      <!-- Origin Dot -->
+      <circle cx="${originX}" cy="${originY}" r="${circleRadius}" fill="#f43f5e" />
+      
+      <!-- X Axis (+X -> Right, Red/Pink) -->
+      <line x1="${originX}" y1="${originY}" x2="${originX + arrowLen}" y2="${originY}" stroke="#f43f5e" stroke-width="${strokeWidth}" marker-end="url(#origin-arrow-x)" />
+      <text x="${originX + arrowLen + labelOffsetX}" y="${originY}" font-size="${fontSize}" fill="#f43f5e" font-family="monospace" font-weight="bold" dominant-baseline="middle">X</text>
+      
+      <!-- Y Axis (+Y -> Up in Cartesian, -Y in SVG screen space, Cyan/Blue) -->
+      <line x1="${originX}" y1="${originY}" x2="${originX}" y2="${originY - arrowLen}" stroke="#38bdf8" stroke-width="${strokeWidth}" marker-end="url(#origin-arrow-y)" />
+      <text x="${originX}" y="${originY - arrowLen - labelOffsetY}" font-size="${fontSize}" fill="#38bdf8" font-family="monospace" font-weight="bold" text-anchor="middle">Y</text>
+      
+      <!-- (0,0) Coordinate Label -->
+      <text x="${originX - labelOffsetX}" y="${originY + labelOffsetY}" font-size="${(9 / 72) / scale}" fill="#94a3b8" font-family="monospace" text-anchor="end">(0,0)</text>
+    </g>
+  `;
+}
+
 export function renderDetail(doc: DetailDocument, sandboxWidth: number = 24, sandboxHeight: number = 18): string {
   const scale = resolveScaleMultiplier(doc.scale);
   const width = sandboxWidth;
   const height = sandboxHeight;
 
-  const geometries = compileGeometryGroups(doc, scale);
+  const geometries = compileGeometryGroups(doc, scale, {}, sandboxHeight);
+  const originIndicator = getOriginIndicator(sandboxHeight, scale);
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%" style="overflow: visible;">
-      ${getStyles()}
       ${getDefs()}
       <defs>
         <pattern id="infinite-grid" width="1" height="1" patternUnits="userSpaceOnUse">
@@ -435,9 +509,11 @@ export function renderDetail(doc: DetailDocument, sandboxWidth: number = 24, san
       </defs>
       <rect x="-5000" y="-5000" width="10000" height="10000" class="blueprint-bg" />
       <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#infinite-grid)" />
-      <g transform="translate(1, 1) scale(${scale})">
+      <g class="drawing-extents" transform="translate(1, 1) scale(${scale})">
+        ${originIndicator}
         ${geometries}
       </g>
+      ${getStyles()}
     </svg>
   `;
 }
@@ -462,7 +538,9 @@ export function renderSheet(
   sheet: SheetDocument,
   titleBlockData: Record<string, any>,
   viewportsMap: Map<string, DetailDocument>,
-  titleBlockDoc?: DetailDocument
+  titleBlockDoc?: DetailDocument,
+  tbOffsetX = 0,
+  tbOffsetY = 0
 ): string {
   const { width, height } = getPaperDimensions(sheet.paperSize);
   let sheetContent = '';
@@ -471,8 +549,10 @@ export function renderSheet(
   if (titleBlockDoc) {
     // Title block is rendered at 1:1 scale
     const tbScale = resolveScaleMultiplier('1:1');
-    const tbSvg = compileGeometryGroups(titleBlockDoc, tbScale, titleBlockData);
-    sheetContent += `\n<!-- Title Block -->\n<g id="title-block-layer">${tbSvg}</g>`;
+    const tbSvg = compileGeometryGroups(titleBlockDoc, tbScale, titleBlockData, height, false);
+    
+    // translating by (x, -y) is correct in SVG coordinate space (since +Y is down in SVG, and we want to move it UP).
+    sheetContent += `\n<!-- Title Block -->\n<g id="title-block-layer" transform="translate(${tbOffsetX}, ${-tbOffsetY})">${tbSvg}</g>`;
   }
 
   // Render Viewports
@@ -483,10 +563,15 @@ export function renderSheet(
 
     if (detailDoc) {
       const vpScaleMultiplier = resolveScaleMultiplier(vp.scale);
-      const vpSvg = compileGeometryGroups(detailDoc, vpScaleMultiplier, titleBlockData);
+      const vpCanvasHeight = 18;
+      const vpSvg = compileGeometryGroups(detailDoc, vpScaleMultiplier, titleBlockData, vpCanvasHeight, false);
+      const vpX = Number(vp.x);
+      const vpY = Number(vp.y);
+      const vpSvgY = height - vpY - (vpCanvasHeight * vpScaleMultiplier);
+      const cidAttr = vp.componentId ? ` data-component-id="${vp.componentId}" data-component-type="CAD::Viewport"` : '';
 
       sheetContent += `
-        <g id="viewport-${detailId}" transform="translate(${vp.x}, ${vp.y}) scale(${vpScaleMultiplier})">
+        <g${cidAttr} class="${vp.componentId ? 'interactive-component pointer-cursor ' : ''}" data-viewport-id="viewport-${detailId}" transform="translate(${vpX}, ${vpSvgY}) scale(${vpScaleMultiplier})">
           ${vpSvg}
         </g>
       `;
@@ -497,10 +582,12 @@ export function renderSheet(
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%" style="background-color: #0f172a; overflow: visible;">
-      ${getStyles()}
       ${getDefs()}
-      <rect x="0" y="0" width="${width}" height="${height}" class="blueprint-bg" />
-      ${sheetContent}
+      <g class="drawing-extents">
+        <rect x="0" y="0" width="${width}" height="${height}" class="blueprint-bg" />
+        ${sheetContent}
+      </g>
+      ${getStyles()}
     </svg>
   `;
 }
