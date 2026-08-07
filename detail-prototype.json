@@ -1,4 +1,5 @@
 {
+  "type": "CAD::Detail",
   "version": "dac/v1",
   "scale": "1/2\\",
   "parameters": {

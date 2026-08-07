@@ -33,6 +33,21 @@ dac/
 
 ---
 
+## CAD Geometry & Interactive Selection
+
+### 1. Cartesian Coordinate System (`+Y = UP`)
+Unlike standard web SVG/HTML coordinates where the Y-axis points down from the top-left, **DaC uses a standard CAD Cartesian coordinate system**:
+* **Origin `(0, 0)`:** Located at the **bottom-left** of the canvas or drawing sheet.
+* **Axes:** `+X` extends to the right; **`+Y` extends upwards**.
+* **Origin UCS Indicator:** In detail views, a red/cyan CAD coordinate axis icon (`X →`, `Y ↑`) is displayed at `(0, 0)` on the blueprint grid to provide visual orientation.
+
+### 2. Interactive Selection & Component Grouping
+Every geometry primitive in a drawing is **selectable and highlightable** in the interactive viewer by default:
+* **Explicit `componentId` (Grouping):** When one or more primitives share an explicit `componentId` (e.g., `"componentId": "anchor_bolt"` on 4 lines and a polygon), the solver groups them together into a single interactive assembly (`<g data-component-id="anchor_bolt">`). Clicking any line in the assembly highlights the entire anchor bolt.
+* **Implicit Auto-Indexing (Fallback):** If an element in `geometry` does not specify a `componentId`, `@aeckit/core-solver` automatically assigns an indexed fallback ID (`shape_0`, `shape_1`, etc.). This ensures **every element on the canvas is clickable and inspectable by default**.
+
+---
+
 ## Getting Started
 
 ### Prerequisites
