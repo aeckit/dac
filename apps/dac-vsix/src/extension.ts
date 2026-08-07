@@ -11,6 +11,28 @@ export function activate(context: vscode.ExtensionContext) {
   let lastWebviewDoc: DetailDocument | null = null;
   let isWebviewUpdating = false;
 
+  function resolveLocalImages(doc: any, baseDir: string) {
+    if (!doc || !doc.geometry || !Array.isArray(doc.geometry)) return;
+    for (const geom of doc.geometry) {
+      if (geom.type === 'CAD::Annotation::Image' && geom.href && typeof geom.href === 'string') {
+        const href: string = geom.href;
+        if (!href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('data:')) {
+          try {
+            const imgPath = path.isAbsolute(href) ? href : path.resolve(baseDir, href);
+            if (fs.existsSync(imgPath)) {
+              const ext = path.extname(imgPath).toLowerCase().replace('.', '') || 'jpeg';
+              const mime = ext === 'jpg' ? 'jpeg' : ext === 'svg' ? 'svg+xml' : ext;
+              const base64 = fs.readFileSync(imgPath, 'base64');
+              geom.href = `data:image/${mime};base64,${base64}`;
+            }
+          } catch (e) {
+            console.error('Failed to load local image:', href, e);
+          }
+        }
+      }
+    }
+  }
+
   // Helper to parse the JSON drawing document and load dependencies if it's a DrawingSet
   async function parseAndLoadDocument(document: vscode.TextDocument): Promise<{ doc: any, viewportsMap?: Record<string, any>, titleBlockMap?: Record<string, any> } | null> {
     const text = document.getText();
@@ -59,12 +81,14 @@ export function activate(context: vscode.ExtensionContext) {
           }
           
           if (typeof sheet !== 'string') {
+            resolveLocalImages(sheet, sheetBaseDir);
             // Load title block
             if (sheet.titleBlock && typeof sheet.titleBlock === 'string') {
               try {
                 const tbPath = path.join(sheetBaseDir, sheet.titleBlock);
                 const tbContent = fs.readFileSync(tbPath, 'utf8');
                 titleBlockMap[sheet.titleBlock] = JSON.parse(tbContent);
+                resolveLocalImages(titleBlockMap[sheet.titleBlock], sheetBaseDir);
               } catch (e) {
                 console.error('Failed to load title block:', sheet.titleBlock);
               }
@@ -77,6 +101,7 @@ export function activate(context: vscode.ExtensionContext) {
                     const vpPath = path.join(sheetBaseDir, vp.detail);
                     const vpContent = fs.readFileSync(vpPath, 'utf8');
                     viewportsMap[vp.detail] = JSON.parse(vpContent);
+                    resolveLocalImages(viewportsMap[vp.detail], sheetBaseDir);
                   } catch (e) {
                     console.error('Failed to load viewport detail:', vp.detail);
                   }
@@ -87,6 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
         return { doc: ds, viewportsMap, titleBlockMap };
       } else if (doc.parameters && doc.geometry) {
+        resolveLocalImages(doc, baseDir);
         return { doc };
       }
       return null;
@@ -188,7 +214,6 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(openVisualizerCommand);
-
   // File watcher: updates visualizer on editor changes/saves
   const onSaveSubscription = vscode.workspace.onDidSaveTextDocument(async (document) => {
     if (activePanel && activeDocument && document.uri.toString() === activeDocument.uri.toString()) {

@@ -33,6 +33,19 @@ try {
       }
     });
 
+    window.addEventListener('dac-toggle-left-pane', () => {
+      const leftPanel = document.querySelector('.left-panel') || document.getElementById('left-sidebar');
+      const toggleBtn = document.getElementById('btn-toggle-left-pane');
+      if (leftPanel) {
+        leftPanel.classList.toggle('collapsed');
+        const isCollapsed = leftPanel.classList.contains('collapsed');
+        if (toggleBtn) {
+          toggleBtn.classList.toggle('collapsed', isCollapsed);
+          toggleBtn.title = isCollapsed ? 'Expand Drawing Inspector' : 'Collapse Drawing Inspector';
+        }
+      }
+    });
+
     vscode.postMessage({ type: 'ready' });
   }
 } catch (err) {

@@ -31,6 +31,19 @@ body {
   background-color: var(--vscode-sideBar-background, #252526);
   padding: 16px;
   overflow-y: auto;
+  transition: width 0.2s ease-in-out, min-width 0.2s ease-in-out, padding 0.2s ease-in-out;
+}
+
+.left-panel.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-right: none !important;
+}
+
+#btn-toggle-right-pane {
+  display: none !important;
 }
 
 /* Right panel SVG viewport */
@@ -299,6 +312,15 @@ input:checked + .slider-round:before {
 .reset-btn:hover {
   background-color: #334155;
   color: #f1f5f9;
+}
+
+.icon-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0 !important;
 }
 
 .svg-viewport {
