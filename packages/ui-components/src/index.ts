@@ -205,7 +205,10 @@ export class VisualizerUI {
         const detailDoc = this.doc as DetailDocument;
         if (!detailDoc.geometry) detailDoc.geometry = [];
         const id = 'rect_' + Date.now().toString(36);
-        detailDoc.geometry.push({ type: 'CAD::Shape::Rectangle', componentId: id, componentType: 'Rectangle', x: 0, y: 0, width: 12, height: 12, fill: 'gray' });
+        const offset = detailDoc.geometry.length * 0.5;
+        detailDoc.geometry.push({ type: 'CAD::Shape::Rectangle', componentId: id, componentType: 'Rectangle', x: offset, y: offset, width: 12, height: 12, fill: 'gray' });
+        this.selectedComponentId = id;
+        this.selectedComponentType = 'CAD::Shape::Rectangle';
         this.updateAndNotify();
       }
     });
@@ -216,7 +219,10 @@ export class VisualizerUI {
         const detailDoc = this.doc as DetailDocument;
         if (!detailDoc.geometry) detailDoc.geometry = [];
         const id = 'line_' + Date.now().toString(36);
-        detailDoc.geometry.push({ type: 'CAD::Shape::Line', componentId: id, componentType: 'Line', x1: 0, y1: 0, x2: 12, y2: 12, strokeWidth: 2 });
+        const offset = detailDoc.geometry.length * 0.5;
+        detailDoc.geometry.push({ type: 'CAD::Shape::Line', componentId: id, componentType: 'Line', x1: offset, y1: offset, x2: 12 + offset, y2: 12 + offset, strokeWidth: 2 });
+        this.selectedComponentId = id;
+        this.selectedComponentType = 'CAD::Shape::Line';
         this.updateAndNotify();
       }
     });
@@ -227,7 +233,10 @@ export class VisualizerUI {
         const detailDoc = this.doc as DetailDocument;
         if (!detailDoc.geometry) detailDoc.geometry = [];
         const id = 'text_' + Date.now().toString(36);
-        detailDoc.geometry.push({ type: 'CAD::Annotation::Text', componentId: id, componentType: 'Text', x: 0, y: 0, text: 'New Text', fontSize: 4 });
+        const offset = detailDoc.geometry.length * 0.5;
+        detailDoc.geometry.push({ type: 'CAD::Annotation::Text', componentId: id, componentType: 'Text', x: offset, y: offset, text: 'New Text', fontSize: 4 });
+        this.selectedComponentId = id;
+        this.selectedComponentType = 'CAD::Annotation::Text';
         this.updateAndNotify();
       }
     });
@@ -238,7 +247,10 @@ export class VisualizerUI {
       if (activeSheet) {
         if (!activeSheet.viewports) activeSheet.viewports = [];
         const id = 'viewport_' + Date.now().toString(36);
-        activeSheet.viewports.push({ detail: '', x: 0, y: 0, scale: '1:1', componentId: id });
+        const offset = 2 + (activeSheet.viewports.length * 2);
+        activeSheet.viewports.push({ detail: '', x: offset, y: offset, scale: '1:1', width: 6, height: 6, componentId: id });
+        this.selectedComponentId = id;
+        this.selectedComponentType = 'CAD::Viewport';
         this.updateAndNotify();
       }
     });
@@ -611,7 +623,7 @@ export class VisualizerUI {
       btn.innerHTML = '✓';
       btn.title = "Apply Change";
       btn.className = 'inline-apply-btn';
-      btn.style.cssText = 'display: none; background: transparent; border: none; color: var(--vscode-charts-green); cursor: pointer; padding: 0; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-weight: bold; font-size: 14px; outline: none; z-index: 10;';
+      btn.style.cssText = 'display: none; background: transparent; border: none; color: #22c55e; cursor: pointer; padding: 0; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-weight: bold; font-size: 14px; outline: none; z-index: 10;';
       
       wrapper.appendChild(btn);
 
@@ -648,13 +660,22 @@ export class VisualizerUI {
           fallbackTb = (ds.titleBlock as string) || '';
           fallbackX = ds.titleBlockOffsetX || 0;
           fallbackY = ds.titleBlockOffsetY || 0;
-          if (ds.project) titleBlockData['ProjectName'] = ds.project;
+          if (ds.project) {
+            titleBlockData['ProjectName'] = ds.project;
+            titleBlockData['projectName'] = ds.project;
+          }
         } else {
           sheet = this.doc as SheetDocument;
         }
 
-        if (sheet.sheetName) titleBlockData['SheetName'] = sheet.sheetName;
-        if (sheet.sheetNumber) titleBlockData['SheetNumber'] = sheet.sheetNumber;
+        if (sheet.sheetName) {
+          titleBlockData['SheetName'] = sheet.sheetName;
+          titleBlockData['sheetName'] = sheet.sheetName;
+        }
+        if (sheet.sheetNumber) {
+          titleBlockData['SheetNumber'] = sheet.sheetNumber;
+          titleBlockData['sheetNumber'] = sheet.sheetNumber;
+        }
 
         let titleBlockDoc: DetailDocument | undefined = undefined;
         const resolvedTb = (sheet.titleBlock as string) || fallbackTb;
