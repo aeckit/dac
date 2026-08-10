@@ -339,10 +339,14 @@ export class VisualizerUI {
     const ds = this.doc as DrawingSetDocument;
 
     let optionsHtml = '';
-    ds.sheets.forEach((sheetObj, index) => {
-      const s = sheetObj as SheetDocument;
-      optionsHtml += `<option value="${index}" ${index === this.activeSheetIndex ? 'selected' : ''}>${s.sheetNumber} - ${s.sheetName}</option>`;
-    });
+    if (ds.sheets && ds.sheets.length > 0) {
+      ds.sheets.forEach((sheetObj, index) => {
+        const s = sheetObj as SheetDocument;
+        optionsHtml += `<option value="${index}" ${index === this.activeSheetIndex ? 'selected' : ''}>${s.sheetNumber || 'Unnamed'} - ${s.sheetName || 'Unnamed'}</option>`;
+      });
+    } else {
+      optionsHtml = `<option value="0" disabled selected>No sheets</option>`;
+    }
 
     this.sheetDropdownContainer.innerHTML = `
       <div class="card" style="margin-bottom: 12px; background: #1e293b;">
@@ -1177,6 +1181,12 @@ export class VisualizerUI {
           }
         } else {
           sheet = this.doc as SheetDocument;
+        }
+
+        if (!sheet) {
+          this.svgWrapper.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" style="background-color: #0f172a;"><text x="50%" y="50%" fill="#94a3b8" text-anchor="middle">No sheets found in Drawing Set</text></svg>`;
+          this.updateOverlayPositions();
+          return;
         }
 
         if (sheet.sheetName) {
