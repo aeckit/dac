@@ -114,7 +114,7 @@ export class VisualizerUI {
       <div class="panel left-panel" id="left-sidebar">
         <div class="control-header">
           <h2>Drawing Inspector</h2>
-          <div class="status-pill"><span class="status-indicator"></span>DAC Connected</div>
+          <div class="status-pill" id="json-validity-status" style="display: none; color: #ef4444;"><span class="status-indicator" style="background-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5);"></span>JSON Error</div>
         </div>
         
         <div id="sheet-dropdown-container"></div>
@@ -127,10 +127,13 @@ export class VisualizerUI {
       
       <div class="panel right-panel" id="right-canvas">
         <div class="canvas-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 8px;">
-          <div style="display: flex; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
             <button class="reset-btn icon-btn" id="btn-toggle-left-pane" title="Toggle Left Sidebar">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="6" y1="3" x2="6" y2="13"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v6h3V5H3zm4 0v6h7V5H7z"/>
+              </svg>
             </button>
+            <span id="canvas-view-type-badge" style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; background: #1e293b; padding: 2px 6px; border-radius: 4px;">VIEW TYPE</span>
           </div>
           <div style="display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1;">
             <button class="reset-btn icon-btn" id="btn-add-rect" title="Add Rectangle">
@@ -983,6 +986,19 @@ export class VisualizerUI {
         if (btnAddViewport) btnAddViewport.style.display = 'none';
       }
       if (headerDivider) headerDivider.style.display = isDetail ? 'block' : 'none';
+
+      const viewTypeBadge = this.rightPanel.querySelector('#canvas-view-type-badge') as HTMLElement;
+      if (viewTypeBadge) {
+        if (this.doc.type === 'CAD::DrawingSet') {
+          viewTypeBadge.textContent = 'SET VIEW';
+        } else if (this.doc.type === 'CAD::Sheet') {
+          viewTypeBadge.textContent = 'SHEET VIEW';
+        } else if (this.doc.type === 'CAD::Detail') {
+          viewTypeBadge.textContent = 'DETAIL VIEW';
+        } else {
+          viewTypeBadge.textContent = (this.doc as any).type || 'UNKNOWN';
+        }
+      }
     } catch (err) {
       this.svgWrapper.innerHTML = `
         <div class="render-error">
