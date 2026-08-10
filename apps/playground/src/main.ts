@@ -276,6 +276,7 @@ function getUniqueName(base: string) {
 }
 
 document.getElementById('btn-new-detail')?.addEventListener('click', () => {
+  const isJson = tabContentJson?.classList.contains('active');
   const doc: DetailDocument = {
     type: 'CAD::Detail',
     version: '1.0',
@@ -283,9 +284,11 @@ document.getElementById('btn-new-detail')?.addEventListener('click', () => {
     geometry: []
   };
   workspace.createFile(getUniqueName('detail'), doc);
+  if (isJson) tabBtnJson?.click();
 });
 
 document.getElementById('btn-new-sheet')?.addEventListener('click', () => {
+  const isJson = tabContentJson?.classList.contains('active');
   const doc: SheetDocument = {
     type: 'CAD::Sheet',
     sheetNumber: 'A101',
@@ -294,15 +297,18 @@ document.getElementById('btn-new-sheet')?.addEventListener('click', () => {
     viewports: []
   };
   workspace.createFile(getUniqueName('sheet'), doc);
+  if (isJson) tabBtnJson?.click();
 });
 
 document.getElementById('btn-new-set')?.addEventListener('click', () => {
+  const isJson = tabContentJson?.classList.contains('active');
   const doc: DrawingSetDocument = {
     type: 'CAD::DrawingSet',
     project: 'New Project',
     sheets: []
   };
   workspace.createFile(getUniqueName('project'), doc);
+  if (isJson) tabBtnJson?.click();
 });
 
 // -----------------------------------------------------------------------------
