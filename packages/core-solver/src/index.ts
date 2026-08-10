@@ -46,6 +46,11 @@ export interface Viewport {
   title?: string;
   hideTitle?: boolean;
   hideScale?: boolean;
+  detailNumber?: string;
+  hideDetailNumber?: boolean;
+  titlePosition?: 'top' | 'bottom';
+  titleOffsetY?: number;
+  titleNote?: string;
   componentId?: string;
 }
 
@@ -593,20 +598,58 @@ export function renderSheet(
       // Title and Scale label SVG elements
       let labelsSvg = '';
       if (hasDimensions) {
-        const titleY = vpCanvasHeight - (vp.height! / vpScaleMultiplier) - (0.5 / vpScaleMultiplier); // Position above the bottom left origin
-        if (!vp.hideTitle) {
-          labelsSvg += `<text x="0" y="${titleY}" font-size="${0.5 / vpScaleMultiplier}" fill="#f1f5f9" font-family="monospace" font-weight="bold">${displayTitle.toUpperCase()}</text>`;
+        const titlePos = vp.titlePosition || 'bottom';
+        const titleOffsetY = (vp.titleOffsetY || 0) / vpScaleMultiplier;
+        
+        const topEdge = vpCanvasHeight - (vp.height! / vpScaleMultiplier);
+        const bottomEdge = vpCanvasHeight;
+        
+        const circleRadius = 0.25 / vpScaleMultiplier;
+        const lineY = titlePos === 'top' 
+            ? topEdge - circleRadius - (0.125 / vpScaleMultiplier) - titleOffsetY
+            : bottomEdge + circleRadius + (0.125 / vpScaleMultiplier) + titleOffsetY;
+            
+        const circleCx = circleRadius;
+        const circleCy = lineY;
+        const lineStartX = circleCx + circleRadius;
+        const lineEndX = vp.width! / vpScaleMultiplier;
+        
+        const displayDetailNumber = vp.hideDetailNumber ? '' : (vp.detailNumber || '1');
+        const textStartX = vp.hideDetailNumber ? 0 : lineStartX + (0.1 / vpScaleMultiplier);
+        
+        if (!vp.hideDetailNumber) {
+          labelsSvg += `<circle cx="${circleCx}" cy="${circleCy}" r="${circleRadius}" fill="none" stroke="#f1f5f9" stroke-width="${1.5 / 72 / vpScaleMultiplier}" />\n`;
+          labelsSvg += `<text x="${circleCx}" y="${circleCy}" font-size="${0.25 / vpScaleMultiplier}" fill="#f1f5f9" font-family="monospace" text-anchor="middle" dominant-baseline="central">${displayDetailNumber}</text>\n`;
         }
+        
+        // The line
+        labelsSvg += `<line x1="${vp.hideDetailNumber ? 0 : lineStartX}" y1="${lineY}" x2="${lineEndX}" y2="${lineY}" stroke="#f1f5f9" stroke-width="${1.5 / 72 / vpScaleMultiplier}" />\n`;
+        
+        // Title Text
+        if (!vp.hideTitle) {
+          const textY = lineY - (0.1 / vpScaleMultiplier);
+          labelsSvg += `<text x="${textStartX}" y="${textY}" font-size="${0.2 / vpScaleMultiplier}" fill="#f1f5f9" font-family="monospace" font-weight="bold" dominant-baseline="alphabetic">${displayTitle.toUpperCase()}</text>\n`;
+        }
+        
+        // Scale Text
         if (!vp.hideScale) {
-          labelsSvg += `<text x="0" y="${titleY - (0.5 / vpScaleMultiplier)}" font-size="${0.35 / vpScaleMultiplier}" fill="#94a3b8" font-family="monospace">SCALE: ${vp.scale}</text>`;
+          const textY = lineY + (0.1 / vpScaleMultiplier);
+          labelsSvg += `<text x="${textStartX}" y="${textY}" font-size="${0.125 / vpScaleMultiplier}" fill="#94a3b8" font-family="monospace" dominant-baseline="hanging">${vp.scale}</text>\n`;
+        }
+        
+        // Optional Title Note
+        if (vp.titleNote) {
+          const textX = lineEndX;
+          const textY = lineY + (0.1 / vpScaleMultiplier);
+          labelsSvg += `<text x="${textX}" y="${textY}" font-size="${0.125 / vpScaleMultiplier}" fill="#94a3b8" font-family="monospace" text-anchor="end" dominant-baseline="hanging">${vp.titleNote}</text>\n`;
         }
       } else {
         const titleY = vpCanvasHeight - (0.5 / vpScaleMultiplier);
         if (!vp.hideTitle) {
-          labelsSvg += `<text x="0" y="${titleY}" font-size="${0.5 / vpScaleMultiplier}" fill="#f1f5f9" font-family="monospace" font-weight="bold">${displayTitle.toUpperCase()}</text>`;
+          labelsSvg += `<text x="0" y="${titleY}" font-size="${0.5 / vpScaleMultiplier}" fill="#f1f5f9" font-family="monospace" font-weight="bold">${displayTitle.toUpperCase()}</text>\n`;
         }
         if (!vp.hideScale) {
-          labelsSvg += `<text x="0" y="${titleY - (0.5 / vpScaleMultiplier)}" font-size="${0.35 / vpScaleMultiplier}" fill="#94a3b8" font-family="monospace">SCALE: ${vp.scale}</text>`;
+          labelsSvg += `<text x="0" y="${titleY - (0.5 / vpScaleMultiplier)}" font-size="${0.35 / vpScaleMultiplier}" fill="#94a3b8" font-family="monospace">SCALE: ${vp.scale}</text>\n`;
         }
       }
 

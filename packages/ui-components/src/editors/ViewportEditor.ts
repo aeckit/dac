@@ -40,7 +40,31 @@ export const ViewportEditor = {
           <label class="control-label">Title</label>
           <input type="text" class="precise-input vp-title-input" value="${viewport.title || ''}" style="width: 120px;" placeholder="Auto" />
         </div>
+        <div class="control-label-row" style="margin-top: 8px;">
+          <label class="control-label">Detail #</label>
+          <input type="text" class="precise-input vp-detail-num-input" value="${viewport.detailNumber || ''}" style="width: 80px;" placeholder="1" />
+        </div>
+        <div class="control-label-row" style="margin-top: 8px;">
+          <label class="control-label">Title Note</label>
+          <input type="text" class="precise-input vp-title-note-input" value="${viewport.titleNote || ''}" style="width: 120px;" placeholder="Optional" />
+        </div>
+        <div class="control-label-row" style="margin-top: 8px;">
+          <label class="control-label">Title Pos</label>
+          <select class="precise-input vp-title-pos-input" style="width: 80px;">
+            <option value="bottom" ${(viewport.titlePosition !== 'top') ? 'selected' : ''}>Bottom</option>
+            <option value="top" ${(viewport.titlePosition === 'top') ? 'selected' : ''}>Top</option>
+          </select>
+        </div>
+        <div class="control-label-row" style="margin-top: 8px;">
+          <label class="control-label">Offset Y</label>
+          <input type="number" step="0.1" class="precise-input vp-title-offset-input" value="${viewport.titleOffsetY || 0}" style="width: 80px;" />
+        </div>
+        
         <div class="control-label-row" style="margin-top: 8px; justify-content: flex-start;">
+          <input type="checkbox" class="vp-hide-detail-num-input" ${viewport.hideDetailNumber ? 'checked' : ''} id="hideDetailNum-${index}" />
+          <label class="control-label" for="hideDetailNum-${index}" style="margin-left: 6px;">Hide Detail #</label>
+        </div>
+        <div class="control-label-row" style="margin-top: 4px; justify-content: flex-start;">
           <input type="checkbox" class="vp-hide-title-input" ${viewport.hideTitle ? 'checked' : ''} id="hideTitle-${index}" />
           <label class="control-label" for="hideTitle-${index}" style="margin-left: 6px;">Hide Title</label>
         </div>
@@ -64,8 +88,13 @@ export const ViewportEditor = {
     const wInput = groupEl.querySelector('.vp-w-input') as HTMLInputElement;
     const hInput = groupEl.querySelector('.vp-h-input') as HTMLInputElement;
     const titleInput = groupEl.querySelector('.vp-title-input') as HTMLInputElement;
+    const detailNumInput = groupEl.querySelector('.vp-detail-num-input') as HTMLInputElement;
+    const titleNoteInput = groupEl.querySelector('.vp-title-note-input') as HTMLInputElement;
+    const titlePosInput = groupEl.querySelector('.vp-title-pos-input') as HTMLSelectElement;
+    const titleOffsetInput = groupEl.querySelector('.vp-title-offset-input') as HTMLInputElement;
     const hideTitleInput = groupEl.querySelector('.vp-hide-title-input') as HTMLInputElement;
     const hideScaleInput = groupEl.querySelector('.vp-hide-scale-input') as HTMLInputElement;
+    const hideDetailNumInput = groupEl.querySelector('.vp-hide-detail-num-input') as HTMLInputElement;
 
     const updateProp = (prop: keyof Viewport, value: any) => {
       const vp = getLatestShape() as unknown as Viewport;
@@ -81,13 +110,19 @@ export const ViewportEditor = {
 
     if (detailInput) detailInput.addEventListener('change', () => updateProp('detail', detailInput.value));
     if (scaleInput) scaleInput.addEventListener('change', () => updateProp('scale', scaleInput.value));
-    if (xInput) xInput.addEventListener('change', () => updateProp('x', parseFloat(xInput.value) || 0));
-    if (yInput) yInput.addEventListener('change', () => updateProp('y', parseFloat(yInput.value) || 0));
+    if (xInput) xInput.addEventListener('change', () => updateProp('x', Math.round((parseFloat(xInput.value) || 0) * 1000) / 1000));
+    if (yInput) yInput.addEventListener('change', () => updateProp('y', Math.round((parseFloat(yInput.value) || 0) * 1000) / 1000));
     
-    if (wInput) wInput.addEventListener('change', () => updateProp('width', wInput.value ? parseFloat(wInput.value) : null));
-    if (hInput) hInput.addEventListener('change', () => updateProp('height', hInput.value ? parseFloat(hInput.value) : null));
+    if (wInput) wInput.addEventListener('change', () => updateProp('width', wInput.value ? Math.round(parseFloat(wInput.value) * 1000) / 1000 : null));
+    if (hInput) hInput.addEventListener('change', () => updateProp('height', hInput.value ? Math.round(parseFloat(hInput.value) * 1000) / 1000 : null));
     if (titleInput) titleInput.addEventListener('change', () => updateProp('title', titleInput.value));
+    if (detailNumInput) detailNumInput.addEventListener('change', () => updateProp('detailNumber', detailNumInput.value));
+    if (titleNoteInput) titleNoteInput.addEventListener('change', () => updateProp('titleNote', titleNoteInput.value));
+    if (titlePosInput) titlePosInput.addEventListener('change', () => updateProp('titlePosition', titlePosInput.value));
+    if (titleOffsetInput) titleOffsetInput.addEventListener('change', () => updateProp('titleOffsetY', titleOffsetInput.value ? Math.round(parseFloat(titleOffsetInput.value) * 1000) / 1000 : null));
+    
     if (hideTitleInput) hideTitleInput.addEventListener('change', () => updateProp('hideTitle', hideTitleInput.checked));
     if (hideScaleInput) hideScaleInput.addEventListener('change', () => updateProp('hideScale', hideScaleInput.checked));
+    if (hideDetailNumInput) hideDetailNumInput.addEventListener('change', () => updateProp('hideDetailNumber', hideDetailNumInput.checked));
   }
 };
