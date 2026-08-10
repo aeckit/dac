@@ -43,6 +43,8 @@ export interface Viewport {
   scale: string;
   width?: number;
   height?: number;
+  cropX?: number;
+  cropY?: number;
   title?: string;
   hideTitle?: boolean;
   hideScale?: boolean;
@@ -587,6 +589,9 @@ export function renderSheet(
       const clipDef = hasDimensions ? `<clipPath id="${clipId}"><rect x="0" y="${vpCanvasHeight - vp.height! / vpScaleMultiplier}" width="${vp.width! / vpScaleMultiplier}" height="${vp.height! / vpScaleMultiplier}" /></clipPath>` : '';
       const clipAttr = hasDimensions ? ` clip-path="url(#${clipId})"` : '';
       
+      const cropX = vp.cropX || 0;
+      const cropY = vp.cropY || 0;
+      
       // Compute actual Title
       let displayTitle = vp.title || '';
       if (!displayTitle && typeof vp.detail === 'string') {
@@ -657,7 +662,9 @@ export function renderSheet(
         ${hasDimensions ? `<defs>${clipDef}</defs>` : ''}
         <g${cidAttr} class="${vp.componentId ? 'interactive-component pointer-cursor ' : ''}" data-viewport-id="viewport-${detailId}" transform="translate(${vpX}, ${vpSvgY}) scale(${vpScaleMultiplier})">
           <g${clipAttr}>
-            ${vpSvg}
+            <g transform="translate(${-cropX}, ${cropY})">
+              ${vpSvg}
+            </g>
           </g>
           ${labelsSvg}
           ${hasDimensions ? `<rect x="0" y="${vpCanvasHeight - vp.height! / vpScaleMultiplier}" width="${vp.width! / vpScaleMultiplier}" height="${vp.height! / vpScaleMultiplier}" fill="none" stroke="#475569" stroke-width="${1 / 72 / vpScaleMultiplier}" stroke-dasharray="0.1, 0.1" />` : ''}

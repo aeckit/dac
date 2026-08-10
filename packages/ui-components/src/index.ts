@@ -1,4 +1,4 @@
-import { DetailDocument, DrawingSetDocument, SheetDocument, renderDetail, renderSheet } from '@aeckit/core-solver';
+import { DetailDocument, DrawingSetDocument, SheetDocument, renderDetail, renderSheet, resolveScaleMultiplier } from '@aeckit/core-solver';
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from './editors';
 import { Viewport } from '@aeckit/core-solver';
 import { ParametricEditorContext, PropertyEditorContext } from './editors/types';
@@ -162,12 +162,38 @@ export class VisualizerUI {
         <div class="svg-viewport" id="svg-viewport-container" style="cursor: grab; overflow: hidden; background: #000; position: relative;">
           <div id="svg-viewport-wrapper" style="transform-origin: 0 0; transition: transform 0.05s ease-out; min-width: 100%; min-height: 100%;"></div>
           <div id="canvas-edit-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 10;">
+            <style>
+              .edit-grabber {
+                display: none; position: absolute; pointer-events: auto;
+                width: 8px; height: 8px; background: #3b82f6; border: 1px solid #ffffff;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.5); transform: translate(-50%, -50%);
+              }
+              .edit-grabber[data-dir="nw"] { cursor: nwse-resize; }
+              .edit-grabber[data-dir="n"] { cursor: ns-resize; }
+              .edit-grabber[data-dir="ne"] { cursor: nesw-resize; }
+              .edit-grabber[data-dir="e"] { cursor: ew-resize; }
+              .edit-grabber[data-dir="se"] { cursor: nwse-resize; }
+              .edit-grabber[data-dir="s"] { cursor: ns-resize; }
+              .edit-grabber[data-dir="sw"] { cursor: nesw-resize; }
+              .edit-grabber[data-dir="w"] { cursor: ew-resize; }
+              .edit-grabber[data-dir="line-start"], .edit-grabber[data-dir="line-end"] { cursor: crosshair; }
+            </style>
             <div id="edit-overlay-btn-move" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: move; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M9 19l3 3 3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
             </div>
             <div id="edit-overlay-btn-delete" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #7f1d1d; border: 1px solid #b91c1c; border-radius: 4px; color: #f8fafc; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
             </div>
+            <div class="edit-grabber" data-dir="nw"></div>
+            <div class="edit-grabber" data-dir="n"></div>
+            <div class="edit-grabber" data-dir="ne"></div>
+            <div class="edit-grabber" data-dir="e"></div>
+            <div class="edit-grabber" data-dir="se"></div>
+            <div class="edit-grabber" data-dir="s"></div>
+            <div class="edit-grabber" data-dir="sw"></div>
+            <div class="edit-grabber" data-dir="w"></div>
+            <div class="edit-grabber" data-dir="line-start"></div>
+            <div class="edit-grabber" data-dir="line-end"></div>
           </div>
         </div>
       </div>
@@ -182,6 +208,15 @@ export class VisualizerUI {
     this.editOverlay = this.container.querySelector('#canvas-edit-overlay') as HTMLElement;
     this.btnMoveOverlay = this.container.querySelector('#edit-overlay-btn-move') as HTMLElement;
     this.btnDeleteOverlay = this.container.querySelector('#edit-overlay-btn-delete') as HTMLElement;
+    
+    this.grabbers = {};
+    const grabberEls = this.container.querySelectorAll('.edit-grabber');
+    grabberEls.forEach(el => {
+      const dir = el.getAttribute('data-dir');
+      if (dir) {
+        this.grabbers[dir] = el as HTMLElement;
+      }
+    });
 
     if (this.doc.type === 'CAD::Detail') {
       const scaleSelect = this.leftPanel.querySelector('#scale-select') as HTMLSelectElement;
@@ -341,7 +376,11 @@ export class VisualizerUI {
       const startMouseY = e.clientY;
       const startCompX = Number(comp.x) || 0;
       const startCompY = Number(comp.y) || 0;
-      const isViewport = this.selectedComponentType === 'CAD::Viewport';
+      const startCompX1 = Number((comp as any).x1) || 0;
+      const startCompY1 = Number((comp as any).y1) || 0;
+      const startCompX2 = Number((comp as any).x2) || 0;
+      const startCompY2 = Number((comp as any).y2) || 0;
+      const isLine = this.selectedComponentType === 'Line' || this.selectedComponentType === 'CAD::Shape::Line';
 
       const onMouseMove = (moveEvt: MouseEvent) => {
         this.isDragging = true;
@@ -368,16 +407,17 @@ export class VisualizerUI {
         const svgDx = svgCurrent.x - svgStart.x;
         const svgDy = svgCurrent.y - svgStart.y;
 
-        const newX = startCompX + svgDx;
-        // In Aeckit CAD, all components (Viewports and Shapes) use a Cartesian coordinate system where +Y is UP.
-        // Screen/SVG space has +Y as DOWN. 
-        // If mouse moves down, svgDy is positive. We want the element to move down visually, so its CAD Y must DECREASE.
-        // Therefore, newY = startCompY - svgDy.
-        const newY = startCompY - svgDy;
-
-        // Round to nearest thousandth
-        comp.x = Math.round(newX * 1000) / 1000;
-        comp.y = Math.round(newY * 1000) / 1000;
+        if (isLine) {
+          (comp as any).x1 = Math.round((startCompX1 + svgDx) * 1000) / 1000;
+          (comp as any).y1 = Math.round((startCompY1 - svgDy) * 1000) / 1000;
+          (comp as any).x2 = Math.round((startCompX2 + svgDx) * 1000) / 1000;
+          (comp as any).y2 = Math.round((startCompY2 - svgDy) * 1000) / 1000;
+        } else {
+          const newX = startCompX + svgDx;
+          const newY = startCompY - svgDy;
+          comp.x = Math.round(newX * 1000) / 1000;
+          comp.y = Math.round(newY * 1000) / 1000;
+        }
 
         this.render();
       };
@@ -400,6 +440,148 @@ export class VisualizerUI {
 
     this.btnMoveOverlay.addEventListener('click', (e) => {
       e.stopPropagation(); // prevent click from bubbling
+    });
+
+    Object.entries(this.grabbers).forEach(([dir, grabber]) => {
+      grabber.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const comp = this.getSelectedShape();
+        if (!comp) return;
+
+        const startMouseX = e.clientX;
+        const startMouseY = e.clientY;
+        const startCompX = Number(comp.x) || 0;
+        const startCompY = Number(comp.y) || 0;
+        const startCompW = Number(comp.width) || 0;
+        const startCompH = Number(comp.height) || 0;
+        const startCropX = Number((comp as any).cropX) || 0;
+        const startCropY = Number((comp as any).cropY) || 0;
+        const startCompX1 = Number((comp as any).x1) || 0;
+        const startCompY1 = Number((comp as any).y1) || 0;
+        const startCompX2 = Number((comp as any).x2) || 0;
+        const startCompY2 = Number((comp as any).y2) || 0;
+
+        const onMouseMove = (moveEvt: MouseEvent) => {
+          this.isDragging = true;
+          const rootSvg = this.svgWrapper?.querySelector('svg');
+          if (!rootSvg) return;
+
+          const selectedEl = this.svgWrapper?.querySelector(`[data-component-id="${this.selectedComponentId}"]`);
+          const parentEl = (selectedEl?.parentElement as unknown as SVGGraphicsElement) || rootSvg;
+          const ctm = parentEl.getScreenCTM();
+          if (!ctm) return;
+
+          const inverse = ctm.inverse();
+
+          const ptStart = rootSvg.createSVGPoint();
+          ptStart.x = startMouseX;
+          ptStart.y = startMouseY;
+          const svgStart = ptStart.matrixTransform(inverse);
+
+          const ptCurrent = rootSvg.createSVGPoint();
+          ptCurrent.x = moveEvt.clientX;
+          ptCurrent.y = moveEvt.clientY;
+          const svgCurrent = ptCurrent.matrixTransform(inverse);
+
+          const svgDx = svgCurrent.x - svgStart.x;
+          // SVG Dy is positive when dragging DOWN on the screen
+          const svgDy = svgCurrent.y - svgStart.y;
+          
+          if (dir === 'line-start') {
+             (comp as any).x1 = Math.round((startCompX1 + svgDx) * 1000) / 1000;
+             (comp as any).y1 = Math.round((startCompY1 - svgDy) * 1000) / 1000;
+             this.render();
+             return;
+          }
+          if (dir === 'line-end') {
+             (comp as any).x2 = Math.round((startCompX2 + svgDx) * 1000) / 1000;
+             (comp as any).y2 = Math.round((startCompY2 - svgDy) * 1000) / 1000;
+             this.render();
+             return;
+          }
+
+          let newX = startCompX;
+          let newY = startCompY;
+          let newW = startCompW;
+          let newH = startCompH;
+          let newCropX = startCropX;
+          let newCropY = startCropY;
+
+          let vpScale = 1;
+          if (this.selectedComponentType === 'CAD::Viewport') {
+             vpScale = resolveScaleMultiplier((comp as any).scale || '1:1');
+          }
+
+          // West (Left) edge dragging
+          if (dir.includes('w')) {
+            newX = startCompX + svgDx;
+            newW = startCompW - svgDx;
+            if (this.selectedComponentType === 'CAD::Viewport') {
+              newCropX = startCropX + svgDx / vpScale;
+            }
+          }
+          // East (Right) edge dragging
+          if (dir.includes('e')) {
+            newW = startCompW + svgDx;
+          }
+          // North (Top) edge dragging
+          if (dir.includes('n')) {
+            newH = startCompH - svgDy;
+          }
+          // South (Bottom) edge dragging
+          if (dir.includes('s')) {
+            newY = startCompY - svgDy;
+            newH = startCompH + svgDy;
+            if (this.selectedComponentType === 'CAD::Viewport') {
+              newCropY = startCropY - svgDy / vpScale;
+            }
+          }
+
+          // Enforce minimum dimensions
+          const minSize = 0.1;
+          if (newW < minSize) {
+             const diff = minSize - newW;
+             if (dir.includes('w')) {
+                newX -= diff;
+                if (this.selectedComponentType === 'CAD::Viewport') newCropX -= diff / vpScale;
+             }
+             newW = minSize;
+          }
+          if (newH < minSize) {
+             const diff = minSize - newH;
+             if (dir.includes('s')) {
+                newY -= diff;
+                if (this.selectedComponentType === 'CAD::Viewport') newCropY -= diff / vpScale;
+             }
+             newH = minSize;
+          }
+
+          comp.x = Math.round(newX * 1000) / 1000;
+          comp.y = Math.round(newY * 1000) / 1000;
+          comp.width = Math.round(newW * 1000) / 1000;
+          comp.height = Math.round(newH * 1000) / 1000;
+          if (this.selectedComponentType === 'CAD::Viewport') {
+            (comp as any).cropX = Math.round(newCropX * 1000) / 1000;
+            (comp as any).cropY = Math.round(newCropY * 1000) / 1000;
+          }
+
+          this.render();
+        };
+
+        const onMouseUp = () => {
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+          this.updateAndNotify();
+          setTimeout(() => { this.isDragging = false; }, 0);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      });
+      
+      grabber.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
     });
 
     this.svgViewport.addEventListener('click', (e) => {
@@ -478,6 +660,7 @@ export class VisualizerUI {
     if (!this.selectedComponentId || !this.svgWrapper) {
       if (this.btnMoveOverlay) this.btnMoveOverlay.style.display = 'none';
       if (this.btnDeleteOverlay) this.btnDeleteOverlay.style.display = 'none';
+      if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
       return;
     }
 
@@ -485,6 +668,7 @@ export class VisualizerUI {
     if (!selectedEl) {
       if (this.btnMoveOverlay) this.btnMoveOverlay.style.display = 'none';
       if (this.btnDeleteOverlay) this.btnDeleteOverlay.style.display = 'none';
+      if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
       return;
     }
 
@@ -506,32 +690,93 @@ export class VisualizerUI {
 
     const rootSvg = this.svgWrapper.querySelector('svg');
     if (!rootSvg) return;
-    const tl = rootSvg.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
-    const tr = rootSvg.createSVGPoint(); tr.x = bbox.x + bbox.width; tr.y = bbox.y;
-    const bl = rootSvg.createSVGPoint(); bl.x = bbox.x; bl.y = bbox.y + bbox.height;
-    const br = rootSvg.createSVGPoint(); br.x = bbox.x + bbox.width; br.y = bbox.y + bbox.height;
+    
+    const isLine = this.selectedComponentType === 'Line' || this.selectedComponentType === 'CAD::Shape::Line';
+    let pts: DOMPoint[] = [];
 
-    // Handle JSDOM test environment where matrixTransform is missing
-    if (typeof tl.matrixTransform !== 'function') return;
+    if (isLine) {
+      const lineNode = selectedEl.querySelector('line');
+      if (lineNode) {
+        const pStart = rootSvg.createSVGPoint(); pStart.x = lineNode.x1.baseVal.value; pStart.y = lineNode.y1.baseVal.value;
+        const pEnd = rootSvg.createSVGPoint(); pEnd.x = lineNode.x2.baseVal.value; pEnd.y = lineNode.y2.baseVal.value;
+        if (typeof pStart.matrixTransform === 'function') {
+          pts = [pStart.matrixTransform(screenCTM), pEnd.matrixTransform(screenCTM)];
+        }
+      }
+    } else {
+      const tl = rootSvg.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
+      const tr = rootSvg.createSVGPoint(); tr.x = bbox.x + bbox.width; tr.y = bbox.y;
+      const bl = rootSvg.createSVGPoint(); bl.x = bbox.x; bl.y = bbox.y + bbox.height;
+      const br = rootSvg.createSVGPoint(); br.x = bbox.x + bbox.width; br.y = bbox.y + bbox.height;
 
-    const pts = [tl, tr, bl, br].map(p => p.matrixTransform(screenCTM));
+      // Handle JSDOM test environment where matrixTransform is missing
+      if (typeof tl.matrixTransform === 'function') {
+        pts = [tl, tr, bl, br].map(p => p.matrixTransform(screenCTM));
+      }
+    }
+
+    if (pts.length === 0) return;
+
     const screenMinX = Math.min(...pts.map(p => p.x));
     const screenMaxX = Math.max(...pts.map(p => p.x));
     const screenMinY = Math.min(...pts.map(p => p.y));
+    const screenMaxY = Math.max(...pts.map(p => p.y));
 
     // Convert from browser screen coordinates to the overlay container coordinates
     const containerRect = this.svgViewport.getBoundingClientRect();
     const pxLeft = screenMinX - containerRect.left;
     const pxTop = screenMinY - containerRect.top;
     const pxRight = screenMaxX - containerRect.left;
+    const pxBottom = screenMaxY - containerRect.top;
 
     this.btnMoveOverlay.style.display = 'flex';
-    this.btnMoveOverlay.style.left = `${pxLeft - 12}px`;
-    this.btnMoveOverlay.style.top = `${pxTop - 12}px`;
+    this.btnMoveOverlay.style.left = `${pxRight - 52}px`;
+    this.btnMoveOverlay.style.top = `${pxTop - 36}px`;
 
     this.btnDeleteOverlay.style.display = 'flex';
-    this.btnDeleteOverlay.style.left = `${pxRight - 12}px`;
-    this.btnDeleteOverlay.style.top = `${pxTop - 12}px`;
+    this.btnDeleteOverlay.style.left = `${pxRight - 24}px`;
+    this.btnDeleteOverlay.style.top = `${pxTop - 36}px`;
+
+    const canResize = this.selectedComponentType === 'Rectangle' || this.selectedComponentType === 'CAD::Shape::Rectangle' || this.selectedComponentType === 'CAD::Viewport';
+    
+    if (isLine && pts.length === 2) {
+      const pxLeft0 = pts[0].x - containerRect.left;
+      const pxTop0 = pts[0].y - containerRect.top;
+      const pxLeft1 = pts[1].x - containerRect.left;
+      const pxTop1 = pts[1].y - containerRect.top;
+
+      this.grabbers['line-start'].style.left = `${pxLeft0}px`; this.grabbers['line-start'].style.top = `${pxTop0}px`;
+      this.grabbers['line-end'].style.left = `${pxLeft1}px`; this.grabbers['line-end'].style.top = `${pxTop1}px`;
+      
+      this.grabbers['line-start'].style.display = 'block';
+      this.grabbers['line-end'].style.display = 'block';
+      
+      ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(d => {
+        if (this.grabbers[d]) this.grabbers[d].style.display = 'none';
+      });
+    } else if (canResize) {
+      const cx = (pxLeft + pxRight) / 2;
+      const cy = (pxTop + pxBottom) / 2;
+      
+      this.grabbers['nw'].style.left = `${pxLeft}px`; this.grabbers['nw'].style.top = `${pxTop}px`;
+      this.grabbers['n'].style.left = `${cx}px`; this.grabbers['n'].style.top = `${pxTop}px`;
+      this.grabbers['ne'].style.left = `${pxRight}px`; this.grabbers['ne'].style.top = `${pxTop}px`;
+      this.grabbers['e'].style.left = `${pxRight}px`; this.grabbers['e'].style.top = `${cy}px`;
+      this.grabbers['se'].style.left = `${pxRight}px`; this.grabbers['se'].style.top = `${pxBottom}px`;
+      this.grabbers['s'].style.left = `${cx}px`; this.grabbers['s'].style.top = `${pxBottom}px`;
+      this.grabbers['sw'].style.left = `${pxLeft}px`; this.grabbers['sw'].style.top = `${pxBottom}px`;
+      this.grabbers['w'].style.left = `${pxLeft}px`; this.grabbers['w'].style.top = `${cy}px`;
+      
+      Object.values(this.grabbers).forEach(g => {
+        if (g.getAttribute('data-dir') !== 'line-start' && g.getAttribute('data-dir') !== 'line-end') {
+          g.style.display = 'block';
+        }
+      });
+      if (this.grabbers['line-start']) this.grabbers['line-start'].style.display = 'none';
+      if (this.grabbers['line-end']) this.grabbers['line-end'].style.display = 'none';
+    } else {
+      Object.values(this.grabbers).forEach(g => g.style.display = 'none');
+    }
   }
 
   private deleteSelectedComponent() {
