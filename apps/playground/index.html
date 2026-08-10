@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DAC Web Playground</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- File Manager Sidebar -->
+      <div id="file-manager">
+        <div class="sidebar-header">
+          <h3>Workspace</h3>
+        </div>
+        <div class="sidebar-actions">
+          <button id="btn-new-detail">New Detail</button>
+          <button id="btn-new-sheet">New Sheet</button>
+          <button id="btn-new-set">New Set</button>
+        </div>
+        <div class="sidebar-section-title">FILES</div>
+        <ul id="file-list"></ul>
+      </div>
+      
+      <!-- Main Content Area -->
+      <div id="main-content">
+        <!-- Toolbar (Top) -->
+        <div id="toolbar">
+          <div class="toolbar-left">
+            <span id="active-filename"></span>
+          </div>
+          <div class="toolbar-right">
+            <button id="btn-share" title="Copy shortened URL to clipboard">Share</button>
+          </div>
+        </div>
+        
+        <!-- Workspace Split Pane -->
+        <div id="workspace-pane">
+          <!-- Visualizer Container (Will hold only the SVG Canvas after detachment) -->
+          <div id="visualizer-container"></div>
+
+          <!-- Resizer handle between visualizer and right pane -->
+          <div id="pane-resizer" title="Drag to resize panes"></div>
+          
+          <!-- Right Pane (Tabs) -->
+          <div id="right-pane">
+            <div class="tabs-header">
+              <button id="tab-btn-inspector" class="tab-btn active">Inspector</button>
+              <button id="tab-btn-json" class="tab-btn">JSON</button>
+            </div>
+            <div class="tabs-content">
+              <div id="tab-content-inspector" class="tab-pane active">
+                <!-- Left sidebar from VisualizerUI will be moved here via JS -->
+              </div>
+              <div id="tab-content-json" class="tab-pane">
+                <div id="editor-container"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Toast Notification Container -->
+    <div id="toast" class="toast hidden">Copied to clipboard!</div>
+    
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
