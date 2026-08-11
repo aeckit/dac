@@ -1231,15 +1231,15 @@ export class VisualizerUI {
       const headerDivider = this.rightPanel.querySelector('#canvas-header-divider') as HTMLElement;
 
       if (this.isDrawingSet() || this.doc.type === 'CAD::Sheet') {
-        if (btnAddRect) btnAddRect.style.display = 'none';
-        if (btnAddLine) btnAddLine.style.display = 'none';
-        if (btnAddText) btnAddText.style.display = 'none';
-        if (btnAddViewport) btnAddViewport.style.display = 'block';
+        if (btnAddRect) { btnAddRect.disabled = true; btnAddRect.style.opacity = '0.3'; btnAddRect.style.cursor = 'not-allowed'; }
+        if (btnAddLine) { btnAddLine.disabled = true; btnAddLine.style.opacity = '0.3'; btnAddLine.style.cursor = 'not-allowed'; }
+        if (btnAddText) { btnAddText.disabled = true; btnAddText.style.opacity = '0.3'; btnAddText.style.cursor = 'not-allowed'; }
+        if (btnAddViewport) { btnAddViewport.disabled = false; btnAddViewport.style.opacity = '1'; btnAddViewport.style.cursor = 'pointer'; }
       } else {
-        if (btnAddRect) btnAddRect.style.display = 'block';
-        if (btnAddLine) btnAddLine.style.display = 'block';
-        if (btnAddText) btnAddText.style.display = 'block';
-        if (btnAddViewport) btnAddViewport.style.display = 'none';
+        if (btnAddRect) { btnAddRect.disabled = false; btnAddRect.style.opacity = '1'; btnAddRect.style.cursor = 'pointer'; }
+        if (btnAddLine) { btnAddLine.disabled = false; btnAddLine.style.opacity = '1'; btnAddLine.style.cursor = 'pointer'; }
+        if (btnAddText) { btnAddText.disabled = false; btnAddText.style.opacity = '1'; btnAddText.style.cursor = 'pointer'; }
+        if (btnAddViewport) { btnAddViewport.disabled = true; btnAddViewport.style.opacity = '0.3'; btnAddViewport.style.cursor = 'not-allowed'; }
       }
       if (headerDivider) headerDivider.style.display = isDetail ? 'block' : 'none';
 
