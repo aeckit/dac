@@ -45,6 +45,7 @@ export class VisualizerUI {
   private editOverlay!: HTMLElement;
   private btnMoveOverlay!: HTMLElement;
   private btnDeleteOverlay!: HTMLElement;
+  private grabbers: Record<string, HTMLElement> = {};
 
   constructor(
     container: HTMLElement,
