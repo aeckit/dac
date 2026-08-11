@@ -441,6 +441,11 @@ body {
   text-align: right;
 }
 
+input[type="text"].precise-input,
+textarea.precise-input {
+  text-align: left;
+}
+
 .precise-input:focus {
   outline: 1px solid var(--vscode-focusBorder, #0e639c);
   border-color: transparent;
