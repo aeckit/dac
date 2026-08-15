@@ -159,7 +159,7 @@ function renderFileList() {
     'Sheets': [],
     'Title Blocks': [],
     'Details': [],
-    'Assets': ['test-image.jpg']
+    'Images': ['test-image.jpg']
   };
 
   for (const filename of Object.keys(files)) {
@@ -193,14 +193,37 @@ function renderFileList() {
     fileListEl.appendChild(header);
 
     for (const filename of filenames) {
-      if (groupName === 'Assets') {
+      if (groupName === 'Images') {
         const li = document.createElement('li');
-        li.className = 'file-item';
+        li.className = 'file-item' + (filename === workspace.activeFilename ? ' active' : '');
         const nameSpan = document.createElement('span');
         nameSpan.textContent = `🖼️  ${filename}`;
         li.appendChild(nameSpan);
         li.onclick = () => {
-          showToast(`Asset reference: "${filename}"`);
+          document.querySelectorAll('#file-list .file-item').forEach(el => el.classList.remove('active'));
+          li.classList.add('active');
+          
+          workspace.activeFilename = filename;
+          const activeFilenameEl = document.getElementById('active-filename');
+          if (activeFilenameEl) activeFilenameEl.textContent = filename;
+          
+          const visualizerContainer = document.getElementById('visualizer-container');
+          if (visualizerContainer) {
+            uiInstance = null;
+            visualizerContainer.innerHTML = `
+              <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #000; padding: 20px; box-sizing: border-box;">
+                <img src="${filename}" style="max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #1e293b; border-radius: 8px;" />
+              </div>
+            `;
+          }
+          
+          if (editor) {
+            editor.setValue('', -1);
+          }
+          const tabInspector = document.getElementById('tab-content-inspector');
+          if (tabInspector) {
+            tabInspector.innerHTML = '<div style="padding: 20px; color: #94a3b8; text-align: center; font-family: monospace; font-size: 11px;">Image asset selected.<br/><br/>Images cannot be edited directly.</div>';
+          }
         };
         fileListEl.appendChild(li);
         continue;
