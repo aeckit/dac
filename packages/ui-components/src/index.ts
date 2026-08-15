@@ -23,8 +23,8 @@ export class VisualizerUI {
   private sandboxHeight = 18;
 
   // Selection state
-  private selectedComponentId: string | null = null;
-  private selectedComponentType: string | null = null;
+  private selectedComponentIds: Set<string> = new Set();
+  private primaryComponentType: string | null = null;
 
   // Zoom & Pan state
   private zoom = 1.0;
@@ -45,6 +45,7 @@ export class VisualizerUI {
   private editOverlay!: HTMLElement;
   private btnMoveOverlay!: HTMLElement;
   private btnDeleteOverlay!: HTMLElement;
+  private btnCropOverlay!: HTMLElement;
   private grabbers: Record<string, HTMLElement> = {};
 
   constructor(
@@ -178,12 +179,29 @@ export class VisualizerUI {
               .edit-grabber[data-dir="sw"] { cursor: nesw-resize; }
               .edit-grabber[data-dir="w"] { cursor: ew-resize; }
               .edit-grabber[data-dir="line-start"], .edit-grabber[data-dir="line-end"] { cursor: crosshair; }
+              
+              #canvas-edit-overlay.crop-mode .edit-grabber {
+                background: transparent; border: none; box-shadow: none; width: 20px; height: 20px;
+              }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="nw"] { border-top: 4px solid #111; border-left: 4px solid #111; border-radius: 2px 0 0 0; filter: drop-shadow(0px 0px 1px rgba(255,255,255,0.8)); transform: translate(-2px, -2px); }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="ne"] { border-top: 4px solid #111; border-right: 4px solid #111; border-radius: 0 2px 0 0; filter: drop-shadow(0px 0px 1px rgba(255,255,255,0.8)); transform: translate(-18px, -2px); }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="se"] { border-bottom: 4px solid #111; border-right: 4px solid #111; border-radius: 0 0 2px 0; filter: drop-shadow(0px 0px 1px rgba(255,255,255,0.8)); transform: translate(-18px, -18px); }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="sw"] { border-bottom: 4px solid #111; border-left: 4px solid #111; border-radius: 0 0 0 2px; filter: drop-shadow(0px 0px 1px rgba(255,255,255,0.8)); transform: translate(-2px, -18px); }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="n"], #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="s"] { width: 24px; height: 4px; border-radius: 2px; filter: drop-shadow(0px 0px 1px rgba(255,255,255,0.8)); }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="n"] { border-top: 4px solid #111; }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="s"] { border-bottom: 4px solid #111; }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="e"], #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="w"] { width: 4px; height: 24px; border-radius: 2px; filter: drop-shadow(0px 0px 1px rgba(255,255,255,0.8)); }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="e"] { border-right: 4px solid #111; }
+              #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="w"] { border-left: 4px solid #111; }
             </style>
             <div id="edit-overlay-btn-move" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: move; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M9 19l3 3 3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+              <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M9 19l3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+            </div>
+            <div id="edit-overlay-btn-crop" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;" title="Toggle Crop Mode">
+              <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/></svg>
             </div>
             <div id="edit-overlay-btn-delete" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #7f1d1d; border: 1px solid #b91c1c; border-radius: 4px; color: #f8fafc; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
+              <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
             </div>
             <div class="edit-grabber" data-dir="nw"></div>
             <div class="edit-grabber" data-dir="n"></div>
@@ -208,6 +226,7 @@ export class VisualizerUI {
     this.svgWrapper = this.container.querySelector('#svg-viewport-wrapper') as HTMLElement;
     this.editOverlay = this.container.querySelector('#canvas-edit-overlay') as HTMLElement;
     this.btnMoveOverlay = this.container.querySelector('#edit-overlay-btn-move') as HTMLElement;
+    this.btnCropOverlay = this.container.querySelector('#edit-overlay-btn-crop') as HTMLElement;
     this.btnDeleteOverlay = this.container.querySelector('#edit-overlay-btn-delete') as HTMLElement;
     
     this.grabbers = {};
@@ -260,8 +279,9 @@ export class VisualizerUI {
         const id = 'rect_' + Date.now().toString(36);
         const offset = detailDoc.geometry.length * 0.5;
         detailDoc.geometry.push({ type: 'CAD::Shape::Rectangle', componentId: id, componentType: 'Rectangle', x: offset, y: offset, width: 12, height: 12, fill: 'gray' });
-        this.selectedComponentId = id;
-        this.selectedComponentType = 'CAD::Shape::Rectangle';
+        this.selectedComponentIds.clear();
+        this.selectedComponentIds.add(id);
+        this.primaryComponentType = 'CAD::Shape::Rectangle';
         this.updateAndNotify();
       }
     });
@@ -274,8 +294,9 @@ export class VisualizerUI {
         const id = 'line_' + Date.now().toString(36);
         const offset = detailDoc.geometry.length * 0.5;
         detailDoc.geometry.push({ type: 'CAD::Shape::Line', componentId: id, componentType: 'Line', x1: offset, y1: offset, x2: 12 + offset, y2: 12 + offset, strokeWidth: 2 });
-        this.selectedComponentId = id;
-        this.selectedComponentType = 'CAD::Shape::Line';
+        this.selectedComponentIds.clear();
+        this.selectedComponentIds.add(id);
+        this.primaryComponentType = 'CAD::Shape::Line';
         this.updateAndNotify();
       }
     });
@@ -288,8 +309,9 @@ export class VisualizerUI {
         const id = 'text_' + Date.now().toString(36);
         const offset = detailDoc.geometry.length * 0.5;
         detailDoc.geometry.push({ type: 'CAD::Annotation::Text', componentId: id, componentType: 'Text', x: offset, y: offset, text: 'New Text', fontSize: 4 });
-        this.selectedComponentId = id;
-        this.selectedComponentType = 'CAD::Annotation::Text';
+        this.selectedComponentIds.clear();
+        this.selectedComponentIds.add(id);
+        this.primaryComponentType = 'CAD::Annotation::Text';
         this.updateAndNotify();
       }
     });
@@ -302,8 +324,9 @@ export class VisualizerUI {
         const id = 'viewport_' + Date.now().toString(36);
         const offset = 2 + (activeSheet.viewports.length * 2);
         activeSheet.viewports.push({ detail: '', x: offset, y: offset, scale: '1:1', width: 6, height: 6, componentId: id });
-        this.selectedComponentId = id;
-        this.selectedComponentType = 'CAD::Viewport';
+        this.selectedComponentIds.clear();
+        this.selectedComponentIds.add(id);
+        this.primaryComponentType = 'CAD::Viewport';
         this.updateAndNotify();
       }
     });
@@ -361,7 +384,7 @@ export class VisualizerUI {
     const selectEl = this.sheetDropdownContainer.querySelector('#sheet-select') as HTMLSelectElement;
     selectEl.addEventListener('change', () => {
       this.activeSheetIndex = parseInt(selectEl.value, 10);
-      this.selectedComponentId = null; // Clear selection when switching sheets
+      this.selectedComponentIds.clear(); // Clear selection when switching sheets
       this.render();
     });
   }
@@ -374,31 +397,58 @@ export class VisualizerUI {
 
     this.btnMoveOverlay.addEventListener('mousedown', (e) => {
       e.stopPropagation();
-      const comp = this.getSelectedShape();
-      if (!comp) return;
+      if (this.selectedComponentIds.size === 0) return;
 
       const startMouseX = e.clientX;
       const startMouseY = e.clientY;
-      const startCompX = Number(comp.x) || 0;
-      const startCompY = Number(comp.y) || 0;
-      const startCompX1 = Number((comp as any).x1) || 0;
-      const startCompY1 = Number((comp as any).y1) || 0;
-      const startCompX2 = Number((comp as any).x2) || 0;
-      const startCompY2 = Number((comp as any).y2) || 0;
-      const isLine = this.selectedComponentType === 'Line' || this.selectedComponentType === 'CAD::Shape::Line';
+      
+      const rootSvg = this.svgWrapper?.querySelector('svg');
+      if (!rootSvg) return;
+
+      const initialStates = new Map<string, any>();
+      this.selectedComponentIds.forEach(cid => {
+        let comp = null;
+        if (this.primaryComponentType === 'CAD::Viewport') {
+          const sheet = this.getActiveSheet();
+          comp = sheet?.viewports?.find(v => v.componentId === cid) || null;
+        } else {
+          const doc = this.findDocumentForComponent(cid);
+          if (doc && doc.geometry) {
+            let autoIndex = 0;
+            comp = doc.geometry.find(s => {
+              const sid = s.componentId || 'shape_' + autoIndex++;
+              return sid === cid;
+            }) || null;
+          }
+        }
+        
+        if (comp) {
+          const isLine = (comp as any).type === 'Line' || (comp as any).type === 'CAD::Shape::Line' || (comp as any).componentType === 'Line';
+          initialStates.set(cid, {
+            comp,
+            isLine,
+            x: Number(comp.x) || 0,
+            y: Number(comp.y) || 0,
+            x1: Number((comp as any).x1) || 0,
+            y1: Number((comp as any).y1) || 0,
+            x2: Number((comp as any).x2) || 0,
+            y2: Number((comp as any).y2) || 0,
+          });
+        }
+      });
+
+      if (initialStates.size === 0) return;
+
+      const firstCid = Array.from(this.selectedComponentIds)[0];
+      const selectedEl = this.svgWrapper?.querySelector(`[data-component-id="${firstCid}"]`);
+      const parentEl = (selectedEl?.parentElement as unknown as SVGGraphicsElement) || rootSvg;
+      const ctm = parentEl.getScreenCTM();
+      if (!ctm) return;
+      const inverse = ctm.inverse();
 
       const onMouseMove = (moveEvt: MouseEvent) => {
         this.isDragging = true;
-        const rootSvg = this.svgWrapper?.querySelector('svg');
-        if (!rootSvg) return;
-
-        const selectedEl = this.svgWrapper?.querySelector(`[data-component-id="${this.selectedComponentId}"]`);
-        const parentEl = (selectedEl?.parentElement as unknown as SVGGraphicsElement) || rootSvg;
-        const ctm = parentEl.getScreenCTM();
-        if (!ctm) return;
-
-        const inverse = ctm.inverse();
-
+        
         const ptStart = rootSvg.createSVGPoint();
         ptStart.x = startMouseX;
         ptStart.y = startMouseY;
@@ -412,17 +462,17 @@ export class VisualizerUI {
         const svgDx = svgCurrent.x - svgStart.x;
         const svgDy = svgCurrent.y - svgStart.y;
 
-        if (isLine) {
-          (comp as any).x1 = Math.round((startCompX1 + svgDx) * 1000) / 1000;
-          (comp as any).y1 = Math.round((startCompY1 - svgDy) * 1000) / 1000;
-          (comp as any).x2 = Math.round((startCompX2 + svgDx) * 1000) / 1000;
-          (comp as any).y2 = Math.round((startCompY2 - svgDy) * 1000) / 1000;
-        } else {
-          const newX = startCompX + svgDx;
-          const newY = startCompY - svgDy;
-          comp.x = Math.round(newX * 1000) / 1000;
-          comp.y = Math.round(newY * 1000) / 1000;
-        }
+        initialStates.forEach(state => {
+          if (state.isLine) {
+            (state.comp as any).x1 = Math.round((state.x1 + svgDx) * 1000) / 1000;
+            (state.comp as any).y1 = Math.round((state.y1 - svgDy) * 1000) / 1000;
+            (state.comp as any).x2 = Math.round((state.x2 + svgDx) * 1000) / 1000;
+            (state.comp as any).y2 = Math.round((state.y2 - svgDy) * 1000) / 1000;
+          } else {
+            state.comp.x = Math.round((state.x + svgDx) * 1000) / 1000;
+            state.comp.y = Math.round((state.y - svgDy) * 1000) / 1000;
+          }
+        });
 
         this.render();
       };
@@ -430,13 +480,8 @@ export class VisualizerUI {
       const onMouseUp = () => {
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
-        // Ensure final update persists to JSON
         this.updateAndNotify();
-        
-        // Reset dragging flag in next tick so the subsequent canvas click event is ignored
-        setTimeout(() => {
-          this.isDragging = false;
-        }, 0);
+        setTimeout(() => { this.isDragging = false; }, 0);
       };
 
       window.addEventListener('mousemove', onMouseMove);
@@ -445,6 +490,45 @@ export class VisualizerUI {
 
     this.btnMoveOverlay.addEventListener('click', (e) => {
       e.stopPropagation(); // prevent click from bubbling
+    });
+
+    this.btnCropOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
+    this.btnDeleteOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
+
+    this.btnCropOverlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const comp = this.getSelectedShape();
+      if (comp && (this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image')) {
+        const isCrop = (comp as any).imageMode === 'crop';
+        
+        if (isCrop) {
+          const oldH = comp.height;
+          const cX = comp.cropX || 0;
+          const cY = comp.cropY || 0;
+          const newW = (comp as any).imgWidth !== undefined ? (comp as any).imgWidth : comp.width;
+          const newH = (comp as any).imgHeight !== undefined ? (comp as any).imgHeight : comp.height;
+          
+          comp.x = comp.x - cX;
+          comp.y = comp.y + oldH - cY - newH;
+          comp.width = newW;
+          comp.height = newH;
+          
+          delete comp.cropX;
+          delete comp.cropY;
+          delete (comp as any).imgWidth;
+          delete (comp as any).imgHeight;
+          (comp as any).imageMode = 'resize';
+        } else {
+          comp.cropX = 0;
+          comp.cropY = 0;
+          (comp as any).imgWidth = comp.width;
+          (comp as any).imgHeight = comp.height;
+          (comp as any).imageMode = 'crop';
+        }
+        
+        this.updateAndNotify();
+        this.render();
+      }
     });
 
     Object.entries(this.grabbers).forEach(([dir, grabber]) => {
@@ -471,7 +555,8 @@ export class VisualizerUI {
           const rootSvg = this.svgWrapper?.querySelector('svg');
           if (!rootSvg) return;
 
-          const selectedEl = this.svgWrapper?.querySelector(`[data-component-id="${this.selectedComponentId}"]`);
+          const singleCid = Array.from(this.selectedComponentIds)[0];
+          const selectedEl = this.svgWrapper?.querySelector(`[data-component-id="${singleCid}"]`);
           const parentEl = (selectedEl?.parentElement as unknown as SVGGraphicsElement) || rootSvg;
           const ctm = parentEl.getScreenCTM();
           if (!ctm) return;
@@ -513,7 +598,7 @@ export class VisualizerUI {
           let newCropY = startCropY;
 
           let vpScale = 1;
-          if (this.selectedComponentType === 'CAD::Viewport') {
+          if (this.primaryComponentType === 'CAD::Viewport') {
              vpScale = resolveScaleMultiplier((comp as any).scale || '1:1');
           }
 
@@ -521,8 +606,10 @@ export class VisualizerUI {
           if (dir.includes('w')) {
             newX = startCompX + svgDx;
             newW = startCompW - svgDx;
-            if (this.selectedComponentType === 'CAD::Viewport') {
+            if (this.primaryComponentType === 'CAD::Viewport') {
               newCropX = startCropX + svgDx / vpScale;
+            } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop') {
+              newCropX = startCropX + svgDx;
             }
           }
           // East (Right) edge dragging
@@ -532,14 +619,18 @@ export class VisualizerUI {
           // North (Top) edge dragging
           if (dir.includes('n')) {
             newH = startCompH - svgDy;
+            if (this.primaryComponentType === 'CAD::Viewport') {
+              newCropY = startCropY - svgDy / vpScale;
+            } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop') {
+              newCropY = startCropY - svgDy;
+            }
           }
           // South (Bottom) edge dragging
           if (dir.includes('s')) {
             newY = startCompY - svgDy;
             newH = startCompH + svgDy;
-            if (this.selectedComponentType === 'CAD::Viewport') {
-              newCropY = startCropY - svgDy / vpScale;
-            }
+            // No crop compensation needed for South edge because CAD y + h remains constant, 
+            // meaning the SVG top-left corner stays locked in place.
           }
 
           // Enforce minimum dimensions
@@ -548,15 +639,27 @@ export class VisualizerUI {
              const diff = minSize - newW;
              if (dir.includes('w')) {
                 newX -= diff;
-                if (this.selectedComponentType === 'CAD::Viewport') newCropX -= diff / vpScale;
+                if (this.primaryComponentType === 'CAD::Viewport') {
+                  newCropX -= diff / vpScale;
+                } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop') {
+                  newCropX -= diff;
+                }
              }
              newW = minSize;
           }
           if (newH < minSize) {
              const diff = minSize - newH;
+             if (dir.includes('n')) {
+                // If we pushed the North edge past the limit, revert the cropY compensation
+                if (this.primaryComponentType === 'CAD::Viewport') {
+                  newCropY += diff / vpScale;
+                } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop') {
+                  newCropY += diff;
+                }
+             }
              if (dir.includes('s')) {
                 newY -= diff;
-                if (this.selectedComponentType === 'CAD::Viewport') newCropY -= diff / vpScale;
+                // No cropY compensation to revert for South edge
              }
              newH = minSize;
           }
@@ -565,7 +668,7 @@ export class VisualizerUI {
           comp.y = Math.round(newY * 1000) / 1000;
           comp.width = Math.round(newW * 1000) / 1000;
           comp.height = Math.round(newH * 1000) / 1000;
-          if (this.selectedComponentType === 'CAD::Viewport') {
+          if (this.primaryComponentType === 'CAD::Viewport' || ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop')) {
             (comp as any).cropX = Math.round(newCropX * 1000) / 1000;
             (comp as any).cropY = Math.round(newCropY * 1000) / 1000;
           }
@@ -589,49 +692,179 @@ export class VisualizerUI {
       });
     });
 
-    this.svgViewport.addEventListener('click', (e) => {
-      const target = e.target as SVGElement;
-      if (this.isDragging) return;
-
-      const interactiveGroup = target.closest('.interactive-component') as SVGGElement | null;
-
-      if (interactiveGroup) {
-        e.stopPropagation();
-        const cid = interactiveGroup.getAttribute('data-component-id');
-        const ctype = interactiveGroup.getAttribute('data-component-type');
-        this.selectedComponentId = cid;
-        this.selectedComponentType = ctype;
-        this.render();
-      } else {
-        this.selectedComponentId = null;
-        this.selectedComponentType = null;
-        this.render();
-      }
-    });
+    this.svgViewport.addEventListener('contextmenu', (e) => e.preventDefault());
 
     this.svgViewport.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      this.isDragging = false;
-      this.startX = e.clientX - this.panX;
-      this.startY = e.clientY - this.panY;
+      // 1. PANNING (Middle or Right Click)
+      if (e.button === 1 || e.button === 2) {
+        this.isDragging = false;
+        this.startX = e.clientX - this.panX;
+        this.startY = e.clientY - this.panY;
 
-      const onMouseMove = (moveEvt: MouseEvent) => {
-        this.isDragging = true;
-        this.panX = moveEvt.clientX - this.startX;
-        this.panY = moveEvt.clientY - this.startY;
-        this.svgViewport.style.cursor = 'grabbing';
-        this.updateZoomPan();
-      };
+        const onMouseMove = (moveEvt: MouseEvent) => {
+          this.isDragging = true;
+          this.panX = moveEvt.clientX - this.startX;
+          this.panY = moveEvt.clientY - this.startY;
+          this.svgViewport.style.cursor = 'grabbing';
+          this.updateZoomPan();
+        };
 
-      const onMouseUp = () => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        this.svgViewport.style.cursor = 'grab';
-        setTimeout(() => { this.isDragging = false; }, 50);
-      };
+        const onMouseUp = () => {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          this.svgViewport.style.cursor = 'grab';
+          setTimeout(() => { this.isDragging = false; }, 50);
+        };
 
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        return;
+      }
+
+      // 2. SELECTION (Left Click)
+      if (e.button === 0) {
+        const startMouseX = e.clientX;
+        const startMouseY = e.clientY;
+        let isSelecting = false;
+        let selectionBox: SVGRectElement | null = null;
+        const rootSvg = this.svgWrapper?.querySelector('svg');
+
+        const onMouseMove = (moveEvt: MouseEvent) => {
+          const dx = moveEvt.clientX - startMouseX;
+          const dy = moveEvt.clientY - startMouseY;
+          if (!isSelecting && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+            isSelecting = true;
+            this.isDragging = true;
+            if (rootSvg) {
+              selectionBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+              selectionBox.setAttribute('stroke-width', '1');
+              selectionBox.setAttribute('vector-effect', 'non-scaling-stroke');
+              rootSvg.appendChild(selectionBox);
+            }
+          }
+
+          if (isSelecting && selectionBox && rootSvg) {
+            const ctm = rootSvg.getScreenCTM();
+            if (ctm) {
+              const inverse = ctm.inverse();
+              const ptStart = rootSvg.createSVGPoint();
+              ptStart.x = startMouseX;
+              ptStart.y = startMouseY;
+              const svgStart = ptStart.matrixTransform(inverse);
+
+              const ptCurrent = rootSvg.createSVGPoint();
+              ptCurrent.x = moveEvt.clientX;
+              ptCurrent.y = moveEvt.clientY;
+              const svgCurrent = ptCurrent.matrixTransform(inverse);
+
+              const x = Math.min(svgStart.x, svgCurrent.x);
+              const y = Math.min(svgStart.y, svgCurrent.y);
+              const w = Math.abs(svgCurrent.x - svgStart.x);
+              const h = Math.abs(svgCurrent.y - svgStart.y);
+
+              selectionBox.setAttribute('x', String(x));
+              selectionBox.setAttribute('y', String(y));
+              selectionBox.setAttribute('width', String(w));
+              selectionBox.setAttribute('height', String(h));
+              
+              const isLeftToRight = moveEvt.clientX >= startMouseX;
+              if (isLeftToRight) {
+                selectionBox.setAttribute('fill', 'rgba(59, 130, 246, 0.2)');
+                selectionBox.setAttribute('stroke', 'rgba(59, 130, 246, 0.8)');
+                selectionBox.removeAttribute('stroke-dasharray');
+              } else {
+                selectionBox.setAttribute('fill', 'rgba(34, 197, 94, 0.2)');
+                selectionBox.setAttribute('stroke', 'rgba(34, 197, 94, 0.8)');
+                selectionBox.setAttribute('stroke-dasharray', '4,4');
+              }
+            }
+          }
+        };
+
+        const onMouseUp = (upEvt: MouseEvent) => {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+
+          if (isSelecting) {
+            if (selectionBox) {
+              const boxRect = selectionBox.getBoundingClientRect();
+              selectionBox.remove();
+              
+              const newSelection = new Set<string>();
+              if (upEvt.shiftKey || upEvt.metaKey) {
+                this.selectedComponentIds.forEach(id => newSelection.add(id));
+              }
+
+              const interactives = this.svgWrapper.querySelectorAll('.interactive-component');
+              const isLeftToRight = upEvt.clientX >= startMouseX;
+              
+              interactives.forEach(group => {
+                const groupRect = group.getBoundingClientRect();
+                
+                let isSelected = false;
+                if (isLeftToRight) {
+                  isSelected = (
+                    groupRect.left >= boxRect.left &&
+                    groupRect.right <= boxRect.right &&
+                    groupRect.top >= boxRect.top &&
+                    groupRect.bottom <= boxRect.bottom
+                  );
+                } else {
+                  isSelected = !(
+                    groupRect.right < boxRect.left || 
+                    groupRect.left > boxRect.right || 
+                    groupRect.bottom < boxRect.top || 
+                    groupRect.top > boxRect.bottom
+                  );
+                }
+                
+                if (isSelected) {
+                  const cid = group.getAttribute('data-component-id');
+                  if (cid) {
+                    if (upEvt.shiftKey || upEvt.metaKey) {
+                      if (newSelection.has(cid)) newSelection.delete(cid);
+                      else newSelection.add(cid);
+                    } else {
+                      newSelection.add(cid);
+                    }
+                  }
+                }
+              });
+              
+              this.selectedComponentIds = newSelection;
+              this.updatePrimaryComponentType();
+              this.render();
+            }
+            setTimeout(() => { this.isDragging = false; }, 50);
+          } else {
+            // Just a click
+            const target = e.target as SVGElement;
+            const interactiveGroup = target.closest('.interactive-component') as SVGGElement | null;
+            
+            if (interactiveGroup) {
+              const cid = interactiveGroup.getAttribute('data-component-id');
+              if (cid) {
+                if (upEvt.shiftKey || upEvt.metaKey) {
+                  if (this.selectedComponentIds.has(cid)) this.selectedComponentIds.delete(cid);
+                  else this.selectedComponentIds.add(cid);
+                } else {
+                  this.selectedComponentIds.clear();
+                  this.selectedComponentIds.add(cid);
+                }
+                this.updatePrimaryComponentType();
+              }
+              this.render();
+            } else {
+              this.selectedComponentIds.clear();
+              this.primaryComponentType = null;
+              this.render();
+            }
+          }
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      }
     });
 
     this.svgViewport.addEventListener('wheel', (e) => {
@@ -662,16 +895,67 @@ export class VisualizerUI {
   }
 
   private updateOverlayPositions() {
-    if (!this.selectedComponentId || !this.svgWrapper) {
+    if (this.selectedComponentIds.size === 0 || !this.svgWrapper) {
       if (this.btnMoveOverlay) this.btnMoveOverlay.style.display = 'none';
+      if (this.btnCropOverlay) this.btnCropOverlay.style.display = 'none';
       if (this.btnDeleteOverlay) this.btnDeleteOverlay.style.display = 'none';
       if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
       return;
     }
 
-    const selectedEl = this.svgWrapper.querySelector(`[data-component-id="${this.selectedComponentId}"]`) as SVGGraphicsElement;
+    const rootSvg = this.svgWrapper.querySelector('svg');
+    if (!rootSvg) return;
+
+    if (this.selectedComponentIds.size > 1) {
+      if (this.btnCropOverlay) this.btnCropOverlay.style.display = 'none';
+      if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const containerRect = this.svgViewport.getBoundingClientRect();
+
+      this.selectedComponentIds.forEach(id => {
+        const el = this.svgWrapper?.querySelector(`[data-component-id="${id}"]`) as SVGGraphicsElement;
+        if (!el) return;
+        const bbox = el.getBBox();
+        const screenCTM = el.getScreenCTM();
+        if (!screenCTM) return;
+
+        const tl = rootSvg.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
+        const tr = rootSvg.createSVGPoint(); tr.x = bbox.x + bbox.width; tr.y = bbox.y;
+        const bl = rootSvg.createSVGPoint(); bl.x = bbox.x; bl.y = bbox.y + bbox.height;
+        const br = rootSvg.createSVGPoint(); br.x = bbox.x + bbox.width; br.y = bbox.y + bbox.height;
+
+        if (typeof tl.matrixTransform === 'function') {
+          const pts = [tl, tr, bl, br].map(p => p.matrixTransform(screenCTM));
+          pts.forEach(p => {
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x);
+            maxY = Math.max(maxY, p.y);
+          });
+        }
+      });
+
+      if (minX === Infinity) return;
+
+      const pxTop = minY - containerRect.top;
+      const pxRight = maxX - containerRect.left;
+
+      this.btnMoveOverlay.style.display = 'flex';
+      this.btnMoveOverlay.style.left = `${pxRight - 52}px`;
+      this.btnMoveOverlay.style.top = `${pxTop - 36}px`;
+
+      this.btnDeleteOverlay.style.display = 'flex';
+      this.btnDeleteOverlay.style.left = `${pxRight - 24}px`;
+      this.btnDeleteOverlay.style.top = `${pxTop - 36}px`;
+      return;
+    }
+
+    const cid = Array.from(this.selectedComponentIds)[0];
+    const selectedEl = this.svgWrapper.querySelector(`[data-component-id="${cid}"]`) as SVGGraphicsElement;
     if (!selectedEl) {
       if (this.btnMoveOverlay) this.btnMoveOverlay.style.display = 'none';
+      if (this.btnCropOverlay) this.btnCropOverlay.style.display = 'none';
       if (this.btnDeleteOverlay) this.btnDeleteOverlay.style.display = 'none';
       if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
       return;
@@ -681,7 +965,7 @@ export class VisualizerUI {
     let bbox = selectedEl.getBBox();
     
     // For viewports, align to the viewport frame border rather than the title label if it exists
-    if (this.selectedComponentType === 'CAD::Viewport') {
+    if (this.primaryComponentType === 'CAD::Viewport') {
       const borderRect = selectedEl.querySelector('rect[stroke="#475569"]') as SVGGElement | null;
       if (borderRect) {
         bbox = borderRect.getBBox();
@@ -689,30 +973,29 @@ export class VisualizerUI {
     }
 
     
-    // getScreenCTM maps the element to the physical browser window pixels
+    const rootSvgEl = this.svgWrapper.querySelector('svg');
+    if (!rootSvgEl) return;
+    
     const screenCTM = selectedEl.getScreenCTM();
     if (!screenCTM) return;
 
-    const rootSvg = this.svgWrapper.querySelector('svg');
-    if (!rootSvg) return;
-    
-    const isLine = this.selectedComponentType === 'Line' || this.selectedComponentType === 'CAD::Shape::Line';
+    const isLine = this.primaryComponentType === 'Line' || this.primaryComponentType === 'CAD::Shape::Line';
     let pts: DOMPoint[] = [];
 
     if (isLine) {
       const lineNode = selectedEl.querySelector('line');
       if (lineNode) {
-        const pStart = rootSvg.createSVGPoint(); pStart.x = lineNode.x1.baseVal.value; pStart.y = lineNode.y1.baseVal.value;
-        const pEnd = rootSvg.createSVGPoint(); pEnd.x = lineNode.x2.baseVal.value; pEnd.y = lineNode.y2.baseVal.value;
+        const pStart = rootSvgEl.createSVGPoint(); pStart.x = lineNode.x1.baseVal.value; pStart.y = lineNode.y1.baseVal.value;
+        const pEnd = rootSvgEl.createSVGPoint(); pEnd.x = lineNode.x2.baseVal.value; pEnd.y = lineNode.y2.baseVal.value;
         if (typeof pStart.matrixTransform === 'function') {
           pts = [pStart.matrixTransform(screenCTM), pEnd.matrixTransform(screenCTM)];
         }
       }
     } else {
-      const tl = rootSvg.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
-      const tr = rootSvg.createSVGPoint(); tr.x = bbox.x + bbox.width; tr.y = bbox.y;
-      const bl = rootSvg.createSVGPoint(); bl.x = bbox.x; bl.y = bbox.y + bbox.height;
-      const br = rootSvg.createSVGPoint(); br.x = bbox.x + bbox.width; br.y = bbox.y + bbox.height;
+      const tl = rootSvgEl.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
+      const tr = rootSvgEl.createSVGPoint(); tr.x = bbox.x + bbox.width; tr.y = bbox.y;
+      const bl = rootSvgEl.createSVGPoint(); bl.x = bbox.x; bl.y = bbox.y + bbox.height;
+      const br = rootSvgEl.createSVGPoint(); br.x = bbox.x + bbox.width; br.y = bbox.y + bbox.height;
 
       // Handle JSDOM test environment where matrixTransform is missing
       if (typeof tl.matrixTransform === 'function') {
@@ -738,11 +1021,32 @@ export class VisualizerUI {
     this.btnMoveOverlay.style.left = `${pxRight - 52}px`;
     this.btnMoveOverlay.style.top = `${pxTop - 36}px`;
 
+    const isImage = this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image';
+    if (isImage) {
+      this.btnCropOverlay.style.display = 'flex';
+      this.btnCropOverlay.style.left = `${pxRight - 80}px`;
+      this.btnCropOverlay.style.top = `${pxTop - 36}px`;
+      
+      const comp = this.getSelectedShape();
+      const isCrop = comp && (comp as any).imageMode === 'crop';
+      this.btnCropOverlay.style.background = isCrop ? '#3b82f6' : '#1e293b';
+      this.btnCropOverlay.style.borderColor = isCrop ? '#2563eb' : '#475569';
+      
+      if (isCrop) {
+        this.editOverlay.classList.add('crop-mode');
+      } else {
+        this.editOverlay.classList.remove('crop-mode');
+      }
+    } else {
+      this.btnCropOverlay.style.display = 'none';
+      this.editOverlay.classList.remove('crop-mode');
+    }
+
     this.btnDeleteOverlay.style.display = 'flex';
     this.btnDeleteOverlay.style.left = `${pxRight - 24}px`;
     this.btnDeleteOverlay.style.top = `${pxTop - 36}px`;
 
-    const canResize = this.selectedComponentType === 'Rectangle' || this.selectedComponentType === 'CAD::Shape::Rectangle' || this.selectedComponentType === 'CAD::Viewport';
+    const canResize = this.primaryComponentType === 'Rectangle' || this.primaryComponentType === 'CAD::Shape::Rectangle' || this.primaryComponentType === 'CAD::Viewport' || this.primaryComponentType === 'Image' || this.primaryComponentType === 'CAD::Annotation::Image';
     
     if (isLine && pts.length === 2) {
       const pxLeft0 = pts[0].x - containerRect.left;
@@ -785,44 +1089,52 @@ export class VisualizerUI {
   }
 
   private deleteSelectedComponent() {
-    if (!this.selectedComponentId) return;
-    const cid = this.selectedComponentId;
+    if (this.selectedComponentIds.size === 0) return;
+    
+    let hasDeleted = false;
 
-    if (this.selectedComponentType === 'CAD::Viewport') {
+    this.selectedComponentIds.forEach(cid => {
+      let deleted = false;
+      
       const activeSheet = this.getActiveSheet();
       if (activeSheet && activeSheet.viewports) {
         const idx = activeSheet.viewports.findIndex(v => v.componentId === cid);
         if (idx > -1) {
           activeSheet.viewports.splice(idx, 1);
-          this.selectedComponentId = null;
-          this.selectedComponentType = null;
-          this.updateAndNotify();
-          return;
+          deleted = true;
         }
       }
-    }
 
-    const doc = this.findDocumentForComponent(cid);
-    if (doc && doc.geometry) {
-      let autoIndex = 0;
-      const idx = doc.geometry.findIndex(shape => {
-        const sid = shape.componentId || 'shape_' + autoIndex++;
-        return sid === cid;
-      });
-      if (idx > -1) {
-        doc.geometry.splice(idx, 1);
-        this.selectedComponentId = null;
-        this.selectedComponentType = null;
-        this.updateAndNotify();
+      if (!deleted) {
+        const doc = this.findDocumentForComponent(cid);
+        if (doc && doc.geometry) {
+          let autoIndex = 0;
+          const idx = doc.geometry.findIndex(shape => {
+            const sid = shape.componentId || 'shape_' + autoIndex++;
+            return sid === cid;
+          });
+          if (idx > -1) {
+            doc.geometry.splice(idx, 1);
+            deleted = true;
+          }
+        }
       }
+      
+      if (deleted) hasDeleted = true;
+    });
+
+    if (hasDeleted) {
+      this.selectedComponentIds.clear();
+      this.primaryComponentType = null;
+      this.updateAndNotify();
     }
   }
 
   private getSelectedShape(): any {
-    if (!this.selectedComponentId) return null;
-    const cid = this.selectedComponentId;
+    if (this.selectedComponentIds.size === 0) return null;
+    const cid = Array.from(this.selectedComponentIds)[0]; // Primarily used when 1 item is selected
 
-    if (this.selectedComponentType === 'CAD::Viewport') {
+    if (this.primaryComponentType === 'CAD::Viewport') {
       const activeSheet = this.getActiveSheet();
       if (activeSheet && activeSheet.viewports) {
         return activeSheet.viewports.find(v => v.componentId === cid) || null;
@@ -839,6 +1151,18 @@ export class VisualizerUI {
       }) || null;
     }
     return null;
+  }
+
+  private updatePrimaryComponentType() {
+    if (this.selectedComponentIds.size === 1) {
+      const cid = Array.from(this.selectedComponentIds)[0];
+      const selectedGroup = this.svgWrapper.querySelector(`[data-component-id="${cid}"]`);
+      this.primaryComponentType = selectedGroup ? selectedGroup.getAttribute('data-component-type') : null;
+    } else if (this.selectedComponentIds.size > 1) {
+      this.primaryComponentType = 'Multiple';
+    } else {
+      this.primaryComponentType = null;
+    }
   }
 
   private findDocumentForComponent(docId: string): DetailDocument | null {
@@ -890,7 +1214,7 @@ export class VisualizerUI {
   private renderPropertyEditor() {
     if (!this.propertiesCardContainer) return;
 
-    if (!this.selectedComponentId) {
+    if (this.selectedComponentIds.size === 0) {
       // Nothing selected, render Document Properties
       let scheduleHtml = '';
       if (this.doc.type === 'CAD::Sheet') {
@@ -952,8 +1276,9 @@ export class VisualizerUI {
           row.addEventListener('click', () => {
             const cid = row.getAttribute('data-cid');
             if (cid) {
-              this.selectedComponentId = cid;
-              this.selectedComponentType = 'CAD::Viewport';
+              this.selectedComponentIds.clear();
+              this.selectedComponentIds.add(cid);
+              this.primaryComponentType = 'CAD::Viewport';
               this.render();
             }
           });
@@ -969,11 +1294,25 @@ export class VisualizerUI {
       return;
     }
 
-    if (this.selectedComponentType === 'CAD::Viewport') {
+    if (this.selectedComponentIds.size > 1) {
+      this.propertiesCardContainer.innerHTML = `
+        <div class="card">
+          <div class="properties-editor-body" style="text-align: center; color: #94a3b8; padding: 16px;">
+            <p style="margin-bottom: 8px;">${this.selectedComponentIds.size} Items Selected</p>
+            <p style="font-size: 11px;">Property editing is disabled for multiple selections.</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const cid = Array.from(this.selectedComponentIds)[0];
+
+    if (this.primaryComponentType === 'CAD::Viewport') {
       const activeSheet = this.getActiveSheet();
       if (!activeSheet || !activeSheet.viewports) return;
       
-      const vpIndex = activeSheet.viewports.findIndex(v => v.componentId === this.selectedComponentId);
+      const vpIndex = activeSheet.viewports.findIndex(v => v.componentId === cid);
       if (vpIndex === -1) return;
       const vp = activeSheet.viewports[vpIndex];
 
@@ -1001,7 +1340,7 @@ export class VisualizerUI {
     }
 
     // We must find which detail document the component belongs to.
-    const targetDoc = this.findDocumentForComponent(this.selectedComponentId);
+    const targetDoc = this.findDocumentForComponent(cid);
 
     if (!targetDoc) {
       this.propertiesCardContainer.innerHTML = `
@@ -1018,7 +1357,7 @@ export class VisualizerUI {
     const componentParams: [string, any][] = [];
     if (targetDoc.parameters) {
       for (const [key, param] of Object.entries(targetDoc.parameters)) {
-        if (param.componentId === this.selectedComponentId) {
+        if (param.componentId === cid) {
           componentParams.push([key, param]);
         }
       }
@@ -1029,14 +1368,14 @@ export class VisualizerUI {
     if (targetDoc.geometry && Array.isArray(targetDoc.geometry)) {
       let autoIndex = 0;
       targetDoc.geometry.forEach((shape, idx) => {
-        const cid = shape.componentId || 'shape_' + autoIndex++;
-        if (cid === this.selectedComponentId) {
+        const sid = shape.componentId || 'shape_' + autoIndex++;
+        if (sid === cid) {
           matchingShapes.push({ shape, index: idx });
         }
       });
     }
 
-    const niceName = this.selectedComponentType?.split('::').pop() || 'Selected Component';
+    const niceName = this.primaryComponentType?.split('::').pop() || 'Selected Component';
 
     if (componentParams.length === 0 && matchingShapes.length === 0) {
       this.propertiesCardContainer.innerHTML = `
@@ -1080,7 +1419,7 @@ export class VisualizerUI {
         componentParams,
         getLatestDoc: () => {
           this.lastUpdateTime = Date.now();
-          return this.findDocumentForComponent(this.selectedComponentId!) || (this.doc as DetailDocument);
+          return this.findDocumentForComponent(cid) || (this.doc as DetailDocument);
         },
         updateAndNotify: () => this.updateAndNotify()
       });
@@ -1092,7 +1431,7 @@ export class VisualizerUI {
           shapeIndex: index,
           getLatestShape: () => {
             this.lastUpdateTime = Date.now();
-            const latestDoc = this.findDocumentForComponent(this.selectedComponentId!) || (this.doc as DetailDocument);
+            const latestDoc = this.findDocumentForComponent(cid) || (this.doc as DetailDocument);
             return latestDoc.geometry && Array.isArray(latestDoc.geometry) ? latestDoc.geometry[index] : null;
           },
           updateAndNotify: () => this.updateAndNotify()
@@ -1216,11 +1555,13 @@ export class VisualizerUI {
 
       this.svgWrapper.innerHTML = svg;
 
-      if (this.selectedComponentId) {
-        const selectedGroup = this.svgWrapper.querySelector(`[data-component-id="${this.selectedComponentId}"]`) as SVGElement | null;
-        if (selectedGroup) {
-          selectedGroup.classList.add('selected-highlight');
-        }
+      if (this.selectedComponentIds.size > 0) {
+        this.selectedComponentIds.forEach(cid => {
+          const selectedGroup = this.svgWrapper.querySelector(`[data-component-id="${cid}"]`) as SVGElement | null;
+          if (selectedGroup) {
+            selectedGroup.classList.add('selected-highlight');
+          }
+        });
       }
 
       const isDetail = this.doc.type === 'CAD::Detail';
@@ -1283,8 +1624,8 @@ export class VisualizerUI {
   }
 
   public resetView() {
-    this.selectedComponentId = null;
-    this.selectedComponentType = null;
+    this.selectedComponentIds.clear();
+    this.primaryComponentType = null;
 
     // Temporarily disable transition for synchronous measurement
     const origTransition = this.svgWrapper.style.transition;
@@ -1323,8 +1664,9 @@ export class VisualizerUI {
   }
 
   public selectComponent(componentId: string | null, componentType: string | null = null) {
-    this.selectedComponentId = componentId;
-    this.selectedComponentType = componentType;
+    this.selectedComponentIds.clear();
+    if (componentId) this.selectedComponentIds.add(componentId);
+    this.primaryComponentType = componentType;
     this.render();
   }
 
