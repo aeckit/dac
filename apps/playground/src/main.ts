@@ -218,7 +218,7 @@ function renderFileList() {
           }
           
           if (editor) {
-            editor.setValue('', -1);
+            editor.setValue('');
           }
           const tabInspector = document.getElementById('tab-content-inspector');
           if (tabInspector) {
