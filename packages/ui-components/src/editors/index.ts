@@ -4,6 +4,7 @@ import { LineEditor } from './LineEditor';
 import { TextEditor } from './TextEditor';
 import { DefaultEditor } from './DefaultEditor';
 import { ParametricEditor } from './ParametricEditor';
+import { ImageEditor } from './ImageEditor';
 
 import { DocumentEditor } from './DocumentEditor';
 import { ViewportEditor } from './ViewportEditor';
@@ -14,6 +15,7 @@ export {
   TextEditor,
   DefaultEditor,
   ParametricEditor,
+  ImageEditor,
   DocumentEditor,
   ViewportEditor
 };
@@ -26,6 +28,8 @@ export const getEditorForShape = (type: string): PropertyEditor => {
       return LineEditor;
     case 'CAD::Annotation::Text':
       return TextEditor;
+    case 'CAD::Annotation::Image':
+      return ImageEditor;
     default:
       return DefaultEditor;
   }

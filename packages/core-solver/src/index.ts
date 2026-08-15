@@ -19,6 +19,11 @@ export interface GeometryPrimitive {
   fill?: string;
   strokeWidth?: number;
   strokeDasharray?: string;
+  imageMode?: 'crop' | 'resize';
+  cropX?: any;
+  cropY?: any;
+  imgWidth?: any;
+  imgHeight?: any;
   hatch?: string;
   offset?: number;
   space?: string;
@@ -320,7 +325,31 @@ function drawImage(shape: GeometryPrimitive, params: Record<string, number | boo
   const y = canvasHeight - (rawY + height);
   const href = shape.href;
 
-  return `<image x="${x}" y="${y}" width="${width}" height="${height}" href="${href}" preserveAspectRatio="xMidYMid meet" />`;
+  if (shape.imageMode === 'crop') {
+    const cropX = evaluateExpression(shape.cropX || 0, params);
+    const cropY = evaluateExpression(shape.cropY || 0, params);
+    const imgWidth = evaluateExpression(shape.imgWidth || width, params);
+    const imgHeight = evaluateExpression(shape.imgHeight || height, params);
+    
+    // Generate a unique ID for the clip path
+    const clipId = `clip-img-${Math.random().toString(36).substring(2, 9)}`;
+    
+    // The clip-path rect defines the visible "window"
+    const clipDef = `<clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${width}" height="${height}" /></clipPath>`;
+    
+    // The image itself is offset by -cropX and +cropY (because SVG Y goes down, so +cropY pushes the image down, revealing the top)
+    const imgX = x - cropX;
+    const imgY = y + cropY;
+    
+    return `
+      <defs>${clipDef}</defs>
+      <g clip-path="url(#${clipId})">
+        <image x="${imgX}" y="${imgY}" width="${imgWidth}" height="${imgHeight}" href="${href}" preserveAspectRatio="none" />
+      </g>
+    `;
+  }
+
+  return `<image x="${x}" y="${y}" width="${width}" height="${height}" href="${href}" preserveAspectRatio="none" />`;
 }
 
 export const L1_REGISTRY: Record<string, ShapeDrawer> = {
@@ -584,7 +613,8 @@ export function renderSheet(
       const vpSvgY = height - vpY - (vpCanvasHeight * vpScaleMultiplier);
       const cidAttr = vp.componentId ? ` data-component-id="${vp.componentId}" data-component-type="CAD::Viewport"` : '';
       
-      const clipId = `clip-${vp.componentId || Math.random().toString(36).substring(7)}`;
+      // Use a unique random suffix to force browser cache invalidation for the clipPath on every render
+      const clipId = `clip-img-${vp.componentId || 'auto'}-${Math.random().toString(36).substring(2, 9)}`;
       const hasDimensions = vp.width !== undefined && vp.height !== undefined;
       const clipDef = hasDimensions ? `<clipPath id="${clipId}"><rect x="0" y="${vpCanvasHeight - vp.height! / vpScaleMultiplier}" width="${vp.width! / vpScaleMultiplier}" height="${vp.height! / vpScaleMultiplier}" /></clipPath>` : '';
       const clipAttr = hasDimensions ? ` clip-path="url(#${clipId})"` : '';
