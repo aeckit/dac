@@ -161,7 +161,7 @@ export class VisualizerUI {
             </button>
           </div>
         </div>
-        <div class="svg-viewport" id="svg-viewport-container" style="cursor: grab; overflow: hidden; background: #000; position: relative;">
+        <div class="svg-viewport" id="svg-viewport-container" style="cursor: crosshair; overflow: hidden; background: #000; position: relative;">
           <div id="svg-viewport-wrapper" style="transform-origin: 0 0; transition: transform 0.05s ease-out; min-width: 100%; min-height: 100%;"></div>
           <div id="canvas-edit-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 10;">
             <style>
@@ -352,6 +352,14 @@ export class VisualizerUI {
         });
       }
     }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.selectedComponentIds.size > 0) {
+          this.selectComponent(null);
+        }
+      }
+    });
   }
 
   private renderSheetDropdown() {
@@ -700,19 +708,19 @@ export class VisualizerUI {
         this.isDragging = false;
         this.startX = e.clientX - this.panX;
         this.startY = e.clientY - this.panY;
+        this.svgViewport.style.cursor = 'grabbing';
 
         const onMouseMove = (moveEvt: MouseEvent) => {
           this.isDragging = true;
           this.panX = moveEvt.clientX - this.startX;
           this.panY = moveEvt.clientY - this.startY;
-          this.svgViewport.style.cursor = 'grabbing';
           this.updateZoomPan();
         };
 
         const onMouseUp = () => {
           document.removeEventListener('mousemove', onMouseMove);
           document.removeEventListener('mouseup', onMouseUp);
-          this.svgViewport.style.cursor = 'grab';
+          this.svgViewport.style.cursor = 'crosshair';
           setTimeout(() => { this.isDragging = false; }, 50);
         };
 
