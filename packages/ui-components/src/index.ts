@@ -44,8 +44,10 @@ export class VisualizerUI {
   private sheetDropdownContainer!: HTMLElement;
   private editOverlay!: HTMLElement;
   private btnMoveOverlay!: HTMLElement;
-  private btnDeleteOverlay!: HTMLElement;
+  private croppingComponentId: string | null = null;
   private btnCropOverlay!: HTMLElement;
+  private btnDeleteOverlay!: HTMLElement;
+  private btnOpenOverlay!: HTMLElement;
   private grabbers: Record<string, HTMLElement> = {};
 
   constructor(
@@ -147,6 +149,9 @@ export class VisualizerUI {
             <button class="reset-btn icon-btn" id="btn-add-text" title="Add Text">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4V3h10v1M8 3v10M6 13h4"/></svg>
             </button>
+            <button class="reset-btn icon-btn" id="btn-add-image" title="Add Image">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><circle cx="5.5" cy="6.5" r="1.5"/><path d="M14 10L10.5 6L6 11L4 9L2 11"/></svg>
+            </button>
             <button class="reset-btn icon-btn" id="btn-add-viewport" title="Add Viewport">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10" rx="1"/><rect x="5" y="5" width="6" height="6" stroke-dasharray="1 1"/></svg>
             </button>
@@ -162,7 +167,7 @@ export class VisualizerUI {
           </div>
         </div>
         <div class="svg-viewport" id="svg-viewport-container" style="cursor: crosshair; overflow: hidden; background: #000; position: relative;">
-          <div id="svg-viewport-wrapper" style="transform-origin: 0 0; transition: transform 0.05s ease-out; min-width: 100%; min-height: 100%;"></div>
+          <div id="svg-viewport-wrapper" style="transform-origin: 0 0; min-width: 100%; min-height: 100%;"></div>
           <div id="canvas-edit-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 10;">
             <style>
               .edit-grabber {
@@ -194,8 +199,11 @@ export class VisualizerUI {
               #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="e"] { border-right: 4px solid #111; }
               #canvas-edit-overlay.crop-mode .edit-grabber[data-dir="w"] { border-left: 4px solid #111; }
             </style>
-            <div id="edit-overlay-btn-move" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: move; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;">
+            <div id="edit-overlay-btn-move" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: move; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;" title="Move">
               <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M9 19l3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+            </div>
+            <div id="edit-overlay-btn-open" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #3b82f6; border: 1px solid #2563eb; border-radius: 4px; color: #f8fafc; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;" title="Open Detail">
+              <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </div>
             <div id="edit-overlay-btn-crop" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;" title="Toggle Crop Mode">
               <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/></svg>
@@ -228,6 +236,7 @@ export class VisualizerUI {
     this.btnMoveOverlay = this.container.querySelector('#edit-overlay-btn-move') as HTMLElement;
     this.btnCropOverlay = this.container.querySelector('#edit-overlay-btn-crop') as HTMLElement;
     this.btnDeleteOverlay = this.container.querySelector('#edit-overlay-btn-delete') as HTMLElement;
+    this.btnOpenOverlay = this.container.querySelector('#edit-overlay-btn-open') as HTMLElement;
     
     this.grabbers = {};
     const grabberEls = this.container.querySelectorAll('.edit-grabber');
@@ -273,51 +282,87 @@ export class VisualizerUI {
 
     const btnAddRect = this.rightPanel.querySelector('#btn-add-rect') as HTMLButtonElement;
     btnAddRect?.addEventListener('click', () => {
-      if (this.doc.type === 'CAD::Detail') {
-        const detailDoc = this.doc as DetailDocument;
-        if (!detailDoc.geometry) detailDoc.geometry = [];
-        const id = 'rect_' + Date.now().toString(36);
-        const offset = detailDoc.geometry.length * 0.5;
-        detailDoc.geometry.push({ type: 'CAD::Shape::Rectangle', componentId: id, componentType: 'Rectangle', x: offset, y: offset, width: 12, height: 12, fill: 'gray' });
-        this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(id);
-        this.primaryComponentType = 'CAD::Shape::Rectangle';
-        this.updateAndNotify();
-      }
+      const isDrawingSet = this.isDrawingSet();
+      if (!isDrawingSet && this.doc.type !== 'CAD::Detail') return;
+      const targetDoc = (isDrawingSet ? this.getActiveSheet() : this.doc) as any;
+      if (!targetDoc) return;
+      if (!targetDoc.geometry) targetDoc.geometry = [];
+      const id = 'rect_' + Date.now().toString(36);
+      const offset = targetDoc.geometry.length * 0.5;
+      targetDoc.geometry.push({ type: 'CAD::Shape::Rectangle', componentId: id, componentType: 'Rectangle', x: offset, y: offset, width: 12, height: 12, fill: 'gray' });
+      this.selectedComponentIds.clear();
+      this.selectedComponentIds.add(id);
+      this.primaryComponentType = 'CAD::Shape::Rectangle';
+      this.updateAndNotify();
     });
 
     const btnAddLine = this.rightPanel.querySelector('#btn-add-line') as HTMLButtonElement;
     btnAddLine?.addEventListener('click', () => {
-      if (this.doc.type === 'CAD::Detail') {
-        const detailDoc = this.doc as DetailDocument;
-        if (!detailDoc.geometry) detailDoc.geometry = [];
-        const id = 'line_' + Date.now().toString(36);
-        const offset = detailDoc.geometry.length * 0.5;
-        detailDoc.geometry.push({ type: 'CAD::Shape::Line', componentId: id, componentType: 'Line', x1: offset, y1: offset, x2: 12 + offset, y2: 12 + offset, strokeWidth: 2 });
-        this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(id);
-        this.primaryComponentType = 'CAD::Shape::Line';
-        this.updateAndNotify();
-      }
+      const isDrawingSet = this.isDrawingSet();
+      if (!isDrawingSet && this.doc.type !== 'CAD::Detail') return;
+      const targetDoc = (isDrawingSet ? this.getActiveSheet() : this.doc) as any;
+      if (!targetDoc) return;
+      if (!targetDoc.geometry) targetDoc.geometry = [];
+      const id = 'line_' + Date.now().toString(36);
+      const offset = targetDoc.geometry.length * 0.5;
+      targetDoc.geometry.push({ type: 'CAD::Shape::Line', componentId: id, componentType: 'Line', x1: offset, y1: offset, x2: 12 + offset, y2: 12 + offset, strokeWidth: 2 });
+      this.selectedComponentIds.clear();
+      this.selectedComponentIds.add(id);
+      this.primaryComponentType = 'CAD::Shape::Line';
+      this.updateAndNotify();
     });
 
     const btnAddText = this.rightPanel.querySelector('#btn-add-text') as HTMLButtonElement;
     btnAddText?.addEventListener('click', () => {
-      if (this.doc.type === 'CAD::Detail') {
-        const detailDoc = this.doc as DetailDocument;
-        if (!detailDoc.geometry) detailDoc.geometry = [];
-        const id = 'text_' + Date.now().toString(36);
-        const offset = detailDoc.geometry.length * 0.5;
-        detailDoc.geometry.push({ type: 'CAD::Annotation::Text', componentId: id, componentType: 'Text', x: offset, y: offset, text: 'New Text', fontSize: 4 });
-        this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(id);
-        this.primaryComponentType = 'CAD::Annotation::Text';
-        this.updateAndNotify();
-      }
+      const isDrawingSet = this.isDrawingSet();
+      if (!isDrawingSet && this.doc.type !== 'CAD::Detail') return;
+      const targetDoc = (isDrawingSet ? this.getActiveSheet() : this.doc) as any;
+      if (!targetDoc) return;
+      if (!targetDoc.geometry) targetDoc.geometry = [];
+      const id = 'text_' + Date.now().toString(36);
+      const offset = targetDoc.geometry.length * 0.5;
+      targetDoc.geometry.push({ type: 'CAD::Annotation::Text', componentId: id, componentType: 'Text', x: offset, y: offset, text: 'New Text', fontSize: 4 });
+      this.selectedComponentIds.clear();
+      this.selectedComponentIds.add(id);
+      this.primaryComponentType = 'CAD::Annotation::Text';
+      this.updateAndNotify();
+    });
+
+    const btnAddImage = this.rightPanel.querySelector('#btn-add-image') as HTMLButtonElement;
+    btnAddImage?.addEventListener('click', () => {
+      const isDrawingSet = this.isDrawingSet();
+      if (!isDrawingSet && this.doc.type !== 'CAD::Detail') return;
+      const targetDoc = (isDrawingSet ? this.getActiveSheet() : this.doc) as any;
+      if (!targetDoc) return;
+      if (!targetDoc.geometry) targetDoc.geometry = [];
+      
+      const id = 'image_' + Date.now().toString(36);
+      const offset = targetDoc.geometry.length * 0.5;
+      
+      targetDoc.geometry.push({
+        type: 'CAD::Annotation::Image',
+        componentId: id,
+        componentType: 'Image',
+        href: '',
+        x: 0,
+        y: 0,
+        width: 12,
+        height: 9,
+        cropX: 0,
+        cropY: 0,
+        imgWidth: 12,
+        imgHeight: 9,
+        lockAspectRatio: true
+      });
+      this.selectedComponentIds.clear();
+      this.selectedComponentIds.add(id);
+      this.primaryComponentType = 'CAD::Annotation::Image';
+      this.updateAndNotify();
     });
 
     const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
     btnAddViewport?.addEventListener('click', () => {
+      if (this.isDrawingSet()) return;
       const activeSheet = this.getActiveSheet();
       if (activeSheet) {
         if (!activeSheet.viewports) activeSheet.viewports = [];
@@ -500,6 +545,26 @@ export class VisualizerUI {
       e.stopPropagation(); // prevent click from bubbling
     });
 
+    this.btnOpenOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
+    this.btnOpenOverlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.primaryComponentType === 'CAD::Viewport') {
+        const sheet = this.getActiveSheet();
+        if (!sheet) return;
+        const cid = Array.from(this.selectedComponentIds)[0];
+        const vp = sheet.viewports?.find(v => v.componentId === cid);
+        if (vp && typeof vp.detail === 'string') {
+          let filename = vp.detail;
+          if (filename.startsWith('../')) {
+            filename = filename.substring(3);
+          }
+          if (filename !== 'inline-detail') {
+            window.dispatchEvent(new CustomEvent('dac-open-file', { detail: { filename } }));
+          }
+        }
+      }
+    });
+
     this.btnCropOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
     this.btnDeleteOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
 
@@ -507,31 +572,12 @@ export class VisualizerUI {
       e.stopPropagation();
       const comp = this.getSelectedShape();
       if (comp && (this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image')) {
-        const isCrop = (comp as any).imageMode === 'crop';
+        const isCrop = this.croppingComponentId === comp.componentId;
         
         if (isCrop) {
-          const oldH = comp.height;
-          const cX = comp.cropX || 0;
-          const cY = comp.cropY || 0;
-          const newW = (comp as any).imgWidth !== undefined ? (comp as any).imgWidth : comp.width;
-          const newH = (comp as any).imgHeight !== undefined ? (comp as any).imgHeight : comp.height;
-          
-          comp.x = comp.x - cX;
-          comp.y = comp.y + oldH - cY - newH;
-          comp.width = newW;
-          comp.height = newH;
-          
-          delete comp.cropX;
-          delete comp.cropY;
-          delete (comp as any).imgWidth;
-          delete (comp as any).imgHeight;
-          (comp as any).imageMode = 'resize';
+          this.croppingComponentId = null;
         } else {
-          comp.cropX = 0;
-          comp.cropY = 0;
-          (comp as any).imgWidth = comp.width;
-          (comp as any).imgHeight = comp.height;
-          (comp as any).imageMode = 'crop';
+          this.croppingComponentId = comp.componentId;
         }
         
         this.updateAndNotify();
@@ -553,6 +599,8 @@ export class VisualizerUI {
         const startCompH = Number(comp.height) || 0;
         const startCropX = Number((comp as any).cropX) || 0;
         const startCropY = Number((comp as any).cropY) || 0;
+        const startImgW = Number((comp as any).imgWidth) || startCompW;
+        const startImgH = Number((comp as any).imgHeight) || startCompH;
         const startCompX1 = Number((comp as any).x1) || 0;
         const startCompY1 = Number((comp as any).y1) || 0;
         const startCompX2 = Number((comp as any).x2) || 0;
@@ -616,7 +664,7 @@ export class VisualizerUI {
             newW = startCompW - svgDx;
             if (this.primaryComponentType === 'CAD::Viewport') {
               newCropX = startCropX + svgDx / vpScale;
-            } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop') {
+            } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && this.croppingComponentId === comp.componentId) {
               newCropX = startCropX + svgDx;
             }
           }
@@ -629,7 +677,7 @@ export class VisualizerUI {
             newH = startCompH - svgDy;
             if (this.primaryComponentType === 'CAD::Viewport') {
               newCropY = startCropY - svgDy / vpScale;
-            } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop') {
+            } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && this.croppingComponentId === comp.componentId) {
               newCropY = startCropY - svgDy;
             }
           }
@@ -637,8 +685,44 @@ export class VisualizerUI {
           if (dir.includes('s')) {
             newY = startCompY - svgDy;
             newH = startCompH + svgDy;
-            // No crop compensation needed for South edge because CAD y + h remains constant, 
-            // meaning the SVG top-left corner stays locked in place.
+          }
+
+          if ((comp as any).lockAspectRatio) {
+            const aspect = startCompW / startCompH;
+            const ratioX = newW / startCompW;
+            const ratioY = newH / startCompH;
+            
+            // Determine which axis drives the scale
+            let driveW = true;
+            if (dir === 'n' || dir === 's') driveW = false;
+            else if (dir === 'e' || dir === 'w') driveW = true;
+            else driveW = Math.abs(ratioX - 1) > Math.abs(ratioY - 1);
+
+            if (driveW) {
+              const lockedH = newW / aspect;
+              if (dir.includes('n')) {
+                // For North (Top), top edge (Y+H) changes, bottom edge (Y) is anchored
+                newH = lockedH;
+              }
+              if (dir.includes('s')) {
+                // For South (Bottom), top edge (Y+H) is anchored, bottom edge (Y) moves
+                const topEdge = startCompY + startCompH;
+                newH = lockedH;
+                newY = topEdge - newH;
+              }
+            } else {
+              const lockedW = newH * aspect;
+              if (dir.includes('e')) {
+                // For East (Right), left edge (X) is anchored
+                newW = lockedW;
+              }
+              if (dir.includes('w')) {
+                // For West (Left), right edge (X+W) is anchored
+                const rightEdge = startCompX + startCompW;
+                newW = lockedW;
+                newX = rightEdge - newW;
+              }
+            }
           }
 
           // Enforce minimum dimensions
@@ -649,7 +733,7 @@ export class VisualizerUI {
                 newX -= diff;
                 if (this.primaryComponentType === 'CAD::Viewport') {
                   newCropX -= diff / vpScale;
-                } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop') {
+                } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && this.croppingComponentId === comp.componentId) {
                   newCropX -= diff;
                 }
              }
@@ -661,7 +745,7 @@ export class VisualizerUI {
                 // If we pushed the North edge past the limit, revert the cropY compensation
                 if (this.primaryComponentType === 'CAD::Viewport') {
                   newCropY += diff / vpScale;
-                } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop') {
+                } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && this.croppingComponentId === comp.componentId) {
                   newCropY += diff;
                 }
              }
@@ -676,9 +760,19 @@ export class VisualizerUI {
           comp.y = Math.round(newY * 1000) / 1000;
           comp.width = Math.round(newW * 1000) / 1000;
           comp.height = Math.round(newH * 1000) / 1000;
-          if (this.primaryComponentType === 'CAD::Viewport' || ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && (comp as any).imageMode === 'crop')) {
+          
+          const isImage = this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image';
+          
+          if (this.primaryComponentType === 'CAD::Viewport' || (isImage && this.croppingComponentId === comp.componentId)) {
             (comp as any).cropX = Math.round(newCropX * 1000) / 1000;
             (comp as any).cropY = Math.round(newCropY * 1000) / 1000;
+          } else if (isImage) {
+            const scaleX = newW / startCompW;
+            const scaleY = newH / startCompH;
+            (comp as any).cropX = Math.round(startCropX * scaleX * 1000) / 1000;
+            (comp as any).cropY = Math.round(startCropY * scaleY * 1000) / 1000;
+            (comp as any).imgWidth = Math.round(startImgW * scaleX * 1000) / 1000;
+            (comp as any).imgHeight = Math.round(startImgH * scaleY * 1000) / 1000;
           }
 
           this.render();
@@ -731,6 +825,10 @@ export class VisualizerUI {
 
       // 2. SELECTION (Left Click)
       if (e.button === 0) {
+        if (this.doc.type === 'CAD::DrawingSet') {
+          return;
+        }
+
         const startMouseX = e.clientX;
         const startMouseY = e.clientY;
         let isSelecting = false;
@@ -965,6 +1063,7 @@ export class VisualizerUI {
       if (this.btnMoveOverlay) this.btnMoveOverlay.style.display = 'none';
       if (this.btnCropOverlay) this.btnCropOverlay.style.display = 'none';
       if (this.btnDeleteOverlay) this.btnDeleteOverlay.style.display = 'none';
+      if (this.btnOpenOverlay) this.btnOpenOverlay.style.display = 'none';
       if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
       return;
     }
@@ -1036,7 +1135,7 @@ export class VisualizerUI {
       this.btnCropOverlay.style.top = `${pxTop - 36}px`;
       
       const comp = this.getSelectedShape();
-      const isCrop = comp && (comp as any).imageMode === 'crop';
+      const isCrop = comp && this.croppingComponentId === comp.componentId;
       this.btnCropOverlay.style.background = isCrop ? '#3b82f6' : '#1e293b';
       this.btnCropOverlay.style.borderColor = isCrop ? '#2563eb' : '#475569';
       
@@ -1053,6 +1152,14 @@ export class VisualizerUI {
     this.btnDeleteOverlay.style.display = 'flex';
     this.btnDeleteOverlay.style.left = `${pxRight - 24}px`;
     this.btnDeleteOverlay.style.top = `${pxTop - 36}px`;
+
+    if (this.primaryComponentType === 'CAD::Viewport') {
+      this.btnOpenOverlay.style.display = 'flex';
+      this.btnOpenOverlay.style.left = `${pxRight - 80}px`;
+      this.btnOpenOverlay.style.top = `${pxTop - 36}px`;
+    } else {
+      this.btnOpenOverlay.style.display = 'none';
+    }
 
     const canResize = this.primaryComponentType === 'Rectangle' || this.primaryComponentType === 'CAD::Shape::Rectangle' || this.primaryComponentType === 'CAD::Viewport' || this.primaryComponentType === 'Image' || this.primaryComponentType === 'CAD::Annotation::Image';
     
@@ -1282,6 +1389,7 @@ export class VisualizerUI {
         const rows = this.propertiesCardContainer.querySelectorAll('.schedule-row');
         rows.forEach(row => {
           row.addEventListener('click', () => {
+            if (this.isDrawingSet()) return;
             const cid = row.getAttribute('data-cid');
             if (cid) {
               this.selectedComponentIds.clear();
@@ -1563,6 +1671,28 @@ export class VisualizerUI {
 
       this.svgWrapper.innerHTML = svg;
 
+      // Handle image fallbacks
+      const images = this.svgWrapper.querySelectorAll('image[data-fallback-id]');
+      images.forEach(img => {
+        const fallbackId = img.getAttribute('data-fallback-id');
+        const fallbackEl = this.svgWrapper.querySelector(`#${fallbackId}`);
+        if (fallbackEl) {
+          const href = img.getAttribute('href');
+          if (!href) return;
+          
+          const handleLoad = () => fallbackEl.setAttribute('display', 'none');
+          const handleError = () => fallbackEl.setAttribute('display', 'block');
+          
+          img.addEventListener('load', handleLoad);
+          img.addEventListener('error', handleError);
+          
+          const htmlImg = new Image();
+          htmlImg.onload = handleLoad;
+          htmlImg.onerror = handleError;
+          htmlImg.src = href;
+        }
+      });
+
       if (this.selectedComponentIds.size > 0) {
         this.selectedComponentIds.forEach(cid => {
           const selectedGroup = this.svgWrapper.querySelector(`[data-component-id="${cid}"]`) as SVGElement | null;
@@ -1576,18 +1706,27 @@ export class VisualizerUI {
       const btnAddRect = this.rightPanel.querySelector('#btn-add-rect') as HTMLButtonElement;
       const btnAddLine = this.rightPanel.querySelector('#btn-add-line') as HTMLButtonElement;
       const btnAddText = this.rightPanel.querySelector('#btn-add-text') as HTMLButtonElement;
+      const btnAddImage = this.rightPanel.querySelector('#btn-add-image') as HTMLButtonElement;
       const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
       const headerDivider = this.rightPanel.querySelector('#canvas-header-divider') as HTMLElement;
 
-      if (this.isDrawingSet() || this.doc.type === 'CAD::Sheet') {
+      if (this.isDrawingSet()) {
         if (btnAddRect) { btnAddRect.disabled = true; btnAddRect.style.opacity = '0.3'; btnAddRect.style.cursor = 'not-allowed'; }
         if (btnAddLine) { btnAddLine.disabled = true; btnAddLine.style.opacity = '0.3'; btnAddLine.style.cursor = 'not-allowed'; }
         if (btnAddText) { btnAddText.disabled = true; btnAddText.style.opacity = '0.3'; btnAddText.style.cursor = 'not-allowed'; }
+        if (btnAddImage) { btnAddImage.disabled = true; btnAddImage.style.opacity = '0.3'; btnAddImage.style.cursor = 'not-allowed'; }
+        if (btnAddViewport) { btnAddViewport.disabled = true; btnAddViewport.style.opacity = '0.3'; btnAddViewport.style.cursor = 'not-allowed'; }
+      } else if (this.doc.type === 'CAD::Sheet') {
+        if (btnAddRect) { btnAddRect.disabled = false; btnAddRect.style.opacity = '1'; btnAddRect.style.cursor = 'pointer'; }
+        if (btnAddLine) { btnAddLine.disabled = false; btnAddLine.style.opacity = '1'; btnAddLine.style.cursor = 'pointer'; }
+        if (btnAddText) { btnAddText.disabled = false; btnAddText.style.opacity = '1'; btnAddText.style.cursor = 'pointer'; }
+        if (btnAddImage) { btnAddImage.disabled = false; btnAddImage.style.opacity = '1'; btnAddImage.style.cursor = 'pointer'; }
         if (btnAddViewport) { btnAddViewport.disabled = false; btnAddViewport.style.opacity = '1'; btnAddViewport.style.cursor = 'pointer'; }
       } else {
         if (btnAddRect) { btnAddRect.disabled = false; btnAddRect.style.opacity = '1'; btnAddRect.style.cursor = 'pointer'; }
         if (btnAddLine) { btnAddLine.disabled = false; btnAddLine.style.opacity = '1'; btnAddLine.style.cursor = 'pointer'; }
         if (btnAddText) { btnAddText.disabled = false; btnAddText.style.opacity = '1'; btnAddText.style.cursor = 'pointer'; }
+        if (btnAddImage) { btnAddImage.disabled = false; btnAddImage.style.opacity = '1'; btnAddImage.style.cursor = 'pointer'; }
         if (btnAddViewport) { btnAddViewport.disabled = true; btnAddViewport.style.opacity = '0.3'; btnAddViewport.style.cursor = 'not-allowed'; }
       }
       if (headerDivider) headerDivider.style.display = isDetail ? 'block' : 'none';

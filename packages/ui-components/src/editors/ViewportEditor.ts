@@ -9,7 +9,12 @@ export const ViewportEditor = {
       <div class="form-group" data-vp-index="${index}">
         <div class="control-label-row">
           <label class="control-label">Source File</label>
-          <input type="text" class="precise-input vp-detail-input" value="${detailName}" />
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <input type="text" class="precise-input vp-detail-input" value="${detailName}" style="width: 120px;" />
+            <button class="vp-open-btn" style="background: #3b82f6; border: none; border-radius: 4px; color: #fff; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Open Detail">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </button>
+          </div>
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Scale</label>
@@ -109,6 +114,17 @@ export const ViewportEditor = {
     };
 
     if (detailInput) detailInput.addEventListener('change', () => updateProp('detail', detailInput.value));
+    
+    const openBtn = groupEl.querySelector('.vp-open-btn') as HTMLButtonElement;
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        let filename = detailInput.value;
+        if (filename.startsWith('../')) filename = filename.substring(3);
+        if (filename && filename !== 'inline-detail') {
+          window.dispatchEvent(new CustomEvent('dac-open-file', { detail: { filename } }));
+        }
+      });
+    }
     if (scaleInput) scaleInput.addEventListener('change', () => updateProp('scale', scaleInput.value));
     if (xInput) xInput.addEventListener('change', () => updateProp('x', Math.round((parseFloat(xInput.value) || 0) * 1000) / 1000));
     if (yInput) yInput.addEventListener('change', () => updateProp('y', Math.round((parseFloat(yInput.value) || 0) * 1000) / 1000));

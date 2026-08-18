@@ -57,6 +57,11 @@ export const ImageEditor: PropertyEditor = {
           <label class="control-label">Image Source</label>
           <input type="text" class="precise-input shape-href-input" value="${shape.href || ''}" placeholder="e.g. test-image.jpg" />
         </div>
+        
+        <div class="control-label-row" style="margin-top: 8px;">
+          <label class="control-label">Lock Aspect Ratio</label>
+          <input type="checkbox" class="shape-lock-ratio-input" ${shape.lockAspectRatio ? 'checked' : ''} style="margin: 0;" />
+        </div>
       </div>
     `;
   },
@@ -79,24 +84,39 @@ export const ImageEditor: PropertyEditor = {
                 val = Number(val);
               }
             }
+            if (currentShape.lockAspectRatio) {
+              if (propName === 'width' && currentShape.width && currentShape.height && val) {
+                const ratio = currentShape.height / currentShape.width;
+                currentShape.height = Number((val * ratio).toFixed(3));
+                if (currentShape.imgWidth) currentShape.imgWidth = val;
+                if (currentShape.imgHeight) currentShape.imgHeight = currentShape.height;
+              } else if (propName === 'height' && currentShape.width && currentShape.height && val) {
+                const ratio = currentShape.width / currentShape.height;
+                currentShape.width = Number((val * ratio).toFixed(3));
+                if (currentShape.imgHeight) currentShape.imgHeight = val;
+                if (currentShape.imgWidth) currentShape.imgWidth = currentShape.width;
+              }
+            }
+
             if (val === '') {
               delete currentShape[propName];
             } else {
               currentShape[propName] = val;
             }
             
-            // Re-render UI explicitly to show/hide fields when mode changes
-            if (propName === 'imageMode') {
-              // Ensure crop properties are initialized if switching to crop
-              if (val === 'crop') {
-                if (currentShape.cropX === undefined) currentShape.cropX = 0;
-                if (currentShape.cropY === undefined) currentShape.cropY = 0;
-                if (currentShape.imgWidth === undefined) currentShape.imgWidth = currentShape.width;
-                if (currentShape.imgHeight === undefined) currentShape.imgHeight = currentShape.height;
-              }
-              // A full reload of the properties panel is triggered by updateAndNotify anyway
-            }
-            
+            updateAndNotify();
+          }
+        });
+      }
+    };
+
+    const bindCheckbox = (selector: string, propName: string) => {
+      const input = groupEl.querySelector(selector) as HTMLInputElement;
+      if (input) {
+        input.addEventListener('change', () => {
+          const currentShape = getLatestShape();
+          if (currentShape) {
+            currentShape[propName] = input.checked;
             updateAndNotify();
           }
         });
@@ -113,5 +133,6 @@ export const ImageEditor: PropertyEditor = {
     bindStringInput('.shape-imgwidth-input', 'imgWidth');
     bindStringInput('.shape-imgheight-input', 'imgHeight');
     bindStringInput('.shape-href-input', 'href');
+    bindCheckbox('.shape-lock-ratio-input', 'lockAspectRatio');
   }
 };

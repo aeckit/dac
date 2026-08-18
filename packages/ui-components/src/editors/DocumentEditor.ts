@@ -61,7 +61,7 @@ export const DocumentEditor = {
         `;
       }
 
-      if (sheet) {
+      if (sheet && !dset) {
         html += `
           <div class="sidebar-section-title" style="margin-bottom: 8px;">${dset ? 'ACTIVE SHEET PROPERTIES' : 'SHEET PROPERTIES'}</div>
           <div class="form-group" data-doc-prop="sheetName">

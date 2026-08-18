@@ -19,7 +19,6 @@ export interface GeometryPrimitive {
   fill?: string;
   strokeWidth?: number;
   strokeDasharray?: string;
-  imageMode?: 'crop' | 'resize';
   cropX?: any;
   cropY?: any;
   imgWidth?: any;
@@ -28,6 +27,7 @@ export interface GeometryPrimitive {
   offset?: number;
   space?: string;
   href?: string;
+  lockAspectRatio?: boolean;
   componentId?: string;
   componentType?: string;
   visible?: any;
@@ -70,6 +70,7 @@ export interface SheetDocument {
   titleBlockOffsetX?: number;
   titleBlockOffsetY?: number;
   viewports: Viewport[];
+  geometry?: GeometryPrimitive[];
 }
 
 export interface DrawingSetDocument {
@@ -323,33 +324,42 @@ function drawImage(shape: GeometryPrimitive, params: Record<string, number | boo
   const width = evaluateExpression(shape.width, params);
   const height = evaluateExpression(shape.height, params);
   const y = canvasHeight - (rawY + height);
-  const href = shape.href;
+  const cropX = evaluateExpression(shape.cropX || 0, params);
+  const cropY = evaluateExpression(shape.cropY || 0, params);
+  const imgWidth = evaluateExpression(shape.imgWidth || width, params);
+  const imgHeight = evaluateExpression(shape.imgHeight || height, params);
+  
+  // Generate a unique ID for the clip path
+  const clipId = `clip-img-${Math.random().toString(36).substring(2, 9)}`;
+  
+  // The clip-path rect defines the visible "window"
+  const clipDef = `<clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${width}" height="${height}" /></clipPath>`;
+  
+  // The image itself is offset by -cropX and +cropY (because SVG Y goes down, so +cropY pushes the image down, revealing the top)
+  const imgX = x - cropX;
+  const imgY = y + cropY;
 
-  if (shape.imageMode === 'crop') {
-    const cropX = evaluateExpression(shape.cropX || 0, params);
-    const cropY = evaluateExpression(shape.cropY || 0, params);
-    const imgWidth = evaluateExpression(shape.imgWidth || width, params);
-    const imgHeight = evaluateExpression(shape.imgHeight || height, params);
-    
-    // Generate a unique ID for the clip path
-    const clipId = `clip-img-${Math.random().toString(36).substring(2, 9)}`;
-    
-    // The clip-path rect defines the visible "window"
-    const clipDef = `<clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${width}" height="${height}" /></clipPath>`;
-    
-    // The image itself is offset by -cropX and +cropY (because SVG Y goes down, so +cropY pushes the image down, revealing the top)
-    const imgX = x - cropX;
-    const imgY = y + cropY;
-    
-    return `
-      <defs>${clipDef}</defs>
-      <g clip-path="url(#${clipId})">
-        <image x="${imgX}" y="${imgY}" width="${imgWidth}" height="${imgHeight}" href="${href}" preserveAspectRatio="none" />
-      </g>
+  const fallbackId = `img-fallback-${Math.random().toString(36).substring(2, 9)}`;
+  const textLabel = shape.href ? shape.href : 'No Image';
+  const placeholder = `
+    <g id="${fallbackId}">
+      <rect x="${imgX}" y="${imgY}" width="${imgWidth}" height="${imgHeight}" fill="#334155" />
+      <path d="M ${imgX} ${imgY} L ${imgX + imgWidth} ${imgY + imgHeight} M ${imgX + imgWidth} ${imgY} L ${imgX} ${imgY + imgHeight}" stroke="#475569" stroke-width="0.1" />
+      <text x="${imgX + imgWidth/2}" y="${imgY + imgHeight/2}" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="${Math.min(imgHeight/4, imgWidth/8)}" fill="#94a3b8">${textLabel}</text>
+    </g>
+  `;
+
+  let imageContent = placeholder;
+  if (shape.href) {
+    imageContent = `
+      ${placeholder}
+      <svg x="${x}" y="${y}" width="${width}" height="${height}">
+        <image x="${-cropX}" y="${cropY}" width="${imgWidth}" height="${imgHeight}" href="${shape.href}" preserveAspectRatio="none" data-fallback-id="${fallbackId}" />
+      </svg>
     `;
   }
-
-  return `<image x="${x}" y="${y}" width="${width}" height="${height}" href="${href}" preserveAspectRatio="none" />`;
+  
+  return imageContent;
 }
 
 export const L1_REGISTRY: Record<string, ShapeDrawer> = {
@@ -598,6 +608,14 @@ export function renderSheet(
     sheetContent += `\n<!-- Title Block -->\n<g id="title-block-layer" transform="translate(${tbOffsetX}, ${-tbOffsetY})">${tbSvg}</g>`;
   }
 
+  // Render Sheet-level Geometry (Annotations/Images)
+  if (sheet.geometry && sheet.geometry.length > 0) {
+    const geomScale = resolveScaleMultiplier('1:1');
+    const dummyDoc: DetailDocument = { type: 'CAD::Detail', version: '1.0', scale: '1:1', geometry: sheet.geometry };
+    const geomSvg = compileGeometryGroups(dummyDoc, geomScale, titleBlockData, height, false);
+    sheetContent += `\n<!-- Sheet Geometry -->\n<g id="sheet-geometry-layer">${geomSvg}</g>`;
+  }
+
   // Render Viewports
   sheetContent += '\n<!-- Viewports -->\n';
   for (const vp of sheet.viewports) {
@@ -697,7 +715,7 @@ export function renderSheet(
             </g>
           </g>
           ${labelsSvg}
-          ${hasDimensions ? `<rect x="0" y="${vpCanvasHeight - vp.height! / vpScaleMultiplier}" width="${vp.width! / vpScaleMultiplier}" height="${vp.height! / vpScaleMultiplier}" fill="none" stroke="#475569" stroke-width="${1 / 72 / vpScaleMultiplier}" stroke-dasharray="0.1, 0.1" />` : ''}
+          ${hasDimensions ? `<rect x="0" y="${vpCanvasHeight - vp.height! / vpScaleMultiplier}" width="${vp.width! / vpScaleMultiplier}" height="${vp.height! / vpScaleMultiplier}" fill="transparent" stroke="#475569" stroke-width="${1 / 72 / vpScaleMultiplier}" stroke-dasharray="0.1, 0.1" pointer-events="all" />` : ''}
         </g>
       `;
     } else {

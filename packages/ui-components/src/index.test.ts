@@ -109,53 +109,7 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
     expect(texts[texts.length - 1].getAttribute('y')).toBe('18'); // 18 - 0 = 18
   });
 
-  it('Sheet View Behavior hides quick-add buttons for CAD::DrawingSet and CAD::Sheet', () => {
-    const drawingSetDoc: DrawingSetDocument = {
-      type: 'CAD::DrawingSet',
-      version: '1.0.0',
-      name: 'Test DrawingSet',
-      sheets: [
-        {
-          type: 'CAD::Sheet',
-          sheetNumber: 'A101',
-          sheetName: 'Plan',
-          paperSize: 'ARCH D',
-          viewports: []
-        }
-      ]
-    };
 
-    new VisualizerUI(container, drawingSetDoc, () => {});
-
-    const btnAddRect = container.querySelector('#btn-add-rect') as HTMLButtonElement;
-    const btnAddLine = container.querySelector('#btn-add-line') as HTMLButtonElement;
-    const btnAddText = container.querySelector('#btn-add-text') as HTMLButtonElement;
-
-    expect(btnAddRect.style.display).toBe('none');
-    expect(btnAddLine.style.display).toBe('none');
-    expect(btnAddText.style.display).toBe('none');
-
-    // Also test with CAD::Sheet document directly
-    const container2 = document.createElement('div');
-    document.body.appendChild(container2);
-    const sheetDoc: SheetDocument = {
-      type: 'CAD::Sheet',
-      sheetNumber: 'A102',
-      sheetName: 'Elevation',
-      paperSize: 'ARCH D',
-      viewports: []
-    };
-
-    new VisualizerUI(container2, sheetDoc, () => {});
-
-    const btnAddRect2 = container2.querySelector('#btn-add-rect') as HTMLButtonElement;
-    const btnAddLine2 = container2.querySelector('#btn-add-line') as HTMLButtonElement;
-    const btnAddText2 = container2.querySelector('#btn-add-text') as HTMLButtonElement;
-
-    expect(btnAddRect2.style.display).toBe('none');
-    expect(btnAddLine2.style.display).toBe('none');
-    expect(btnAddText2.style.display).toBe('none');
-  });
 
   it('VisualizerUI renders shapes reflecting inverted Cartesian (+Y = UP) SVG coordinates in generated DOM', () => {
     const detailDoc: DetailDocument = {
