@@ -79,6 +79,7 @@ function updateEditor() {
 // -----------------------------------------------------------------------------
 // Setup Visualizer
 // -----------------------------------------------------------------------------
+let currentVisualizerFilename: string | null = null;
 function updateVisualizer() {
   const activeDoc = workspace.getActiveFileContent();
   if (!activeDoc) return;
@@ -140,11 +141,17 @@ function updateVisualizer() {
       // Remove border and ensure it fills the tab
       (leftSidebar as HTMLElement).style.width = '100%';
       (leftSidebar as HTMLElement).style.borderRight = 'none';
+      tabInspector.innerHTML = ''; // Clear any persisting placeholder messages
       tabInspector.appendChild(leftSidebar);
     }
   } else {
     uiInstance.updateConfig(vizDoc, viewportsMap, titleBlockMap);
+    if (currentVisualizerFilename !== workspace.activeFilename) {
+      uiInstance.resetView(); // Auto-deselect and re-center on file switch
+    }
   }
+  
+  currentVisualizerFilename = workspace.activeFilename;
 }
 
 // -----------------------------------------------------------------------------
@@ -158,8 +165,7 @@ function renderFileList() {
     'Drawing Sets': [],
     'Sheets': [],
     'Title Blocks': [],
-    'Details': [],
-    'Images': ['test-image.jpg']
+    'Details': []
   };
 
   for (const filename of Object.keys(files)) {
@@ -193,41 +199,7 @@ function renderFileList() {
     fileListEl.appendChild(header);
 
     for (const filename of filenames) {
-      if (groupName === 'Images') {
-        const li = document.createElement('li');
-        li.className = 'file-item' + (filename === workspace.activeFilename ? ' active' : '');
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = `🖼️  ${filename}`;
-        li.appendChild(nameSpan);
-        li.onclick = () => {
-          document.querySelectorAll('#file-list .file-item').forEach(el => el.classList.remove('active'));
-          li.classList.add('active');
-          
-          workspace.activeFilename = filename;
-          const activeFilenameEl = document.getElementById('active-filename');
-          if (activeFilenameEl) activeFilenameEl.textContent = filename;
-          
-          const visualizerContainer = document.getElementById('visualizer-container');
-          if (visualizerContainer) {
-            uiInstance = null;
-            visualizerContainer.innerHTML = `
-              <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #000; padding: 20px; box-sizing: border-box;">
-                <img src="${filename}" style="max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #1e293b; border-radius: 8px;" />
-              </div>
-            `;
-          }
-          
-          if (editor) {
-            editor.setValue('');
-          }
-          const tabInspector = document.getElementById('tab-content-inspector');
-          if (tabInspector) {
-            tabInspector.innerHTML = '<div style="padding: 20px; color: #94a3b8; text-align: center; font-family: monospace; font-size: 11px;">Image asset selected.<br/><br/>Images cannot be edited directly.</div>';
-          }
-        };
-        fileListEl.appendChild(li);
-        continue;
-      }
+
 
       const li = document.createElement('li');
       li.className = 'file-item' + (filename === workspace.activeFilename ? ' active' : '');
@@ -414,6 +386,7 @@ function showToast(msg: string) {
 }
 
 document.getElementById('btn-share')?.addEventListener('click', async () => {
+  workspace.syncToHash();
   const longUrl = window.location.href;
   
   try {
@@ -465,6 +438,17 @@ function initPaneToggles() {
 
   window.addEventListener('dac-toggle-left-pane', toggleLeft);
   window.addEventListener('dac-toggle-right-pane', toggleRight);
+  window.addEventListener('dac-open-file', ((e: CustomEvent) => {
+    const filename = e.detail?.filename;
+    if (filename && workspace.getFiles()[filename]) {
+      const isJson = tabContentJson?.classList.contains('active');
+      workspace.setActiveFile(filename);
+      updateEditor();
+      if (isJson) tabBtnJson?.click();
+    } else {
+      showToast('File not found: ' + filename);
+    }
+  }) as EventListener);
 }
 
 // -----------------------------------------------------------------------------

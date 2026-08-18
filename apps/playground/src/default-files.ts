@@ -280,19 +280,33 @@ export const defaultFiles: Record<string, any> = {
       "detail": "../detail-prototype.json",
       "x": "2",
       "y": "2",
-      "scale": "1\"=1'-0\""
+      "width": "10",
+      "height": "8",
+      "scale": "1\"=1'-0\"",
+      "detailNumber": "1",
+      "componentId": "vp_default_1"
     },
     {
       "detail": "../detail-prototype.json",
       "x": "15",
       "y": "10",
-      "scale": "1/2\"=1'-0\""
+      "width": "10",
+      "height": "8",
+      "scale": "1/2\"=1'-0\"",
+      "detailNumber": "2",
+      "componentId": "vp_default_2"
     },
     {
       "detail": "../general-notes.json",
       "x": "20",
       "y": "2",
-      "scale": "1:1"
+      "width": "8",
+      "height": "6",
+      "scale": "1:1",
+      "detailNumber": "3",
+      "hideScale": true,
+      "hideDetailNumber": true,
+      "componentId": "vp_default_3"
     }
   ]
 },

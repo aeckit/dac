@@ -62,7 +62,6 @@ export class WorkspaceManager {
   public setActiveFile(filename: string) {
     if (this.files[filename]) {
       this.activeFilename = filename;
-      this.syncToHash();
       this.onChange();
     }
   }
@@ -70,7 +69,6 @@ export class WorkspaceManager {
   public updateActiveFile(content: VisualizerDocument | SheetDocument) {
     if (this.activeFilename) {
       this.files[this.activeFilename] = content;
-      this.syncToHash();
       this.onChange();
     }
   }
@@ -80,7 +78,6 @@ export class WorkspaceManager {
     try {
       const parsed = JSON.parse(jsonString);
       this.files[this.activeFilename] = parsed;
-      this.syncToHash();
       this.onChange();
       return { success: true };
     } catch (e: any) {
@@ -92,7 +89,6 @@ export class WorkspaceManager {
     if (!this.files[filename]) {
       this.files[filename] = content;
       this.activeFilename = filename;
-      this.syncToHash();
       this.onChange();
     }
   }
@@ -103,7 +99,15 @@ export class WorkspaceManager {
       if (this.activeFilename === filename) {
         this.activeFilename = Object.keys(this.files)[0] || null;
       }
-      this.syncToHash();
+      this.onChange();
+    }
+  }
+
+  public duplicateFile(filename: string) {
+    if (this.files[filename]) {
+      const newName = `copy-of-${filename}`;
+      this.files[newName] = JSON.parse(JSON.stringify(this.files[filename]));
+      this.activeFilename = newName;
       this.onChange();
     }
   }
