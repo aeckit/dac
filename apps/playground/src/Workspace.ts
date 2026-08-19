@@ -1,9 +1,9 @@
 import LZString from 'lz-string';
-import type { SheetDocument, DetailDocument } from '@aeckit/core-solver';
+import type { SheetConfiguration, DetailDocument } from '@aeckit/core-solver';
 import type { VisualizerDocument } from '@aeckit/ui-components';
 import { defaultFiles } from './default-files';
 
-export type FileMap = Record<string, VisualizerDocument | SheetDocument>;
+export type FileMap = Record<string, VisualizerDocument | SheetConfiguration>;
 
 export class WorkspaceManager {
   private files: FileMap = {};
@@ -33,7 +33,7 @@ export class WorkspaceManager {
     
     // Default fallback
     this.files = JSON.parse(JSON.stringify(defaultFiles)); // Deep copy to avoid mutating the original
-    this.activeFilename = 'demo-drawing-set.json';
+    this.activeFilename = 'demo-project.json';
   }
 
   public syncToHash() {
@@ -49,7 +49,7 @@ export class WorkspaceManager {
     return this.files;
   }
 
-  public getActiveFileContent(): VisualizerDocument | SheetDocument | null {
+  public getActiveFileContent(): VisualizerDocument | SheetConfiguration | null {
     if (!this.activeFilename) return null;
     return this.files[this.activeFilename];
   }
@@ -66,7 +66,7 @@ export class WorkspaceManager {
     }
   }
 
-  public updateActiveFile(content: VisualizerDocument | SheetDocument) {
+  public updateActiveFile(content: VisualizerDocument | SheetConfiguration) {
     if (this.activeFilename) {
       this.files[this.activeFilename] = content;
       this.onChange();
@@ -85,7 +85,7 @@ export class WorkspaceManager {
     }
   }
 
-  public createFile(filename: string, content: VisualizerDocument | SheetDocument) {
+  public createFile(filename: string, content: VisualizerDocument | SheetConfiguration) {
     if (!this.files[filename]) {
       this.files[filename] = content;
       this.activeFilename = filename;

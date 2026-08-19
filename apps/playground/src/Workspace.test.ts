@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WorkspaceManager } from './Workspace';
-import type { DetailDocument, SheetDocument } from '@aeckit/core-solver';
+import type { DetailDocument, SheetConfiguration } from '@aeckit/core-solver';
 
 describe('WorkspaceManager & File Management UI Experience', () => {
   let onChange: () => void;
@@ -114,12 +114,12 @@ describe('WorkspaceManager & File Management UI Experience', () => {
           { type: 'CAD::Shape::Rectangle', x: 0, y: 0, width: 12, height: 12 }
         ]
       };
-      const sheetDoc: SheetDocument = {
-        type: 'CAD::Sheet',
+      const sheetDoc: SheetConfiguration = {
+        type: 'CAD::SheetConfiguration',
         sheetNumber: 'A001',
         sheetName: 'Floor Plan Sheet',
         paperSize: 'ARCH D',
-        titleBlock: 'detail.json',
+        titleBlockOverride: 'detail.json',
         viewports: []
       };
 

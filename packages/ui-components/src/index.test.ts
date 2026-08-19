@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { VisualizerUI } from './index';
-import { L1_REGISTRY, DetailDocument, DrawingSetDocument, SheetDocument, renderDetail } from '@aeckit/core-solver';
+import { L1_REGISTRY, DetailDocument, ProjectDocument, SheetConfiguration, renderDetail } from '@aeckit/core-solver';
 
 describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
   let container: HTMLElement;
@@ -194,8 +194,8 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
     const viewportsMap = new Map<string, DetailDocument>();
     viewportsMap.set('test-detail.json', vpDetail);
 
-    const sheetDoc: SheetDocument = {
-      type: 'CAD::Sheet',
+    const sheetDoc: SheetConfiguration = {
+      type: 'CAD::SheetConfiguration',
       sheetNumber: 'A101',
       sheetName: 'Plan Sheet',
       paperSize: 'ARCH D',
@@ -322,8 +322,8 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
   });
 
   it('VisualizerUI renders Document Properties when nothing is selected', () => {
-    const sheetDoc: SheetDocument = {
-      type: 'CAD::Sheet',
+    const sheetDoc: SheetConfiguration = {
+      type: 'CAD::SheetConfiguration',
       sheetNumber: 'A100',
       sheetName: 'Cover Sheet',
       paperSize: 'ARCH D',
@@ -343,8 +343,8 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
   });
 
   it('VisualizerUI renders Viewport properties when a viewport is selected', () => {
-    const sheetDoc: SheetDocument = {
-      type: 'CAD::Sheet',
+    const sheetDoc: SheetConfiguration = {
+      type: 'CAD::SheetConfiguration',
       sheetNumber: 'A101',
       sheetName: 'Plan',
       paperSize: 'ARCH D',
@@ -366,17 +366,17 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
   });
 
   it('Add Viewport Button (#btn-add-viewport) adds a viewport to the sheet', () => {
-    const sheetDoc: SheetDocument = {
-      type: 'CAD::Sheet',
+    const sheetDoc: SheetConfiguration = {
+      type: 'CAD::SheetConfiguration',
       sheetNumber: 'A102',
       sheetName: 'Elevations',
       paperSize: 'ARCH D',
       viewports: []
     };
     
-    let updatedDoc: SheetDocument | undefined;
+    let updatedDoc: SheetConfiguration | undefined;
     new VisualizerUI(container, sheetDoc, (doc) => {
-      updatedDoc = doc as SheetDocument;
+      updatedDoc = doc as SheetConfiguration;
     });
 
     const btn = container.querySelector('#btn-add-viewport') as HTMLButtonElement;
@@ -400,13 +400,13 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
       ]
     };
 
-    const dset: DrawingSetDocument = {
-      type: 'CAD::DrawingSet',
+    const dset: ProjectDocument = {
+      type: 'CAD::Project',
       project: 'Acme Corp',
       titleBlock: 'tb.json',
       sheets: [
         {
-          type: 'CAD::Sheet',
+          type: 'CAD::SheetConfiguration',
           sheetName: 'Floor Plan',
           sheetNumber: 'A101',
           paperSize: 'ARCH D',

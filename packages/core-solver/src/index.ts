@@ -61,29 +61,37 @@ export interface Viewport {
   componentId?: string;
 }
 
-export interface SheetDocument {
-  type: 'CAD::Sheet';
+export interface TitleBlockDocument {
+  type: 'CAD::TitleBlock';
+  version: string;
+  parameters?: Record<string, { type: string; default: any; value?: any; componentId?: string; min?: number; max?: number; label?: string }>;
+  geometry: GeometryPrimitive[];
+}
+
+export interface SheetConfiguration {
+  type: 'CAD::SheetConfiguration';
   sheetNumber: string;
   sheetName: string;
   paperSize: string;
-  titleBlock?: string | DetailDocument;
+  titleBlockOverride?: string | TitleBlockDocument;
   titleBlockOffsetX?: number;
   titleBlockOffsetY?: number;
   viewports: Viewport[];
   geometry?: GeometryPrimitive[];
 }
 
-export interface DrawingSetDocument {
-  type: 'CAD::DrawingSet';
-  project: string;
-  titleBlockData?: Record<string, any>;
-  titleBlock?: string | DetailDocument;
+export interface ProjectDocument {
+  type: 'CAD::Project';
+  projectName: string;
+  projectNumber?: string;
+  projectAddress?: string;
+  defaultTitleBlockRef?: string | TitleBlockDocument;
   titleBlockOffsetX?: number;
   titleBlockOffsetY?: number;
-  sheets: (string | SheetDocument)[];
+  sheets: (string | SheetConfiguration)[];
 }
 
-export type VisualizerDocument = DetailDocument | DrawingSetDocument | SheetDocument;
+export type VisualizerDocument = DetailDocument | ProjectDocument | SheetConfiguration | TitleBlockDocument;
 
 /**
  * Returns the scale multiplier (model inches to paper inches).
@@ -456,7 +464,7 @@ function getStyles(): string {
 /**
  * Evaluates geometry shapes and groups them by componentId
  */
-export function compileGeometryGroups(doc: DetailDocument, scale: number, globalParams: Record<string, number | boolean> = {}, canvasHeight = 18, isInteractive = true): string {
+export function compileGeometryGroups(doc: DetailDocument | TitleBlockDocument, scale: number, globalParams: Record<string, number | boolean> = {}, canvasHeight = 18, isInteractive = true): string {
   const resolvedParams: Record<string, number | boolean> = { ...globalParams };
 
   if (doc.parameters) {
@@ -585,13 +593,13 @@ function getPaperDimensions(size: string): { width: number; height: number } {
 }
 
 /**
- * Renders a full SheetDocument with an embedded title block and viewports
+ * Renders a full SheetConfiguration with an embedded title block and viewports
  */
 export function renderSheet(
-  sheet: SheetDocument,
+  sheet: SheetConfiguration,
   titleBlockData: Record<string, any>,
   viewportsMap: Map<string, DetailDocument>,
-  titleBlockDoc?: DetailDocument,
+  titleBlockDoc?: TitleBlockDocument,
   tbOffsetX = 0,
   tbOffsetY = 0
 ): string {
@@ -645,7 +653,7 @@ export function renderSheet(
       if (!displayTitle && typeof vp.detail === 'string') {
         // Fallback to filename (e.g. "../detail-prototype.json" -> "Detail Prototype")
         const basename = vp.detail.split('/').pop() || '';
-        displayTitle = basename.replace('.json', '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        displayTitle = basename.replace('.json', '').split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       }
       
       // Title and Scale label SVG elements

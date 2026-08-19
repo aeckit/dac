@@ -2,7 +2,7 @@
 
 export const defaultFiles: Record<string, any> = {
   'title-block.json': {
-  "type": "CAD::Detail",
+  "type": "CAD::TitleBlock",
   "version": "1.0",
   "scale": "1:1",
   "parameters": {},
@@ -270,7 +270,7 @@ export const defaultFiles: Record<string, any> = {
   ]
 },
   'sheets/S-101.json': {
-  "type": "CAD::Sheet",
+  "type": "CAD::SheetConfiguration",
   "sheetNumber": "S-101",
   "sheetName": "Foundation Plan & Details",
   "paperSize": "Arch D",
@@ -310,8 +310,8 @@ export const defaultFiles: Record<string, any> = {
     }
   ]
 },
-  'demo-drawing-set.json': {
-  "type": "CAD::DrawingSet",
+  'demo-project.json': {
+  "type": "CAD::Project",
   "project": "AECKit Demo Project",
   "titleBlockData": {
     "projectName": "ACME WAREHOUSE",

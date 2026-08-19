@@ -1,8 +1,8 @@
-import { DetailDocument, DrawingSetDocument, SheetDocument, renderDetail, renderSheet, resolveScaleMultiplier } from '@aeckit/core-solver';
+import { DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, renderDetail, renderSheet, resolveScaleMultiplier } from '@aeckit/core-solver';
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from './editors';
 import { Viewport } from '@aeckit/core-solver';
 import { ParametricEditorContext, PropertyEditorContext } from './editors/types';
-export type VisualizerDocument = DetailDocument | DrawingSetDocument | SheetDocument;
+export type VisualizerDocument = DetailDocument | ProjectDocument | SheetConfiguration | TitleBlockDocument;
 
 export interface VisualizerUIOptions {
   showLeftToggle?: boolean;  // default: true
@@ -13,8 +13,8 @@ export class VisualizerUI {
   private container: HTMLElement;
   private doc: VisualizerDocument;
   private viewportsMap: Map<string, DetailDocument>;
-  private titleBlockMap: Map<string, DetailDocument>;
-  private onChange: (doc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, DetailDocument>) => void;
+  private titleBlockMap: Map<string, TitleBlockDocument | DetailDocument>;
+  private onChange: (doc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>) => void;
   private options: VisualizerUIOptions;
 
   // Drawing Set state
@@ -53,9 +53,9 @@ export class VisualizerUI {
   constructor(
     container: HTMLElement,
     initialDoc: VisualizerDocument,
-    onChange: (doc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, DetailDocument>) => void,
+    onChange: (doc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>) => void,
     viewportsMap?: Map<string, DetailDocument>,
-    titleBlockMap?: Map<string, DetailDocument>,
+    titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>,
     options?: VisualizerUIOptions
   ) {
     this.container = container;
@@ -70,17 +70,17 @@ export class VisualizerUI {
     this.setupInteractivity();
   }
 
-  private isDrawingSet(): boolean {
-    return this.doc.type === 'CAD::DrawingSet';
+  private isProject(): boolean {
+    return this.doc.type === 'CAD::Project';
   }
 
-  public getActiveSheet(): SheetDocument | null {
-    if (this.doc.type === 'CAD::Sheet') {
-      return this.doc as SheetDocument;
+  public getActiveSheet(): SheetConfiguration | null {
+    if (this.doc.type === 'CAD::SheetConfiguration') {
+      return this.doc as SheetConfiguration;
     }
-    if (this.isDrawingSet()) {
-      const ds = this.doc as DrawingSetDocument;
-      return ds.sheets[this.activeSheetIndex] as SheetDocument;
+    if (this.isProject()) {
+      const ds = this.doc as ProjectDocument;
+      return ds.sheets[this.activeSheetIndex] as SheetConfiguration;
     }
     return null;
   }
@@ -99,7 +99,7 @@ export class VisualizerUI {
     this.container.className = 'visualizer-container';
 
     // Scale settings are only relevant if it's a DetailDocument (since sheets are always 1:1 paper)
-    const globalSettingsHtml = this.doc.type === 'CAD::Detail' ? `
+    const globalSettingsHtml = (this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock') ? `
       <div class="card" id="global-settings-card">
         <h3>Global Settings</h3>
         <div class="form-group row-align">
@@ -247,7 +247,7 @@ export class VisualizerUI {
       }
     });
 
-    if (this.doc.type === 'CAD::Detail') {
+    if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
       const scaleSelect = this.leftPanel.querySelector('#scale-select') as HTMLSelectElement;
       if (scaleSelect) {
         scaleSelect.addEventListener('change', () => {
@@ -266,7 +266,7 @@ export class VisualizerUI {
           if (Math.abs(widthInches - this.sandboxWidth) > 0.1 || Math.abs(heightInches - this.sandboxHeight) > 0.1) {
             this.sandboxWidth = widthInches;
             this.sandboxHeight = heightInches;
-            if (this.doc.type === 'CAD::Detail') {
+            if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
               this.renderSVG();
             }
           }
@@ -282,9 +282,9 @@ export class VisualizerUI {
 
     const btnAddRect = this.rightPanel.querySelector('#btn-add-rect') as HTMLButtonElement;
     btnAddRect?.addEventListener('click', () => {
-      const isDrawingSet = this.isDrawingSet();
-      if (!isDrawingSet && this.doc.type !== 'CAD::Detail') return;
-      const targetDoc = (isDrawingSet ? this.getActiveSheet() : this.doc) as any;
+      const isProject = this.isProject();
+      if (!isProject && (this.doc.type !== 'CAD::Detail' && this.doc.type !== 'CAD::TitleBlock')) return;
+      const targetDoc = (isProject ? this.getActiveSheet() : this.doc) as any;
       if (!targetDoc) return;
       if (!targetDoc.geometry) targetDoc.geometry = [];
       const id = 'rect_' + Date.now().toString(36);
@@ -298,9 +298,9 @@ export class VisualizerUI {
 
     const btnAddLine = this.rightPanel.querySelector('#btn-add-line') as HTMLButtonElement;
     btnAddLine?.addEventListener('click', () => {
-      const isDrawingSet = this.isDrawingSet();
-      if (!isDrawingSet && this.doc.type !== 'CAD::Detail') return;
-      const targetDoc = (isDrawingSet ? this.getActiveSheet() : this.doc) as any;
+      const isProject = this.isProject();
+      if (!isProject && (this.doc.type !== 'CAD::Detail' && this.doc.type !== 'CAD::TitleBlock')) return;
+      const targetDoc = (isProject ? this.getActiveSheet() : this.doc) as any;
       if (!targetDoc) return;
       if (!targetDoc.geometry) targetDoc.geometry = [];
       const id = 'line_' + Date.now().toString(36);
@@ -314,9 +314,9 @@ export class VisualizerUI {
 
     const btnAddText = this.rightPanel.querySelector('#btn-add-text') as HTMLButtonElement;
     btnAddText?.addEventListener('click', () => {
-      const isDrawingSet = this.isDrawingSet();
-      if (!isDrawingSet && this.doc.type !== 'CAD::Detail') return;
-      const targetDoc = (isDrawingSet ? this.getActiveSheet() : this.doc) as any;
+      const isProject = this.isProject();
+      if (!isProject && (this.doc.type !== 'CAD::Detail' && this.doc.type !== 'CAD::TitleBlock')) return;
+      const targetDoc = (isProject ? this.getActiveSheet() : this.doc) as any;
       if (!targetDoc) return;
       if (!targetDoc.geometry) targetDoc.geometry = [];
       const id = 'text_' + Date.now().toString(36);
@@ -330,9 +330,9 @@ export class VisualizerUI {
 
     const btnAddImage = this.rightPanel.querySelector('#btn-add-image') as HTMLButtonElement;
     btnAddImage?.addEventListener('click', () => {
-      const isDrawingSet = this.isDrawingSet();
-      if (!isDrawingSet && this.doc.type !== 'CAD::Detail') return;
-      const targetDoc = (isDrawingSet ? this.getActiveSheet() : this.doc) as any;
+      const isProject = this.isProject();
+      if (!isProject && (this.doc.type !== 'CAD::Detail' && this.doc.type !== 'CAD::TitleBlock')) return;
+      const targetDoc = (isProject ? this.getActiveSheet() : this.doc) as any;
       if (!targetDoc) return;
       if (!targetDoc.geometry) targetDoc.geometry = [];
       
@@ -362,7 +362,7 @@ export class VisualizerUI {
 
     const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
     btnAddViewport?.addEventListener('click', () => {
-      if (this.isDrawingSet()) return;
+      if (this.isProject()) return;
       const activeSheet = this.getActiveSheet();
       if (activeSheet) {
         if (!activeSheet.viewports) activeSheet.viewports = [];
@@ -408,17 +408,17 @@ export class VisualizerUI {
   }
 
   private renderSheetDropdown() {
-    if (!this.isDrawingSet()) {
+    if (!this.isProject()) {
       this.sheetDropdownContainer.innerHTML = '';
       return;
     }
 
-    const ds = this.doc as DrawingSetDocument;
+    const ds = this.doc as ProjectDocument;
 
     let optionsHtml = '';
     if (ds.sheets && ds.sheets.length > 0) {
       ds.sheets.forEach((sheetObj, index) => {
-        const s = sheetObj as SheetDocument;
+        const s = sheetObj as SheetConfiguration;
         optionsHtml += `<option value="${index}" ${index === this.activeSheetIndex ? 'selected' : ''}>${s.sheetNumber || 'Unnamed'} - ${s.sheetName || 'Unnamed'}</option>`;
       });
     } else {
@@ -825,7 +825,7 @@ export class VisualizerUI {
 
       // 2. SELECTION (Left Click)
       if (e.button === 0) {
-        if (this.doc.type === 'CAD::DrawingSet') {
+        if (this.doc.type === 'CAD::Project') {
           return;
         }
 
@@ -1281,15 +1281,15 @@ export class VisualizerUI {
   }
 
   private findDocumentForComponent(docId: string): DetailDocument | null {
-    if (this.doc.type === 'CAD::Detail') {
+    if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
       return this.doc as DetailDocument;
     }
-    let sheet: SheetDocument;
-    if (this.doc.type === 'CAD::DrawingSet') {
-      const ds = this.doc as DrawingSetDocument;
-      sheet = ds.sheets[this.activeSheetIndex] as SheetDocument;
+    let sheet: SheetConfiguration;
+    if (this.doc.type === 'CAD::Project') {
+      const ds = this.doc as ProjectDocument;
+      sheet = ds.sheets[this.activeSheetIndex] as SheetConfiguration;
     } else {
-      sheet = this.doc as SheetDocument;
+      sheet = this.doc as SheetConfiguration;
     }
 
     const docContainsSelected = (d: DetailDocument | undefined): boolean => {
@@ -1309,8 +1309,8 @@ export class VisualizerUI {
       return false;
     };
 
-    if (sheet.titleBlock && typeof sheet.titleBlock === 'string') {
-      const tbDoc = this.titleBlockMap.get(sheet.titleBlock);
+    if (sheet.titleBlockOverride && typeof sheet.titleBlockOverride === 'string') {
+      const tbDoc = this.titleBlockMap.get(sheet.titleBlockOverride) as any;
       if (docContainsSelected(tbDoc)) return tbDoc!;
     }
 
@@ -1332,7 +1332,7 @@ export class VisualizerUI {
     if (this.selectedComponentIds.size === 0) {
       // Nothing selected, render Document Properties
       let scheduleHtml = '';
-      if (this.doc.type === 'CAD::Sheet') {
+      if (this.doc.type === 'CAD::SheetConfiguration') {
         const sheet = this.getActiveSheet();
         if (sheet && sheet.viewports && sheet.viewports.length > 0) {
           scheduleHtml = `
@@ -1389,7 +1389,7 @@ export class VisualizerUI {
         const rows = this.propertiesCardContainer.querySelectorAll('.schedule-row');
         rows.forEach(row => {
           row.addEventListener('click', () => {
-            if (this.isDrawingSet()) return;
+            if (this.isProject()) return;
             const cid = row.getAttribute('data-cid');
             if (cid) {
               this.selectedComponentIds.clear();
@@ -1617,26 +1617,26 @@ export class VisualizerUI {
   private renderSVG() {
     try {
       let svg = '';
-      if (this.isDrawingSet() || this.doc.type === 'CAD::Sheet') {
-        let sheet: SheetDocument;
+      if (this.isProject() || this.doc.type === 'CAD::SheetConfiguration') {
+        let sheet: SheetConfiguration;
         let titleBlockData: Record<string, any> = {};
         let fallbackTb = '';
         let fallbackX = 0;
         let fallbackY = 0;
 
-        if (this.doc.type === 'CAD::DrawingSet') {
-          const ds = this.doc as DrawingSetDocument;
-          sheet = ds.sheets[this.activeSheetIndex] as SheetDocument;
-          titleBlockData = ds.titleBlockData ? { ...ds.titleBlockData } : {};
-          fallbackTb = (ds.titleBlock as string) || '';
+        if (this.doc.type === 'CAD::Project') {
+          const ds = this.doc as ProjectDocument;
+          sheet = ds.sheets[this.activeSheetIndex] as SheetConfiguration;
+          titleBlockData = {};
+          fallbackTb = (ds.defaultTitleBlockRef as string) || '';
           fallbackX = ds.titleBlockOffsetX || 0;
           fallbackY = ds.titleBlockOffsetY || 0;
-          if (ds.project) {
-            titleBlockData['ProjectName'] = ds.project;
-            titleBlockData['projectName'] = ds.project;
+          if (ds.projectName) {
+            titleBlockData['ProjectName'] = ds.projectName;
+            titleBlockData['projectName'] = ds.projectName;
           }
         } else {
-          sheet = this.doc as SheetDocument;
+          sheet = this.doc as SheetConfiguration;
         }
 
         if (!sheet) {
@@ -1654,8 +1654,8 @@ export class VisualizerUI {
           titleBlockData['sheetNumber'] = sheet.sheetNumber;
         }
 
-        let titleBlockDoc: DetailDocument | undefined = undefined;
-        const resolvedTb = (sheet.titleBlock as string) || fallbackTb;
+        let titleBlockDoc: TitleBlockDocument | DetailDocument | undefined = undefined;
+        const resolvedTb = (sheet.titleBlockOverride as string) || fallbackTb;
         
         if (resolvedTb) {
           titleBlockDoc = this.titleBlockMap.get(resolvedTb);
@@ -1664,7 +1664,7 @@ export class VisualizerUI {
         const effectiveX = sheet.titleBlockOffsetX !== undefined ? sheet.titleBlockOffsetX : fallbackX;
         const effectiveY = sheet.titleBlockOffsetY !== undefined ? sheet.titleBlockOffsetY : fallbackY;
 
-        svg = renderSheet(sheet, titleBlockData, this.viewportsMap, titleBlockDoc, effectiveX, effectiveY);
+        svg = renderSheet(sheet, titleBlockData, this.viewportsMap, titleBlockDoc as any, effectiveX, effectiveY);
       } else {
         svg = renderDetail(this.doc as DetailDocument, this.sandboxWidth, this.sandboxHeight);
       }
@@ -1702,7 +1702,7 @@ export class VisualizerUI {
         });
       }
 
-      const isDetail = this.doc.type === 'CAD::Detail';
+      const isDetail = (this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock');
       const btnAddRect = this.rightPanel.querySelector('#btn-add-rect') as HTMLButtonElement;
       const btnAddLine = this.rightPanel.querySelector('#btn-add-line') as HTMLButtonElement;
       const btnAddText = this.rightPanel.querySelector('#btn-add-text') as HTMLButtonElement;
@@ -1710,13 +1710,13 @@ export class VisualizerUI {
       const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
       const headerDivider = this.rightPanel.querySelector('#canvas-header-divider') as HTMLElement;
 
-      if (this.isDrawingSet()) {
+      if (this.isProject()) {
         if (btnAddRect) { btnAddRect.disabled = true; btnAddRect.style.opacity = '0.3'; btnAddRect.style.cursor = 'not-allowed'; }
         if (btnAddLine) { btnAddLine.disabled = true; btnAddLine.style.opacity = '0.3'; btnAddLine.style.cursor = 'not-allowed'; }
         if (btnAddText) { btnAddText.disabled = true; btnAddText.style.opacity = '0.3'; btnAddText.style.cursor = 'not-allowed'; }
         if (btnAddImage) { btnAddImage.disabled = true; btnAddImage.style.opacity = '0.3'; btnAddImage.style.cursor = 'not-allowed'; }
         if (btnAddViewport) { btnAddViewport.disabled = true; btnAddViewport.style.opacity = '0.3'; btnAddViewport.style.cursor = 'not-allowed'; }
-      } else if (this.doc.type === 'CAD::Sheet') {
+      } else if (this.doc.type === 'CAD::SheetConfiguration') {
         if (btnAddRect) { btnAddRect.disabled = false; btnAddRect.style.opacity = '1'; btnAddRect.style.cursor = 'pointer'; }
         if (btnAddLine) { btnAddLine.disabled = false; btnAddLine.style.opacity = '1'; btnAddLine.style.cursor = 'pointer'; }
         if (btnAddText) { btnAddText.disabled = false; btnAddText.style.opacity = '1'; btnAddText.style.cursor = 'pointer'; }
@@ -1733,11 +1733,11 @@ export class VisualizerUI {
 
       const viewTypeBadge = this.rightPanel.querySelector('#canvas-view-type-badge') as HTMLElement;
       if (viewTypeBadge) {
-        if (this.doc.type === 'CAD::DrawingSet') {
+        if (this.doc.type === 'CAD::Project') {
           viewTypeBadge.textContent = 'SET VIEW';
-        } else if (this.doc.type === 'CAD::Sheet') {
+        } else if (this.doc.type === 'CAD::SheetConfiguration') {
           viewTypeBadge.textContent = 'SHEET VIEW';
-        } else if (this.doc.type === 'CAD::Detail') {
+        } else if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
           viewTypeBadge.textContent = 'DETAIL VIEW';
         } else {
           viewTypeBadge.textContent = (this.doc as any).type || 'UNKNOWN';
@@ -1758,7 +1758,7 @@ export class VisualizerUI {
     this.onChange(this.doc, this.viewportsMap, this.titleBlockMap);
   }
 
-  public updateConfig(newDoc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, DetailDocument>) {
+  public updateConfig(newDoc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>) {
     this.doc = JSON.parse(JSON.stringify(newDoc));
     if (viewportsMap) this.viewportsMap = viewportsMap;
     if (titleBlockMap) this.titleBlockMap = titleBlockMap;

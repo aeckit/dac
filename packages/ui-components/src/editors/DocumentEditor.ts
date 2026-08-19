@@ -1,15 +1,15 @@
 import { PropertyEditor, ParametricEditorContext } from './types';
-import { DetailDocument, SheetDocument, DrawingSetDocument } from '@aeckit/core-solver';
+import { DetailDocument, SheetConfiguration, ProjectDocument } from '@aeckit/core-solver';
 
 export interface DocumentEditorContext {
   container: HTMLElement;
-  getLatestDoc: () => DetailDocument | SheetDocument | DrawingSetDocument | null;
-  getActiveSheet?: () => SheetDocument | null;
+  getLatestDoc: () => any | null;
+  getActiveSheet?: () => SheetConfiguration | null;
   updateAndNotify: () => void;
 }
 
 export const DocumentEditor = {
-  renderHTML(doc: DetailDocument | SheetDocument | DrawingSetDocument, activeSheet?: SheetDocument | null): string {
+  renderHTML(doc: any, activeSheet?: SheetConfiguration | null): string {
     if (doc.type === 'CAD::Detail') {
       return `
         <div class="form-group" data-doc-prop="scale">
@@ -21,10 +21,10 @@ export const DocumentEditor = {
       `;
     }
 
-    if (doc.type === 'CAD::DrawingSet' || doc.type === 'CAD::Sheet') {
-      const isSheet = doc.type === 'CAD::Sheet';
-      const sheet = isSheet ? (doc as SheetDocument) : (activeSheet || null);
-      const dset = !isSheet ? (doc as DrawingSetDocument) : null;
+    if (doc.type === 'CAD::Project' || doc.type === 'CAD::SheetConfiguration') {
+      const isSheet = doc.type === 'CAD::SheetConfiguration';
+      const sheet = isSheet ? (doc as SheetConfiguration) : (activeSheet || null);
+      const dset = !isSheet ? (doc as ProjectDocument) : null;
       
       let html = '';
       if (dset) {
@@ -32,12 +32,12 @@ export const DocumentEditor = {
           <div class="form-group" data-doc-prop="project">
             <div class="control-label-row">
               <label class="control-label">Project Name</label>
-              <input type="text" class="precise-input doc-project-input" value="${dset.project || ''}" />
+              <input type="text" class="precise-input doc-project-input" value="${dset.projectName || ''}" />
             </div>
           </div>
         `;
         
-        let dsetTbName = typeof dset.titleBlock === 'string' ? dset.titleBlock : '';
+        let dsetTbName = typeof dset.defaultTitleBlockRef === 'string' ? dset.defaultTitleBlockRef : '';
         let dsetTbX = dset.titleBlockOffsetX || 0;
         let dsetTbY = dset.titleBlockOffsetY || 0;
         
@@ -89,7 +89,7 @@ export const DocumentEditor = {
           </div>
         `;
         
-        let sheetTbName = typeof sheet.titleBlock === 'string' ? sheet.titleBlock : '';
+        let sheetTbName = typeof sheet.titleBlockOverride === 'string' ? sheet.titleBlockOverride : '';
         let sheetTbX = sheet.titleBlockOffsetX || 0;
         let sheetTbY = sheet.titleBlockOffsetY || 0;
         
@@ -131,7 +131,7 @@ export const DocumentEditor = {
     };
     
     // Helper to safely get and update the active sheet
-    const updateSheet = (updater: (sheet: SheetDocument) => void) => {
+    const updateSheet = (updater: (sheet: SheetConfiguration) => void) => {
       if (getActiveSheet) {
         const sheet = getActiveSheet();
         if (sheet) {
@@ -139,7 +139,7 @@ export const DocumentEditor = {
           updateAndNotify();
         }
       } else {
-        updateDoc((doc) => { if (doc.type === 'CAD::Sheet') updater(doc); });
+        updateDoc((doc) => { if (doc.type === 'CAD::SheetConfiguration') updater(doc); });
       }
     };
 
@@ -151,11 +151,11 @@ export const DocumentEditor = {
       });
     }
 
-    // DrawingSet Listeners
+    // Project Listeners
     const projectInput = container.querySelector('.doc-project-input') as HTMLInputElement;
     if (projectInput) {
       projectInput.addEventListener('change', () => {
-        updateDoc((doc) => { if (doc.type === 'CAD::DrawingSet') doc.project = projectInput.value; });
+        updateDoc((doc) => { if (doc.type === 'CAD::Project') doc.project = projectInput.value; });
       });
     }
 
@@ -208,7 +208,7 @@ export const DocumentEditor = {
           updateSheet(applyTitleBlock);
         } else {
           updateDoc((doc) => {
-            if (doc.type === 'CAD::DrawingSet' || doc.type === 'CAD::Sheet') applyTitleBlock(doc);
+            if (doc.type === 'CAD::Project' || doc.type === 'CAD::SheetConfiguration') applyTitleBlock(doc);
           });
         }
       };

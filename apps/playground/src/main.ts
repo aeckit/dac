@@ -2,7 +2,7 @@ import * as monaco from 'monaco-editor';
 import * as uiComponents from '@aeckit/ui-components';
 const { VisualizerUI } = uiComponents;
 import type { VisualizerDocument, VisualizerUI as VisualizerUIType } from '@aeckit/ui-components';
-import type { DetailDocument, SheetDocument, DrawingSetDocument } from '@aeckit/core-solver';
+import type { DetailDocument, SheetConfiguration, ProjectDocument } from '@aeckit/core-solver';
 import { WorkspaceManager } from './Workspace';
 
 // -----------------------------------------------------------------------------
@@ -89,17 +89,17 @@ function updateVisualizer() {
   const titleBlockMap = workspace.getTitleBlockMap();
 
   let vizDoc: VisualizerDocument;
-  if (activeDoc.type === 'CAD::DrawingSet') {
+  if (activeDoc.type === 'CAD::Project') {
     vizDoc = {
       ...activeDoc,
-      sheets: (activeDoc as DrawingSetDocument).sheets.map(s => {
+      sheets: (activeDoc as ProjectDocument).sheets.map(s => {
         if (typeof s === 'string') {
           // Resolve string paths like "sheets/S-101.json"
-          return (files[s] || files[s.replace('sheets/', '')]) as SheetDocument;
+          return (files[s] || files[s.replace('sheets/', '')]) as SheetConfiguration;
         }
-        return s as SheetDocument;
+        return s as SheetConfiguration;
       }).filter(Boolean)
-    } as DrawingSetDocument;
+    } as ProjectDocument;
   } else {
     vizDoc = activeDoc as VisualizerDocument;
   }
@@ -162,24 +162,19 @@ function renderFileList() {
   const files = workspace.getFiles();
   
   const groups: Record<string, string[]> = {
-    'Drawing Sets': [],
-    'Sheets': [],
+    'Projects': [],
     'Title Blocks': [],
     'Details': []
   };
 
   for (const filename of Object.keys(files)) {
     const doc = files[filename];
-    if (doc.type === 'CAD::DrawingSet') {
-      groups['Drawing Sets'].push(filename);
-    } else if (doc.type === 'CAD::Sheet') {
-      groups['Sheets'].push(filename);
+    if (doc.type === 'CAD::Project') {
+      groups['Projects'].push(filename);
+    } else if (doc.type === 'CAD::TitleBlock') {
+      groups['Title Blocks'].push(filename);
     } else if (doc.type === 'CAD::Detail') {
-      if (filename.toLowerCase().includes('title') || filename.toLowerCase().includes('tb')) {
-        groups['Title Blocks'].push(filename);
-      } else {
-        groups['Details'].push(filename);
-      }
+      groups['Details'].push(filename);
     } else {
       groups['Details'].push(filename);
     }
@@ -284,8 +279,8 @@ document.getElementById('btn-new-detail')?.addEventListener('click', () => {
 
 document.getElementById('btn-new-sheet')?.addEventListener('click', () => {
   const isJson = tabContentJson?.classList.contains('active');
-  const doc: SheetDocument = {
-    type: 'CAD::Sheet',
+  const doc: SheetConfiguration = {
+    type: 'CAD::SheetConfiguration',
     sheetNumber: 'A101',
     sheetName: 'New Sheet',
     paperSize: 'Arch D',
@@ -297,9 +292,9 @@ document.getElementById('btn-new-sheet')?.addEventListener('click', () => {
 
 document.getElementById('btn-new-set')?.addEventListener('click', () => {
   const isJson = tabContentJson?.classList.contains('active');
-  const doc: DrawingSetDocument = {
-    type: 'CAD::DrawingSet',
-    project: 'New Project',
+  const doc: ProjectDocument = {
+    type: 'CAD::Project',
+    projectName: 'New Project',
     sheets: []
   };
   workspace.createFile(getUniqueName('project'), doc);

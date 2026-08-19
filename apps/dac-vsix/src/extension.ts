@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { DetailDocument, DrawingSetDocument, SheetDocument } from '@aeckit/core-solver';
+import { DetailDocument, ProjectDocument, SheetDocument } from '@aeckit/core-solver';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('DAC Visualizer Extension is active!');
@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  // Helper to parse the JSON drawing document and load dependencies if it's a DrawingSet
+  // Helper to parse the JSON drawing document and load dependencies if it's a Project
   async function parseAndLoadDocument(document: vscode.TextDocument): Promise<{ doc: any, viewportsMap?: Record<string, any>, titleBlockMap?: Record<string, any> } | null> {
     const text = document.getText();
     try {
@@ -42,20 +42,16 @@ export function activate(context: vscode.ExtensionContext) {
       
       const baseDir = path.dirname(document.fileName);
 
-      if (doc.type === 'CAD::DrawingSet' || doc.type === 'CAD::Sheet') {
-        let ds = doc as DrawingSetDocument;
+      if (doc.type === 'CAD::Project' || doc.type === 'CAD::SheetConfiguration') {
+        let ds = doc as ProjectDocument;
         
-        // If a Sheet is opened directly, wrap it in a dummy DrawingSet for the visualizer
-        if (doc.type === 'CAD::Sheet') {
+        // If a Sheet is opened directly, wrap it in a dummy Project for the visualizer
+        if (doc.type === 'CAD::SheetConfiguration') {
           const c = doc as SheetDocument;
           ds = {
-            type: 'CAD::DrawingSet',
-            project: 'Preview Sheet',
-            titleBlockData: {
-              projectName: "PREVIEW PROJECT",
-              projectAddress: "PREVIEW ADDRESS",
-              sheetNumber: c.sheetNumber || "S-XXX"
-            },
+            type: 'CAD::Project',
+            projectName: "PREVIEW PROJECT",
+            projectAddress: "PREVIEW ADDRESS",
             sheets: [c]
           };
         }
@@ -83,16 +79,28 @@ export function activate(context: vscode.ExtensionContext) {
           if (typeof sheet !== 'string') {
             resolveLocalImages(sheet, sheetBaseDir);
             // Load title block
-            if (sheet.titleBlock && typeof sheet.titleBlock === 'string') {
+
+            if (sheet.titleBlockOverride && typeof sheet.titleBlockOverride === "string") {
               try {
-                const tbPath = path.join(sheetBaseDir, sheet.titleBlock);
-                const tbContent = fs.readFileSync(tbPath, 'utf8');
-                titleBlockMap[sheet.titleBlock] = JSON.parse(tbContent);
-                resolveLocalImages(titleBlockMap[sheet.titleBlock], sheetBaseDir);
+                const tbPath = path.join(sheetBaseDir, sheet.titleBlockOverride);
+                const tbContent = fs.readFileSync(tbPath, "utf8");
+                titleBlockMap[sheet.titleBlockOverride] = JSON.parse(tbContent);
+                resolveLocalImages(titleBlockMap[sheet.titleBlockOverride], sheetBaseDir);
               } catch (e) {
-                console.error('Failed to load title block:', sheet.titleBlock);
+                console.error("Failed to load title block:", sheet.titleBlockOverride);
               }
             }
+            if (ds.defaultTitleBlockRef && typeof ds.defaultTitleBlockRef === "string") {
+              try {
+                const tbPath = path.join(baseDir, ds.defaultTitleBlockRef);
+                const tbContent = fs.readFileSync(tbPath, "utf8");
+                titleBlockMap[ds.defaultTitleBlockRef] = JSON.parse(tbContent);
+                resolveLocalImages(titleBlockMap[ds.defaultTitleBlockRef], baseDir);
+              } catch (e) {
+                console.error("Failed to load default title block:", ds.defaultTitleBlockRef);
+              }
+            }
+
             // Load viewports
             if (sheet.viewports) {
               for (const vp of sheet.viewports) {
