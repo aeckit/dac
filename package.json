@@ -12,7 +12,8 @@
     "test": "vitest run",
     "compile": "npm run compile --workspaces --if-present",
     "watch": "npm run watch --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build --workspaces --if-present",
+    "package": "npm run package --workspaces --if-present"
   },
   "devDependencies": {
     "happy-dom": "^20.11.1",

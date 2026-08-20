@@ -1,6 +1,10 @@
-*
-!dist/**
-!package.json
-!readme.md
-!LICENSE.txt
-!icon.png
+.vscode/**
+.vscodeignore
+node_modules/**
+src/**
+.gitignore
+*.config.js
+tsconfig.json
+esbuild.js
+**/*.map
+.DS_Store
