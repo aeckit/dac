@@ -362,7 +362,6 @@ export class VisualizerUI {
 
     const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
     btnAddViewport?.addEventListener('click', () => {
-      if (this.isProject()) return;
       const activeSheet = this.getActiveSheet();
       if (activeSheet) {
         if (!activeSheet.viewports) activeSheet.viewports = [];
@@ -1710,17 +1709,11 @@ export class VisualizerUI {
       const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
       const headerDivider = this.rightPanel.querySelector('#canvas-header-divider') as HTMLElement;
 
-      if (this.isProject()) {
+      if (this.isProject() || this.doc.type === 'CAD::SheetConfiguration') {
         if (btnAddRect) { btnAddRect.disabled = true; btnAddRect.style.opacity = '0.3'; btnAddRect.style.cursor = 'not-allowed'; }
         if (btnAddLine) { btnAddLine.disabled = true; btnAddLine.style.opacity = '0.3'; btnAddLine.style.cursor = 'not-allowed'; }
         if (btnAddText) { btnAddText.disabled = true; btnAddText.style.opacity = '0.3'; btnAddText.style.cursor = 'not-allowed'; }
         if (btnAddImage) { btnAddImage.disabled = true; btnAddImage.style.opacity = '0.3'; btnAddImage.style.cursor = 'not-allowed'; }
-        if (btnAddViewport) { btnAddViewport.disabled = true; btnAddViewport.style.opacity = '0.3'; btnAddViewport.style.cursor = 'not-allowed'; }
-      } else if (this.doc.type === 'CAD::SheetConfiguration') {
-        if (btnAddRect) { btnAddRect.disabled = false; btnAddRect.style.opacity = '1'; btnAddRect.style.cursor = 'pointer'; }
-        if (btnAddLine) { btnAddLine.disabled = false; btnAddLine.style.opacity = '1'; btnAddLine.style.cursor = 'pointer'; }
-        if (btnAddText) { btnAddText.disabled = false; btnAddText.style.opacity = '1'; btnAddText.style.cursor = 'pointer'; }
-        if (btnAddImage) { btnAddImage.disabled = false; btnAddImage.style.opacity = '1'; btnAddImage.style.cursor = 'pointer'; }
         if (btnAddViewport) { btnAddViewport.disabled = false; btnAddViewport.style.opacity = '1'; btnAddViewport.style.cursor = 'pointer'; }
       } else {
         if (btnAddRect) { btnAddRect.disabled = false; btnAddRect.style.opacity = '1'; btnAddRect.style.cursor = 'pointer'; }
