@@ -170,7 +170,6 @@ describe('Cartesian (+Y = UP) Coordinate System Unit Tests', () => {
         type: 'CAD::Sheet',
         sheetNumber: 'A101',
         sheetName: 'Plan',
-        paperSize: 'ARCH D',
         viewports: [
           { detail: detailDoc, x: 2, y: 2, scale: '1:1' }
         ]
@@ -201,7 +200,6 @@ describe('Cartesian (+Y = UP) Coordinate System Unit Tests', () => {
         type: 'CAD::Sheet',
         sheetNumber: 'A102',
         sheetName: 'Details Sheet',
-        paperSize: 'ARCH D',
         viewports: [
           { detail: detailDoc, x: 2, y: 2, scale: '1"=1\'-0"' }
         ]
@@ -234,7 +232,6 @@ describe('Cartesian (+Y = UP) Coordinate System Unit Tests', () => {
         type: 'CAD::Sheet',
         sheetNumber: 'A103',
         sheetName: 'Origin Sheet',
-        paperSize: 'ARCH D',
         viewports: [
           { detail: detailDoc, x: 0, y: 0, scale: '1/4"=1\'-0"' }
         ]

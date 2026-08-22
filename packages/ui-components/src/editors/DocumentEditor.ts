@@ -9,7 +9,7 @@ export interface DocumentEditorContext {
 }
 
 export const DocumentEditor = {
-  renderHTML(doc: any, activeSheet?: SheetConfiguration | null): string {
+  renderHTML(doc: any, sheet?: any, tbDoc?: any): string {
     if (doc.type === 'CAD::Detail') {
       return `
         <div class="form-group" data-doc-prop="scale">
@@ -23,8 +23,7 @@ export const DocumentEditor = {
 
     if (doc.type === 'CAD::Project' || doc.type === 'CAD::SheetConfiguration') {
       const isSheet = doc.type === 'CAD::SheetConfiguration';
-      const sheet = isSheet ? (doc as SheetConfiguration) : (activeSheet || null);
-      const dset = !isSheet ? (doc as ProjectDocument) : null;
+      const dset = doc.type === 'CAD::Project' ? doc : null;
       
       let html = '';
       if (dset) {
@@ -46,7 +45,7 @@ export const DocumentEditor = {
           <div class="form-group" data-doc-prop="titleBlock">
             <div class="control-label-row">
               <label class="control-label">Source File</label>
-              <input type="text" class="precise-input doc-titleblock-input" data-target="dset" placeholder="e.g. titleblock.json" value="${dsetTbName}" />
+              <input type="text" class="precise-input doc-titleblock-input" data-target="dset" placeholder="e.g. titleblock.json" value="${dsetTbName}" style="width: 120px;" />
             </div>
             <div class="control-label-row" style="margin-top: 8px;">
               <label class="control-label">Origin X</label>
@@ -59,6 +58,22 @@ export const DocumentEditor = {
           </div>
           <hr style="border: 0; border-top: 1px solid var(--vscode-panel-border); margin: 16px 0;" />
         `;
+
+        if (tbDoc && tbDoc.parameters) {
+          html += `<div class="sidebar-section-title" style="margin-bottom: 8px;">TITLE BLOCK PARAMETERS</div>`;
+          html += `<div class="form-group" data-doc-prop="tbParams">`;
+          for (const [key, paramDefRaw] of Object.entries(tbDoc.parameters)) {
+            const paramDef = paramDefRaw as any;
+            const val = (dset.parameters && dset.parameters[key] !== undefined) ? dset.parameters[key] : (paramDef.default !== undefined ? paramDef.default : '');
+            html += `
+              <div class="control-label-row">
+                <label class="control-label" title="${key}">${paramDef.label || key}</label>
+                <input type="text" class="precise-input doc-tbparam-input" data-param-key="${key}" value="${val}" style="width: 120px;" />
+              </div>
+            `;
+          }
+          html += `</div><hr style="border: 0; border-top: 1px solid var(--vscode-panel-border); margin: 16px 0;" />`;
+        }
       }
 
       if (sheet && !dset) {
@@ -155,9 +170,25 @@ export const DocumentEditor = {
     const projectInput = container.querySelector('.doc-project-input') as HTMLInputElement;
     if (projectInput) {
       projectInput.addEventListener('change', () => {
-        updateDoc((doc) => { if (doc.type === 'CAD::Project') doc.project = projectInput.value; });
+        updateDoc((doc) => { if (doc.type === 'CAD::Project') doc.projectName = projectInput.value; });
       });
     }
+
+    const tbParamInputs = container.querySelectorAll('.doc-tbparam-input');
+    tbParamInputs.forEach((el) => {
+      const input = el as HTMLInputElement;
+      input.addEventListener('change', () => {
+        const key = input.getAttribute('data-param-key');
+        if (key) {
+          updateDoc((doc) => {
+            if (doc.type === 'CAD::Project') {
+              if (!doc.parameters) doc.parameters = {};
+              doc.parameters[key] = input.value;
+            }
+          });
+        }
+      });
+    });
 
     // Sheet Listeners
     const sheetNameInput = container.querySelector('.doc-sheetname-input') as HTMLInputElement;
@@ -174,59 +205,45 @@ export const DocumentEditor = {
       });
     }
 
+    // Project Paper Size Listener
     const paperSizeInput = container.querySelector('.doc-papersize-input') as HTMLSelectElement;
     if (paperSizeInput) {
       paperSizeInput.addEventListener('change', () => {
-        updateSheet((sheet) => sheet.paperSize = paperSizeInput.value);
+        updateDoc((doc) => { if (doc.type === 'CAD::Project') doc.defaultPaperSize = paperSizeInput.value; });
       });
     }
 
-    // Title Block Listeners
-    const titleBlockInputs = container.querySelectorAll('.doc-titleblock-input');
-    const tbXInputs = container.querySelectorAll('.doc-tbx-input');
-    const tbYInputs = container.querySelectorAll('.doc-tby-input');
+    // Title Block Listeners (Project Level Only)
+    const titleBlockInput = container.querySelector('.doc-titleblock-input') as HTMLInputElement;
+    const tbXInput = container.querySelector('.doc-tbx-input') as HTMLInputElement;
+    const tbYInput = container.querySelector('.doc-tby-input') as HTMLInputElement;
     
-    const bindTitleBlockGroup = (tbInput: HTMLInputElement, xInput: HTMLInputElement, yInput: HTMLInputElement, isSheetTarget: boolean) => {
+    if (titleBlockInput && tbXInput && tbYInput) {
       const applyTitleBlock = (targetObj: any) => {
-        const name = tbInput?.value || '';
-        const x = parseFloat(xInput?.value || '0');
-        const y = parseFloat(yInput?.value || '0');
+        const name = titleBlockInput.value || '';
+        const x = parseFloat(tbXInput.value || '0');
+        const y = parseFloat(tbYInput.value || '0');
         
         if (!name) {
-          delete targetObj.titleBlock;
+          delete targetObj.defaultTitleBlockRef;
           delete targetObj.titleBlockOffsetX;
           delete targetObj.titleBlockOffsetY;
         } else {
-          targetObj.titleBlock = name;
+          targetObj.defaultTitleBlockRef = name;
           targetObj.titleBlockOffsetX = isNaN(x) ? 0 : x;
           targetObj.titleBlockOffsetY = isNaN(y) ? 0 : y;
         }
       };
 
       const handler = () => {
-        if (isSheetTarget) {
-          updateSheet(applyTitleBlock);
-        } else {
-          updateDoc((doc) => {
-            if (doc.type === 'CAD::Project' || doc.type === 'CAD::SheetConfiguration') applyTitleBlock(doc);
-          });
-        }
+        updateDoc((doc) => {
+          if (doc.type === 'CAD::Project') applyTitleBlock(doc);
+        });
       };
 
-      if (tbInput) tbInput.addEventListener('change', handler);
-      if (xInput) xInput.addEventListener('change', handler);
-      if (yInput) yInput.addEventListener('change', handler);
-    };
-
-    // The document might have 1 or 2 title block sections (one for DSET, one for ACTIVE SHEET)
-    // We bind them iteratively and check their data-target
-    for (let i = 0; i < titleBlockInputs.length; i++) {
-      const tbInput = titleBlockInputs[i] as HTMLInputElement;
-      const xInput = tbXInputs[i] as HTMLInputElement;
-      const yInput = tbYInputs[i] as HTMLInputElement;
-      const isSheetTarget = tbInput.getAttribute('data-target') === 'sheet';
-      
-      bindTitleBlockGroup(tbInput, xInput, yInput, isSheetTarget);
+      titleBlockInput.addEventListener('change', handler);
+      tbXInput.addEventListener('change', handler);
+      tbYInput.addEventListener('change', handler);
     }
   }
 };

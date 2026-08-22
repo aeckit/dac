@@ -118,8 +118,6 @@ describe('WorkspaceManager & File Management UI Experience', () => {
         type: 'CAD::SheetConfiguration',
         sheetNumber: 'A001',
         sheetName: 'Floor Plan Sheet',
-        paperSize: 'ARCH D',
-        titleBlockOverride: 'detail.json',
         viewports: []
       };
 

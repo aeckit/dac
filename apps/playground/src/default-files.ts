@@ -5,7 +5,10 @@ export const defaultFiles: Record<string, any> = {
   "type": "CAD::TitleBlock",
   "version": "1.0",
   "scale": "1:1",
-  "parameters": {},
+  "parameters": {
+    "projectAddress": { "type": "string", "label": "Project Address", "default": "N/A" },
+    "projectNumber": { "type": "string", "label": "Project Number", "default": "0000" }
+  },
   "geometry": [
     {
       "type": "CAD::Shape::Rectangle",
@@ -55,10 +58,9 @@ export const defaultFiles: Record<string, any> = {
       "space": "paper"
     },
     {
-      "type": "CAD::Annotation::TextBox",
+      "type": "CAD::Annotation::Text",
       "x": "31.5",
       "y": "21.5",
-      "width": "4",
       "text": "{parameters.projectAddress}",
       "fontSize": "14",
       "color": "#64748b",
@@ -93,7 +95,7 @@ export const defaultFiles: Record<string, any> = {
     }
   ]
 },
-  'general-notes.json': {
+  'welcome-detail.json': {
   "type": "CAD::Detail",
   "version": "1.0",
   "scale": "1:1",
@@ -101,225 +103,186 @@ export const defaultFiles: Record<string, any> = {
   "geometry": [
     {
       "type": "CAD::Annotation::Text",
-      "x": "0",
-      "y": "17",
-      "text": "GENERAL NOTES",
-      "fontSize": "32",
+      "x": "1",
+      "y": "16",
+      "text": "Welcome to AECKit Playground!",
+      "fontSize": "48",
       "color": "#f1f5f9",
       "space": "paper"
     },
     {
-      "type": "CAD::Annotation::TextBox",
+      "type": "CAD::Annotation::Text",
+      "x": "1",
+      "y": "14",
+      "text": "This playground lets you explore the AECKit CAD\nframework directly in your browser.\n\n1. Use the left sidebar to manage Projects, Sheets, and Details.\n2. Projects contain Sheets. Sheets contain Viewports.\n3. Viewports render Details at a specific scale.",
+      "fontSize": "20",
+      "color": "#cbd5e1",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Shape::Rectangle",
       "x": "0",
+      "y": "0",
+      "width": "20",
+      "height": "18",
+      "strokeWidth": "2",
+      "color": "#3b82f6",
+      "fill": "none",
+      "componentId": "border"
+    }
+  ]
+},
+  'json-editor-guide.json': {
+  "type": "CAD::Detail",
+  "version": "1.0",
+  "scale": "1:1",
+  "parameters": {},
+  "geometry": [
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "1",
       "y": "16",
-      "width": "8",
-      "text": "1. ALL CONCRETE SHALL BE MINIMUM 3000 PSI AT 28 DAYS.\n2. ALL REINFORCING STEEL SHALL BE ASTM A615 GRADE 60.\n3. CONTRACTOR SHALL VERIFY ALL DIMENSIONS PRIOR TO CONSTRUCTION.\n4. ANY DISCREPANCIES SHALL BE REPORTED TO THE ENGINEER OF RECORD IMMEDIATELY.",
+      "text": "JSON Mode & Editing",
+      "fontSize": "36",
+      "color": "#38bdf8",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "1",
+      "y": "14",
+      "text": "Click on any element in the canvas to select it.\n\nThen, open the Properties pane on the right and\nclick the 'JSON' toggle to view its raw data.\n\nYou can edit the JSON directly (e.g., change the\n'color' or 'width' property) and watch the canvas\nupdate in real-time!",
       "fontSize": "16",
       "color": "#94a3b8",
       "space": "paper"
     },
     {
-      "type": "CAD::Annotation::Image",
+      "type": "CAD::Shape::Rectangle",
       "x": "0",
-      "y": "4",
-      "width": "8",
-      "height": "6",
-      "href": "test-image.jpg"
+      "y": "0",
+      "width": "18",
+      "height": "18",
+      "strokeWidth": "2",
+      "color": "#38bdf8",
+      "fill": "none",
+      "componentId": "border"
+    },
+    {
+      "type": "CAD::Shape::Circle",
+      "cx": "9",
+      "cy": "4",
+      "r": "3",
+      "color": "#f43f5e",
+      "fill": "#881337",
+      "componentId": "demo-circle"
     }
   ]
 },
-  'detail-prototype.json': {
+  'components-demo.json': {
   "type": "CAD::Detail",
-  "version": "dac/v1",
-  "scale": "1/2\\",
-  "parameters": {
-    "sillPlateOffset": {
-      "type": "Number",
-      "default": 1.5,
-      "min": -8,
-      "max": 8,
-      "label": "Horizontal Offset (in)",
-      "componentId": "sill_plate_1",
-      "value": 0
-    },
-    "sillPlateVisible": {
-      "type": "Boolean",
-      "default": true,
-      "label": "Sill Plate Visible",
-      "componentId": "sill_plate_1",
-      "value": true
-    },
-    "anchorBoltOffset": {
-      "type": "Number",
-      "default": 0,
-      "min": -3,
-      "max": 3,
-      "label": "Bolt Local Offset (in)",
-      "componentId": "anchor_bolt_1",
-      "value": -1.5
-    }
-  },
+  "version": "1.0",
+  "scale": "1:1",
+  "parameters": {},
   "geometry": [
     {
-      "id": "foundation_wall_rect",
-      "type": "CAD::Shape::Rectangle",
-      "componentId": "foundation_wall_1",
-      "componentType": "CAD::Component::ConcreteWall",
-      "x": 18,
-      "y": 2,
-      "width": 24,
-      "height": 16,
-      "hatch": "Concrete"
+      "type": "CAD::Annotation::Text",
+      "x": "1",
+      "y": "8",
+      "text": "Components & Tools",
+      "fontSize": "24",
+      "color": "#a78bfa",
+      "space": "paper"
     },
     {
-      "id": "sill_plate_rect",
-      "type": "CAD::Shape::Rectangle",
-      "componentId": "sill_plate_1",
-      "componentType": "CAD::Component::SillPlate",
-      "x": "30 + {parameters.sillPlateOffset} - 7",
-      "y": 18,
-      "width": 14,
-      "height": 3.8,
-      "hatch": "TimberCross",
-      "visible": "{parameters.sillPlateVisible}"
+      "type": "CAD::Annotation::Text",
+      "x": "1",
+      "y": "7",
+      "text": "Use the bottom toolbar to add Viewports to sheets.\n\nWhen editing a detail, you can add lines,\nrectangles, and text elements.\n\nTry clicking on the shapes below to edit\ntheir properties.",
+      "fontSize": "14",
+      "color": "#94a3b8",
+      "space": "paper"
     },
     {
-      "id": "anchor_bolt_assembly",
       "type": "CAD::Shape::Rectangle",
-      "componentId": "anchor_bolt_1",
-      "componentType": "CAD::Component::AnchorBolt",
-      "x": "30 + {parameters.sillPlateOffset} + {parameters.anchorBoltOffset} - 0.375",
-      "y": 12,
-      "width": 0.75,
-      "height": 10,
-      "fill": "#64748b",
-      "color": "#cbd5e1"
+      "x": "0",
+      "y": "0",
+      "width": "12",
+      "height": "10",
+      "strokeWidth": "2",
+      "color": "#a78bfa",
+      "fill": "none",
+      "componentId": "border"
     },
     {
-      "id": "anchor_bolt_washer",
       "type": "CAD::Shape::Rectangle",
-      "componentId": "anchor_bolt_1",
-      "componentType": "CAD::Component::AnchorBolt",
-      "x": "30 + {parameters.sillPlateOffset} + {parameters.anchorBoltOffset} - 1.0",
-      "y": 21.8,
-      "width": 2,
-      "height": 0.25,
-      "fill": "#94a3b8",
-      "color": "#e2e8f0"
+      "x": "1",
+      "y": "1",
+      "width": "4",
+      "height": "2",
+      "color": "#22c55e",
+      "fill": "#14532d",
+      "componentId": "demo-rect"
     },
     {
-      "id": "anchor_bolt_nut",
-      "type": "CAD::Shape::Rectangle",
-      "componentId": "anchor_bolt_1",
-      "componentType": "CAD::Component::AnchorBolt",
-      "x": "30 + {parameters.sillPlateOffset} + {parameters.anchorBoltOffset} - 0.6",
-      "y": 22.05,
-      "width": 1.2,
-      "height": 0.8,
-      "fill": "#475569",
-      "color": "#cbd5e1"
-    },
-    {
-      "id": "center_cross_h",
       "type": "CAD::Shape::Line",
-      "componentId": "anchor_crosshair_1",
-      "componentType": "CAD::Component::ReferenceAnchor",
-      "x1": 29,
-      "y1": 18,
-      "x2": 31,
-      "y2": 18,
-      "color": "#f43f5e",
-      "strokeWidth": 1.5
-    },
-    {
-      "id": "center_cross_v",
-      "type": "CAD::Shape::Line",
-      "componentId": "anchor_crosshair_1",
-      "componentType": "CAD::Component::ReferenceAnchor",
-      "x1": 30,
-      "y1": 17,
-      "x2": 30,
-      "y2": 19,
-      "color": "#f43f5e",
-      "strokeWidth": 1.5
-    },
-    {
-      "id": "center_cross_c",
-      "type": "CAD::Shape::Circle",
-      "componentId": "anchor_crosshair_1",
-      "componentType": "CAD::Component::ReferenceAnchor",
-      "cx": 30,
-      "cy": 18,
-      "r": 0.3,
-      "color": "#f43f5e",
-      "strokeWidth": 1.5
-    },
-    {
-      "id": "offset_dimension_line",
-      "type": "CAD::Annotation::Dimension",
-      "componentId": "dimension_1",
-      "componentType": "CAD::Annotation::OffsetDimension",
-      "x1": 30,
-      "y1": 18,
-      "x2": "30 + {parameters.sillPlateOffset}",
-      "y2": 18,
-      "offset": 60,
-      "text": "{parameters.sillPlateOffset} in",
-      "visible": "{parameters.sillPlateVisible}"
+      "x1": "6",
+      "y1": "1",
+      "x2": "10",
+      "y2": "3",
+      "color": "#eab308",
+      "strokeWidth": "4",
+      "componentId": "demo-line"
     }
   ]
 },
-  'sheets/S-101.json': {
+  'DEMO-1.json': {
   "type": "CAD::SheetConfiguration",
-  "sheetNumber": "S-101",
-  "sheetName": "Foundation Plan & Details",
-  "paperSize": "Arch D",
-  "titleBlock": "../title-block.json",
+  "sheetNumber": "DEMO-1",
+  "sheetName": "Playground Tutorial",
   "viewports": [
     {
-      "detail": "../detail-prototype.json",
-      "x": "2",
-      "y": "2",
-      "width": "10",
-      "height": "8",
-      "scale": "1\"=1'-0\"",
-      "detailNumber": "1",
-      "componentId": "vp_default_1"
-    },
-    {
-      "detail": "../detail-prototype.json",
-      "x": "15",
+      "detail": "welcome-detail.json",
+      "x": "1",
       "y": "10",
-      "width": "10",
-      "height": "8",
-      "scale": "1/2\"=1'-0\"",
-      "detailNumber": "2",
-      "componentId": "vp_default_2"
+      "width": "15",
+      "height": "13",
+      "scale": "1:1.5",
+      "detailNumber": "1",
+      "componentId": "vp_welcome"
     },
     {
-      "detail": "../general-notes.json",
-      "x": "20",
-      "y": "2",
-      "width": "8",
-      "height": "6",
-      "scale": "1:1",
+      "detail": "json-editor-guide.json",
+      "x": "17",
+      "y": "10",
+      "width": "13",
+      "height": "13",
+      "scale": "1:1.5",
+      "detailNumber": "2",
+      "componentId": "vp_json"
+    },
+    {
+      "detail": "components-demo.json",
+      "x": "1",
+      "y": "1",
+      "width": "15",
+      "height": "8",
+      "scale": "1:1.5",
       "detailNumber": "3",
-      "hideScale": true,
-      "hideDetailNumber": true,
-      "componentId": "vp_default_3"
+      "componentId": "vp_components"
     }
   ]
 },
   'demo-project.json': {
   "type": "CAD::Project",
-  "project": "AECKit Demo Project",
-  "titleBlockData": {
-    "projectName": "ACME WAREHOUSE",
-    "projectAddress": "123 INDUSTRIAL WAY\nSEATTLE, WA 98101",
-    "sheetNumber": "S-101"
+  "projectName": "PLAYGROUND TUTORIAL",
+  "parameters": {
+    "projectAddress": "AECKit Virtual Space",
+    "projectNumber": "2026-001"
   },
+  "defaultTitleBlockRef": "title-block.json",
+  "defaultPaperSize": "ARCH D",
   "sheets": [
-    "sheets/S-101.json"
+    "DEMO-1.json"
   ]
-},
+}
 };

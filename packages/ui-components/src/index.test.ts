@@ -198,7 +198,6 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
       type: 'CAD::SheetConfiguration',
       sheetNumber: 'A101',
       sheetName: 'Plan Sheet',
-      paperSize: 'ARCH D',
       viewports: [
         {
           detail: 'test-detail.json',
@@ -326,7 +325,6 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
       type: 'CAD::SheetConfiguration',
       sheetNumber: 'A100',
       sheetName: 'Cover Sheet',
-      paperSize: 'ARCH D',
       viewports: []
     };
 
@@ -347,7 +345,6 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
       type: 'CAD::SheetConfiguration',
       sheetNumber: 'A101',
       sheetName: 'Plan',
-      paperSize: 'ARCH D',
       viewports: [
         { detail: 'test.json', x: 2, y: 2, scale: '1:1', componentId: 'vp_1' }
       ]
@@ -370,7 +367,6 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
       type: 'CAD::SheetConfiguration',
       sheetNumber: 'A102',
       sheetName: 'Elevations',
-      paperSize: 'ARCH D',
       viewports: []
     };
     
@@ -402,14 +398,13 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
 
     const dset: ProjectDocument = {
       type: 'CAD::Project',
-      project: 'Acme Corp',
-      titleBlock: 'tb.json',
+      projectName: 'Acme Corp',
+      defaultTitleBlockRef: 'tb.json',
       sheets: [
         {
           type: 'CAD::SheetConfiguration',
           sheetName: 'Floor Plan',
           sheetNumber: 'A101',
-          paperSize: 'ARCH D',
           viewports: []
         }
       ]
@@ -427,5 +422,69 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
     expect(svgHtml).toContain('>Floor Plan</text>');
     expect(svgHtml).toContain('>A101</text>');
     expect(svgHtml).toContain('>Acme Corp</text>');
+  });
+
+  it('VisualizerUI JSON Mode Toggle and Direct Edit Updates Document', () => {
+    const detailDoc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0.0',
+      scale: '1:1',
+      geometry: [
+        { type: 'CAD::Shape::Rectangle', x: 5, y: 10, width: 12, height: 4, componentId: 'rect_1' }
+      ]
+    };
+
+    let latestDoc: DetailDocument | undefined;
+    const ui = new VisualizerUI(container, detailDoc, (doc) => {
+      latestDoc = doc as DetailDocument;
+    });
+
+    const btnJson = container.querySelector('#btn-mode-json') as HTMLButtonElement;
+    expect(btnJson).not.toBeNull();
+    btnJson.click();
+
+    const textarea = container.querySelector('#json-editor-textarea') as HTMLTextAreaElement;
+    expect(textarea).not.toBeNull();
+
+    // Verify current root doc JSON is serialized in the textarea
+    const parsedInit = JSON.parse(textarea.value);
+    expect(parsedInit.type).toBe('CAD::Detail');
+    expect(parsedInit.geometry[0].width).toBe(12);
+
+    // Edit JSON value directly (e.g. increase width of rectangle)
+    const updatedDoc = JSON.parse(textarea.value);
+    updatedDoc.geometry[0].width = 20;
+    textarea.value = JSON.stringify(updatedDoc, null, 2);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(latestDoc).toBeDefined();
+    expect(latestDoc!.geometry![0].width).toBe(20);
+  });
+
+  it('VisualizerUI JSON Mode displays context-aware shape JSON when selected', () => {
+    const detailDoc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0.0',
+      scale: '1:1',
+      geometry: [
+        { type: 'CAD::Shape::Rectangle', x: 5, y: 10, width: 12, height: 4, componentId: 'rect_1' }
+      ]
+    };
+
+    const ui = new VisualizerUI(container, detailDoc, () => {});
+    ui.selectComponent('rect_1', 'CAD::Shape::Rectangle');
+
+    const btnJson = container.querySelector('#btn-mode-json') as HTMLButtonElement;
+    expect(btnJson).not.toBeNull();
+    btnJson.click();
+
+    const textarea = container.querySelector('#json-editor-textarea') as HTMLTextAreaElement;
+    expect(textarea).not.toBeNull();
+
+    // Verify ONLY the selected rectangle shape is serialized, not the full document
+    const parsedShape = JSON.parse(textarea.value);
+    expect(parsedShape.type).toBe('CAD::Shape::Rectangle');
+    expect(parsedShape.width).toBe(12);
+    expect(parsedShape.geometry).toBeUndefined(); // It is just the shape object!
   });
 });

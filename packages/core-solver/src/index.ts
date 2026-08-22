@@ -72,8 +72,6 @@ export interface SheetConfiguration {
   type: 'CAD::SheetConfiguration';
   sheetNumber: string;
   sheetName: string;
-  paperSize: string;
-  titleBlockOverride?: string | TitleBlockDocument;
   titleBlockOffsetX?: number;
   titleBlockOffsetY?: number;
   viewports: Viewport[];
@@ -83,11 +81,11 @@ export interface SheetConfiguration {
 export interface ProjectDocument {
   type: 'CAD::Project';
   projectName: string;
-  projectNumber?: string;
-  projectAddress?: string;
   defaultTitleBlockRef?: string | TitleBlockDocument;
+  defaultPaperSize?: string;
   titleBlockOffsetX?: number;
   titleBlockOffsetY?: number;
+  parameters?: Record<string, any>;
   sheets: (string | SheetConfiguration)[];
 }
 
@@ -156,7 +154,7 @@ function drawLine(shape: GeometryPrimitive, params: Record<string, number | bool
   const strokeWidth = ((shape.strokeWidth || 2) / 72) / scale;
   const dashArray = shape.strokeDasharray ? `stroke-dasharray="${shape.strokeDasharray}"` : '';
 
-  const hitTarget = `<path d="M ${x1} ${y1} L ${x2} ${y2}" stroke="transparent" stroke-width="0.5" pointer-events="stroke" class="line-hit-target" />`;
+  const hitTarget = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />`;
   const visibleLine = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${strokeColor}" stroke-width="${strokeWidth}" ${dashArray} stroke-linecap="round" />`;
 
   return `${hitTarget}\n${visibleLine}`;
@@ -171,7 +169,9 @@ function drawCircle(shape: GeometryPrimitive, params: Record<string, number | bo
   const strokeColor = shape.color || '#f8fafc';
   const strokeWidth = ((shape.strokeWidth || 2) / 72) / scale;
 
-  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+  const hitTarget = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />`;
+  const visibleShape = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+  return `${hitTarget}\n${visibleShape}`;
 }
 
 // SVG Rectangle and Hatching Drawer (Cartesian +Y = UP)
@@ -202,6 +202,7 @@ function drawRectangle(shape: GeometryPrimitive, params: Record<string, number |
   const strokeWidth = ((shape.strokeWidth || 2) / 72) / scale;
 
   return `
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
     <rect x="${x}" y="${y}" width="${w}" height="${h}" ${fillStr} stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round" />
     ${extraGraphics}
   `;
@@ -275,29 +276,17 @@ function drawText(shape: GeometryPrimitive, params: Record<string, number | bool
   const fontSize = ((shape.fontSize || 11) / 72) / scale;
   const color = shape.color || '#f1f5f9';
 
-  return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto">${text}</text>`;
-}
+  const lines = String(text).split(/\\n|\n/);
+  if (lines.length <= 1) {
+    return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto">${text}</text>`;
+  }
 
-// Annotation: TextBox (General Notes - Cartesian +Y = UP)
-function drawTextBox(shape: GeometryPrimitive, params: Record<string, number | boolean>, scale: number, canvasHeight = 18): string {
-  const x = evaluateExpression(shape.x, params);
-  const rawY = evaluateExpression(shape.y, params);
-  const width = evaluateExpression(shape.width, params);
-
-  const rawFontSize = shape.fontSize || 11;
-  const cssScale = (1 / 72) / scale;
-  const cssWidth = width / cssScale;
-
-  const text = evaluateExpression(shape.text, params);
-  const color = shape.color || '#f1f5f9';
-
-  const y = canvasHeight - rawY;
-
-  return `
-    <foreignObject x="${x}" y="${y}" width="${width}" height="${width * 10}">
-      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size: ${rawFontSize}px; width: ${cssWidth}px; transform: scale(${cssScale}); transform-origin: top left; color: ${color}; font-family: monospace; white-space: pre-wrap; margin: 0; padding: 0; line-height: 1.4;">${text}</div>
-    </foreignObject>
-  `;
+  const tspans = lines.map((line, index) => {
+    const dy = index === 0 ? 0 : 1.2;
+    return `<tspan x="${x}" dy="${dy}em">${line}</tspan>`;
+  }).join('');
+  
+  return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto">${tspans}</text>`;
 }
 
 // Annotation: Leader (Cartesian +Y = UP)
@@ -376,7 +365,6 @@ export const L1_REGISTRY: Record<string, ShapeDrawer> = {
   "CAD::Shape::Rectangle": drawRectangle,
   "CAD::Annotation::Dimension": drawDimension,
   "CAD::Annotation::Text": drawText,
-  "CAD::Annotation::TextBox": drawTextBox,
   "CAD::Annotation::Leader": drawLeader,
   "CAD::Annotation::Image": drawImage,
   // Shorthand aliases for convenience
@@ -385,7 +373,6 @@ export const L1_REGISTRY: Record<string, ShapeDrawer> = {
   "rect": drawRectangle,
   "dimension": drawDimension,
   "text": drawText,
-  "textbox": drawTextBox,
   "leader": drawLeader,
   "image": drawImage,
 };
@@ -411,6 +398,13 @@ function getDefs(): string {
       <marker id="origin-arrow-y" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
         <path d="M 0 2 L 10 5 L 0 8 z" fill="#38bdf8" />
       </marker>
+      <filter id="hover-text-bg" x="-2%" y="-5%" width="104%" height="110%">
+        <feFlood flood-color="rgba(148, 163, 184, 0.2)" result="bg" />
+        <feMerge>
+          <feMergeNode in="bg" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
     </defs>
   `;
 }
@@ -432,9 +426,10 @@ function getStyles(): string {
         cursor: pointer;
       }
 
-      .selected-highlight rect, 
-      .selected-highlight circle,
-      .selected-highlight line {
+      .selected-highlight rect:not(.cad-hit-area), 
+      .selected-highlight circle:not(.cad-hit-area),
+      .selected-highlight line:not(.cad-hit-area),
+      .selected-highlight path:not(.cad-hit-area) {
         stroke: #06b6d4 !important;
         stroke-width: 0.06 !important;
         filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
@@ -445,16 +440,18 @@ function getStyles(): string {
         filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
         transition: fill 0.2s ease;
       }
-      
-      .interactive-component:hover rect,
-      .interactive-component:hover circle,
-      .interactive-component:hover line {
+      .interactive-component:hover rect:not(.cad-hit-area),
+      .interactive-component:hover circle:not(.cad-hit-area),
+      .interactive-component:hover line:not(.cad-hit-area),
+      .interactive-component:hover path:not(.cad-hit-area) {
         stroke: #38bdf8;
         stroke-width: 0.05 !important;
         transition: stroke 0.15s ease, stroke-width 0.15s ease;
       }
+      
       .interactive-component:hover text {
         fill: #38bdf8 !important;
+        filter: url(#hover-text-bg);
         transition: fill 0.15s ease;
       }
     </style>
@@ -584,10 +581,13 @@ export function renderDetail(doc: DetailDocument, sandboxWidth: number = 24, san
  */
 function getPaperDimensions(size: string): { width: number; height: number } {
   switch (size.toLowerCase()) {
+    case 'arch e': return { width: 48, height: 36 };
     case 'arch d': return { width: 36, height: 24 };
     case 'arch c': return { width: 24, height: 18 };
     case 'ansi b': return { width: 17, height: 11 };
     case 'letter': return { width: 11, height: 8.5 };
+    case 'a0': return { width: 46.8, height: 33.1 };
+    case 'a1': return { width: 33.1, height: 23.4 };
     default: return { width: 36, height: 24 };
   }
 }
@@ -601,9 +601,10 @@ export function renderSheet(
   viewportsMap: Map<string, DetailDocument>,
   titleBlockDoc?: TitleBlockDocument,
   tbOffsetX = 0,
-  tbOffsetY = 0
+  tbOffsetY = 0,
+  paperSize = 'ARCH D'
 ): string {
-  const { width, height } = getPaperDimensions(sheet.paperSize);
+  const { width, height } = getPaperDimensions(paperSize);
   let sheetContent = '';
 
   // Render Title Block

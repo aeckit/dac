@@ -1283,10 +1283,10 @@ export class VisualizerUI {
     if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
       return this.doc as DetailDocument;
     }
-    let sheet: SheetConfiguration;
+    let sheet: SheetConfiguration | null = null;
     if (this.doc.type === 'CAD::Project') {
       const ds = this.doc as ProjectDocument;
-      sheet = ds.sheets[this.activeSheetIndex] as SheetConfiguration;
+      sheet = this.resolveSheet(ds.sheets[this.activeSheetIndex]);
     } else {
       sheet = this.doc as SheetConfiguration;
     }
@@ -1308,10 +1308,7 @@ export class VisualizerUI {
       return false;
     };
 
-    if (sheet.titleBlockOverride && typeof sheet.titleBlockOverride === 'string') {
-      const tbDoc = this.titleBlockMap.get(sheet.titleBlockOverride) as any;
-      if (docContainsSelected(tbDoc)) return tbDoc!;
-    }
+    if (!sheet) return null;
 
     for (const vp of sheet.viewports) {
       const vDoc = typeof vp.detail === 'string' ? this.viewportsMap.get(vp.detail) : vp.detail;
@@ -1362,10 +1359,16 @@ export class VisualizerUI {
         }
       }
 
+      let tbDoc: any = null;
+      if (this.doc.type === 'CAD::Project') {
+        const ds = this.doc as any;
+        tbDoc = typeof ds.defaultTitleBlockRef === 'string' ? this.titleBlockMap.get(ds.defaultTitleBlockRef) : ds.defaultTitleBlockRef;
+      }
+
       this.propertiesCardContainer.innerHTML = `
         <div class="card">
           <div class="properties-editor-body">
-            ${DocumentEditor.renderHTML(this.doc, this.getActiveSheet())}
+            ${DocumentEditor.renderHTML(this.doc, this.getActiveSheet(), tbDoc)}
           </div>
         </div>
         ${scheduleHtml}
@@ -1617,25 +1620,47 @@ export class VisualizerUI {
     try {
       let svg = '';
       if (this.isProject() || this.doc.type === 'CAD::SheetConfiguration') {
-        let sheet: SheetConfiguration;
+        let sheet: SheetConfiguration | null = null;
         let titleBlockData: Record<string, any> = {};
         let fallbackTb = '';
         let fallbackX = 0;
         let fallbackY = 0;
+        let fallbackPaperSize = 'ARCH D';
 
         if (this.doc.type === 'CAD::Project') {
           const ds = this.doc as ProjectDocument;
-          sheet = ds.sheets[this.activeSheetIndex] as SheetConfiguration;
+          sheet = this.resolveSheet(ds.sheets[this.activeSheetIndex]);
           titleBlockData = {};
           fallbackTb = (ds.defaultTitleBlockRef as string) || '';
           fallbackX = ds.titleBlockOffsetX || 0;
           fallbackY = ds.titleBlockOffsetY || 0;
+          fallbackPaperSize = ds.defaultPaperSize || 'ARCH D';
           if (ds.projectName) {
             titleBlockData['ProjectName'] = ds.projectName;
             titleBlockData['projectName'] = ds.projectName;
           }
+          if (ds.parameters) {
+            Object.assign(titleBlockData, ds.parameters);
+          }
         } else {
           sheet = this.doc as SheetConfiguration;
+          if (this.options.parentProject) {
+            fallbackTb = (this.options.parentProject.defaultTitleBlockRef as string) || '';
+            fallbackX = this.options.parentProject.titleBlockOffsetX || 0;
+            fallbackY = this.options.parentProject.titleBlockOffsetY || 0;
+            fallbackPaperSize = this.options.parentProject.defaultPaperSize || 'ARCH D';
+            if (this.options.parentProject.projectName) {
+              titleBlockData['ProjectName'] = this.options.parentProject.projectName;
+              titleBlockData['projectName'] = this.options.parentProject.projectName;
+            }
+            if (this.options.parentProject.parameters) {
+              Object.assign(titleBlockData, this.options.parentProject.parameters);
+            }
+          }
+        }
+
+        if (!sheet) {
+          return '';
         }
 
         if (!sheet) {
@@ -1654,7 +1679,7 @@ export class VisualizerUI {
         }
 
         let titleBlockDoc: TitleBlockDocument | DetailDocument | undefined = undefined;
-        const resolvedTb = (sheet.titleBlockOverride as string) || fallbackTb;
+        const resolvedTb = fallbackTb;
         
         if (resolvedTb) {
           titleBlockDoc = this.titleBlockMap.get(resolvedTb);
@@ -1663,7 +1688,7 @@ export class VisualizerUI {
         const effectiveX = sheet.titleBlockOffsetX !== undefined ? sheet.titleBlockOffsetX : fallbackX;
         const effectiveY = sheet.titleBlockOffsetY !== undefined ? sheet.titleBlockOffsetY : fallbackY;
 
-        svg = renderSheet(sheet, titleBlockData, this.viewportsMap, titleBlockDoc as any, effectiveX, effectiveY);
+        svg = renderSheet(sheet, titleBlockData, this.viewportsMap, titleBlockDoc as any, effectiveX, effectiveY, fallbackPaperSize);
       } else {
         svg = renderDetail(this.doc as DetailDocument, this.sandboxWidth, this.sandboxHeight);
       }
@@ -1751,10 +1776,14 @@ export class VisualizerUI {
     this.onChange(this.doc, this.viewportsMap, this.titleBlockMap);
   }
 
-  public updateConfig(newDoc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>) {
+  public updateConfig(newDoc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>, sheetsMap?: Map<string, SheetConfiguration>, parentProject?: ProjectDocument | null) {
     this.doc = JSON.parse(JSON.stringify(newDoc));
     if (viewportsMap) this.viewportsMap = viewportsMap;
     if (titleBlockMap) this.titleBlockMap = titleBlockMap;
+    if (this.options) {
+      if (sheetsMap) this.options.sheetsMap = sheetsMap;
+      if (parentProject !== undefined) this.options.parentProject = parentProject || undefined;
+    }
 
     // Maintain selection state
     this.renderSVG();

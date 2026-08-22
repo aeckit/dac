@@ -22,9 +22,15 @@ export class WorkspaceManager {
         const decoded = LZString.decompressFromEncodedURIComponent(hash);
         if (decoded) {
           const parsed = JSON.parse(decoded);
-          this.files = parsed.files || {};
-          this.activeFilename = parsed.activeFilename || Object.keys(this.files)[0] || null;
-          return;
+          // Invalidate old hashes that don't have the new demo file 'components-demo.json'
+          if (!parsed.files || !parsed.files['components-demo.json']) {
+            console.log("Old workspace hash detected. Clearing to load new demo files.");
+            window.location.hash = '';
+          } else {
+            this.files = parsed.files;
+            this.activeFilename = parsed.activeFilename || Object.keys(this.files)[0] || null;
+            return;
+          }
         }
       } catch (e) {
         console.error("Failed to parse URL hash:", e);
