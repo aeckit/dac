@@ -104,6 +104,20 @@ function updateVisualizer() {
     vizDoc = activeDoc as VisualizerDocument;
   }
 
+  const sheetsMap = new Map<string, SheetConfiguration>();
+  let parentProject: ProjectDocument | null = null;
+  for (const [k, v] of Object.entries(files)) {
+    if (v.type === 'CAD::SheetConfiguration') {
+      sheetsMap.set(k, v as SheetConfiguration);
+    } else if (v.type === 'CAD::Project') {
+      const proj = v as ProjectDocument;
+      if (activeDoc.type === 'CAD::SheetConfiguration') {
+        const hasSheet = proj.sheets.some(s => s === workspace.activeFilename || (typeof s === 'object' && s.sheetName === (activeDoc as SheetConfiguration).sheetName));
+        if (hasSheet) parentProject = proj;
+      }
+    }
+  }
+
   if (!uiInstance) {
     uiInstance = new VisualizerUI(
       visualizerContainer,
@@ -131,7 +145,8 @@ function updateVisualizer() {
         updateEditor();
       },
       viewportsMap,
-      titleBlockMap
+      titleBlockMap,
+      { sheetsMap, parentProject: parentProject || undefined }
     );
 
     // After instantiation, detach the Drawing Inspector and move to tabs
@@ -145,7 +160,7 @@ function updateVisualizer() {
       tabInspector.appendChild(leftSidebar);
     }
   } else {
-    uiInstance.updateConfig(vizDoc, viewportsMap, titleBlockMap);
+    uiInstance.updateConfig(vizDoc, viewportsMap, titleBlockMap, sheetsMap, parentProject);
     if (currentVisualizerFilename !== workspace.activeFilename) {
       uiInstance.resetView(); // Auto-deselect and re-center on file switch
     }
@@ -161,30 +176,22 @@ function renderFileList() {
   fileListEl.innerHTML = '';
   const files = workspace.getFiles();
   
-  const groups: Record<string, string[]> = {
-    'Projects': [],
-    'Title Blocks': [],
-    'Details': []
+  const createDeleteButton = (filename: string) => {
+    const delBtn = document.createElement('span');
+    delBtn.textContent = '×';
+    delBtn.style.color = '#ff6b6b';
+    delBtn.style.marginLeft = '8px';
+    delBtn.style.cursor = 'pointer';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      workspace.deleteFile(filename);
+    };
+    return delBtn;
   };
 
-  for (const filename of Object.keys(files)) {
-    const doc = files[filename];
-    if (doc.type === 'CAD::Project') {
-      groups['Projects'].push(filename);
-    } else if (doc.type === 'CAD::TitleBlock') {
-      groups['Title Blocks'].push(filename);
-    } else if (doc.type === 'CAD::Detail') {
-      groups['Details'].push(filename);
-    } else {
-      groups['Details'].push(filename);
-    }
-  }
-
-  for (const [groupName, filenames] of Object.entries(groups)) {
-    if (filenames.length === 0) continue;
-
+  const renderSectionTitle = (title: string) => {
     const header = document.createElement('div');
-    header.textContent = groupName;
+    header.textContent = title;
     header.style.fontSize = '10px';
     header.style.textTransform = 'uppercase';
     header.style.color = '#94a3b8';
@@ -192,61 +199,171 @@ function renderFileList() {
     header.style.fontWeight = 'bold';
     header.style.letterSpacing = '0.5px';
     fileListEl.appendChild(header);
+  };
 
-    for (const filename of filenames) {
+  const projects = Object.keys(files).filter(k => files[k].type === 'CAD::Project');
+  const sheets = Object.keys(files).filter(k => files[k].type === 'CAD::SheetConfiguration');
+  const titleBlocks = Object.keys(files).filter(k => files[k].type === 'CAD::TitleBlock');
+  const details = Object.keys(files).filter(k => files[k].type === 'CAD::Detail');
+  
+  // Also collect any unclassified files
+  const classified = new Set([...projects, ...sheets, ...titleBlocks, ...details]);
+  const others = Object.keys(files).filter(k => !classified.has(k));
+  details.push(...others);
 
-
+  // Render Projects
+  if (projects.length > 0) {
+    renderSectionTitle('Projects');
+    
+    projects.forEach(projFile => {
+      // 1) Render Project Item
       const li = document.createElement('li');
-      li.className = 'file-item' + (filename === workspace.activeFilename ? ' active' : '');
+      li.className = 'file-item' + (projFile === workspace.activeFilename ? ' active' : '');
+      li.style.fontWeight = 'bold';
       
       const nameSpan = document.createElement('span');
-      nameSpan.textContent = filename;
+      nameSpan.textContent = projFile;
       li.appendChild(nameSpan);
-
-      const docContent = files[filename];
-
-      const delBtn = document.createElement('span');
-      delBtn.textContent = '×';
-      delBtn.style.color = '#ff6b6b';
-      delBtn.style.marginLeft = '8px';
-      delBtn.style.cursor = 'pointer';
-      delBtn.onclick = (e) => {
-        e.stopPropagation();
-        workspace.deleteFile(filename);
-      };
-
-      const isDetail = docContent?.type === 'CAD::Detail';
-      if (isDetail) {
-        const addBtn = document.createElement('span');
-        addBtn.textContent = '+';
-        addBtn.style.color = '#4ade80';
-        addBtn.style.marginLeft = 'auto';
-        addBtn.style.marginRight = '8px';
-        addBtn.style.cursor = 'pointer';
-        addBtn.title = 'Insert into active sheet';
-        addBtn.onclick = (e) => {
-          e.stopPropagation();
-          if (uiInstance && uiInstance.getActiveSheet()) {
-            uiInstance.insertViewport(filename);
-          } else {
-            showToast('Open a Sheet or Drawing Set first to insert this detail.');
-          }
-        };
-        li.appendChild(addBtn);
-      } else {
-        delBtn.style.marginLeft = 'auto'; // push delete button to right if no add button
-      }
       
+      const delBtn = createDeleteButton(projFile);
+      delBtn.style.marginLeft = 'auto';
       li.appendChild(delBtn);
-
+      
       li.onclick = () => {
         const isJson = tabContentJson?.classList.contains('active');
-        workspace.setActiveFile(filename);
+        workspace.setActiveFile(projFile);
         if (isJson) tabBtnJson?.click();
       };
-
+      
       fileListEl.appendChild(li);
-    }
+
+      // 2) Render Sheets under this Project
+      const projDoc = files[projFile] as any;
+      if (projDoc && Array.isArray(projDoc.sheets)) {
+        projDoc.sheets.forEach((sheetRef: any) => {
+          const sheetName = typeof sheetRef === 'string' ? sheetRef : sheetRef.sheetName; // Handle embedded vs referenced
+          if (sheetName && files[sheetName]) {
+            const sli = document.createElement('li');
+            sli.className = 'file-item' + (sheetName === workspace.activeFilename ? ' active' : '');
+            sli.style.paddingLeft = '24px'; // Indent under project
+            sli.style.borderLeft = '1px solid #334155'; // Visual tree line
+            
+            const sNameSpan = document.createElement('span');
+            sNameSpan.textContent = "↳ " + sheetName;
+            sli.appendChild(sNameSpan);
+            
+            const sDelBtn = createDeleteButton(sheetName);
+            sDelBtn.style.marginLeft = 'auto';
+            sli.appendChild(sDelBtn);
+            
+            sli.onclick = () => {
+              const isJson = tabContentJson?.classList.contains('active');
+              workspace.setActiveFile(sheetName);
+              if (isJson) tabBtnJson?.click();
+            };
+            fileListEl.appendChild(sli);
+            
+            // Remove it from the general "sheets" pool so it doesn't render twice
+            const idx = sheets.indexOf(sheetName);
+            if (idx > -1) sheets.splice(idx, 1);
+          }
+        });
+      }
+    });
+  }
+
+  // Render Unassigned Sheets (orphans)
+  if (sheets.length > 0) {
+    renderSectionTitle('Unassigned Sheets');
+    
+    sheets.forEach(sheetFile => {
+      const li = document.createElement('li');
+      li.className = 'file-item' + (sheetFile === workspace.activeFilename ? ' active' : '');
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = sheetFile;
+      li.appendChild(nameSpan);
+      
+      const delBtn = createDeleteButton(sheetFile);
+      delBtn.style.marginLeft = 'auto';
+      li.appendChild(delBtn);
+      
+      li.onclick = () => {
+        const isJson = tabContentJson?.classList.contains('active');
+        workspace.setActiveFile(sheetFile);
+        if (isJson) tabBtnJson?.click();
+      };
+      
+      fileListEl.appendChild(li);
+    });
+  }
+
+  // Render Title Blocks
+  if (titleBlocks.length > 0) {
+    renderSectionTitle('Title Blocks');
+    
+    titleBlocks.forEach(tbFile => {
+      const li = document.createElement('li');
+      li.className = 'file-item' + (tbFile === workspace.activeFilename ? ' active' : '');
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = tbFile;
+      li.appendChild(nameSpan);
+      
+      const delBtn = createDeleteButton(tbFile);
+      delBtn.style.marginLeft = 'auto';
+      li.appendChild(delBtn);
+      
+      li.onclick = () => {
+        const isJson = tabContentJson?.classList.contains('active');
+        workspace.setActiveFile(tbFile);
+        if (isJson) tabBtnJson?.click();
+      };
+      
+      fileListEl.appendChild(li);
+    });
+  }
+
+  // Render Details
+  if (details.length > 0) {
+    renderSectionTitle('Details');
+    
+    details.forEach(detFile => {
+      const li = document.createElement('li');
+      li.className = 'file-item' + (detFile === workspace.activeFilename ? ' active' : '');
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = detFile;
+      li.appendChild(nameSpan);
+      
+      const addBtn = document.createElement('span');
+      addBtn.textContent = '+';
+      addBtn.style.color = '#4ade80';
+      addBtn.style.marginLeft = 'auto';
+      addBtn.style.marginRight = '8px';
+      addBtn.style.cursor = 'pointer';
+      addBtn.title = 'Insert into active sheet';
+      addBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (uiInstance && uiInstance.getActiveSheet()) {
+          uiInstance.insertViewport(detFile);
+        } else {
+          showToast('Open a Sheet or Drawing Set first to insert this detail.');
+        }
+      };
+      li.appendChild(addBtn);
+      
+      const delBtn = createDeleteButton(detFile);
+      li.appendChild(delBtn);
+      
+      li.onclick = () => {
+        const isJson = tabContentJson?.classList.contains('active');
+        workspace.setActiveFile(detFile);
+        if (isJson) tabBtnJson?.click();
+      };
+      
+      fileListEl.appendChild(li);
+    });
   }
 }
 
@@ -283,7 +400,6 @@ document.getElementById('btn-new-sheet')?.addEventListener('click', () => {
     type: 'CAD::SheetConfiguration',
     sheetNumber: 'A101',
     sheetName: 'New Sheet',
-    paperSize: 'Arch D',
     viewports: []
   };
   workspace.createFile(getUniqueName('sheet'), doc);

@@ -7,6 +7,9 @@ export type VisualizerDocument = DetailDocument | ProjectDocument | SheetConfigu
 export interface VisualizerUIOptions {
   showLeftToggle?: boolean;  // default: true
   showRightToggle?: boolean; // default: true
+  parentProject?: ProjectDocument;
+  sheetsMap?: Map<string, SheetConfiguration>;
+  editorFactory?: (container: HTMLElement, initialValue: string, onChange: (value: string) => void) => any;
 }
 
 export class VisualizerUI {
@@ -80,9 +83,16 @@ export class VisualizerUI {
     }
     if (this.isProject()) {
       const ds = this.doc as ProjectDocument;
-      return ds.sheets[this.activeSheetIndex] as SheetConfiguration;
+      return this.resolveSheet(ds.sheets[this.activeSheetIndex]);
     }
     return null;
+  }
+
+  public resolveSheet(sheetRef: string | SheetConfiguration): SheetConfiguration | null {
+    if (typeof sheetRef === 'string') {
+      return this.options.sheetsMap?.get(sheetRef) || null;
+    }
+    return sheetRef;
   }
 
   public insertViewport(detailName: string) {

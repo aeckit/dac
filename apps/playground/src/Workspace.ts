@@ -132,7 +132,7 @@ export class WorkspaceManager {
   public getTitleBlockMap(): Map<string, DetailDocument> {
     const map = new Map<string, DetailDocument>();
     for (const [name, doc] of Object.entries(this.files)) {
-      if (doc.type === 'CAD::Detail') {
+      if (doc.type === 'CAD::TitleBlock' || doc.type === 'CAD::Detail') {
         map.set(name, doc as DetailDocument);
         map.set(`../${name}`, doc as DetailDocument);
       }
