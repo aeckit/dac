@@ -409,6 +409,20 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+}
+
+.form-group.row-align > label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-group.row-align > .precise-input,
+.form-group.row-align > .precise-input-wrapper {
+  flex: 1.5;
+  width: 100%;
 }
 
 .form-group.disabled {

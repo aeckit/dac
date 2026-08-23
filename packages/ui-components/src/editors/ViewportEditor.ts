@@ -10,7 +10,7 @@ export const ViewportEditor = {
         <div class="control-label-row">
           <label class="control-label">Source File</label>
           <div style="display: flex; gap: 4px; align-items: center;">
-            <input type="text" class="precise-input vp-detail-input" value="${detailName}" style="width: 120px;" />
+            <input type="text" class="precise-input vp-detail-input" value="${detailName}" />
             <button class="vp-open-btn" style="background: #3b82f6; border: none; border-radius: 4px; color: #fff; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Open Detail">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </button>
@@ -18,7 +18,7 @@ export const ViewportEditor = {
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Scale</label>
-          <select class="precise-input vp-scale-input" style="width: 120px;">
+          <select class="precise-input vp-scale-input">
             <option value="1/2=1-0" ${(viewport.scale || '').includes('1/2') ? 'selected' : ''}>1/2" = 1'-0" (1:24)</option>
             <option value="1=1-0" ${(viewport.scale || '').includes('1=') || (viewport.scale || '').includes('1"') ? 'selected' : ''}>1" = 1'-0" (1:12)</option>
             <option value="3=1-0" ${(viewport.scale || '').includes('3=') || (viewport.scale || '').includes('3"') ? 'selected' : ''}>3" = 1'-0" (1:4)</option>
@@ -27,42 +27,42 @@ export const ViewportEditor = {
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Origin X</label>
-          <input type="number" class="precise-input vp-x-input" value="${viewport.x}" style="width: 80px;" />
+          <input type="number" class="precise-input vp-x-input" value="${viewport.x}" />
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Origin Y</label>
-          <input type="number" class="precise-input vp-y-input" value="${viewport.y}" style="width: 80px;" />
+          <input type="number" class="precise-input vp-y-input" value="${viewport.y}" />
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Width</label>
-          <input type="number" class="precise-input vp-w-input" value="${viewport.width !== undefined ? viewport.width : ''}" style="width: 80px;" placeholder="Auto" />
+          <input type="number" class="precise-input vp-w-input" value="${viewport.width !== undefined ? viewport.width : ''}" placeholder="Auto" />
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Height</label>
-          <input type="number" class="precise-input vp-h-input" value="${viewport.height !== undefined ? viewport.height : ''}" style="width: 80px;" placeholder="Auto" />
+          <input type="number" class="precise-input vp-h-input" value="${viewport.height !== undefined ? viewport.height : ''}" placeholder="Auto" />
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Title</label>
-          <input type="text" class="precise-input vp-title-input" value="${viewport.title || ''}" style="width: 120px;" placeholder="Auto" />
+          <input type="text" class="precise-input vp-title-input" value="${viewport.title || ''}" placeholder="Auto" />
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Detail #</label>
-          <input type="text" class="precise-input vp-detail-num-input" value="${viewport.detailNumber || ''}" style="width: 80px;" placeholder="1" />
+          <input type="text" class="precise-input vp-detail-num-input" value="${viewport.detailNumber || ''}" placeholder="1" />
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Title Note</label>
-          <input type="text" class="precise-input vp-title-note-input" value="${viewport.titleNote || ''}" style="width: 120px;" placeholder="Optional" />
+          <input type="text" class="precise-input vp-title-note-input" value="${viewport.titleNote || ''}" placeholder="Optional" />
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Title Pos</label>
-          <select class="precise-input vp-title-pos-input" style="width: 80px;">
+          <select class="precise-input vp-title-pos-input">
             <option value="bottom" ${(viewport.titlePosition !== 'top') ? 'selected' : ''}>Bottom</option>
             <option value="top" ${(viewport.titlePosition === 'top') ? 'selected' : ''}>Top</option>
           </select>
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Offset Y</label>
-          <input type="number" step="0.1" class="precise-input vp-title-offset-input" value="${viewport.titleOffsetY || 0}" style="width: 80px;" />
+          <input type="number" step="0.1" class="precise-input vp-title-offset-input" value="${viewport.titleOffsetY || 0}" />
         </div>
         
         <div class="control-label-row" style="margin-top: 8px; justify-content: flex-start;">

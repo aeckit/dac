@@ -11,7 +11,7 @@ export const DefaultEditor: PropertyEditor = {
           <textarea class="precise-input shape-text-input" style="width: 100%; min-height: 60px; font-family: monospace; margin-top: 6px; padding: 6px; box-sizing: border-box; background: var(--vscode-input-background, #1e293b); color: var(--vscode-input-foreground, #f8fafc); border: 1px solid var(--vscode-input-border, #334155); border-radius: 4px;">${shape.text || ''}</textarea>
           <div class="control-label-row" style="margin-top: 8px;">
             <label class="control-label">Font Size (pt)</label>
-            <input type="number" class="precise-input shape-fontsize-input" min="4" max="144" step="1" value="${shape.fontSize || 11}" style="width: 80px;" />
+            <input type="number" class="precise-input shape-fontsize-input" min="4" max="144" step="1" value="${shape.fontSize || 11}" />
           </div>
         </div>
       `;
@@ -20,7 +20,7 @@ export const DefaultEditor: PropertyEditor = {
         <div class="form-group" data-shape-index="${index}">
           <div class="control-label-row">
             <label class="control-label">Stroke Width</label>
-            <input type="number" class="precise-input shape-strokewidth-input" min="0.5" max="20" step="0.5" value="${shape.strokeWidth || 2}" style="width: 80px;" />
+            <input type="number" class="precise-input shape-strokewidth-input" min="0.5" max="20" step="0.5" value="${shape.strokeWidth || 2}" />
           </div>
         </div>
       `;

@@ -45,15 +45,15 @@ export const DocumentEditor = {
           <div class="form-group" data-doc-prop="titleBlock">
             <div class="control-label-row">
               <label class="control-label">Source File</label>
-              <input type="text" class="precise-input doc-titleblock-input" data-target="dset" placeholder="e.g. titleblock.json" value="${dsetTbName}" style="width: 120px;" />
+              <input type="text" class="precise-input doc-titleblock-input" data-target="dset" placeholder="e.g. titleblock.json" value="${dsetTbName}" />
             </div>
             <div class="control-label-row" style="margin-top: 8px;">
               <label class="control-label">Origin X</label>
-              <input type="number" class="precise-input doc-tbx-input" data-target="dset" value="${dsetTbX}" style="width: 80px;" />
+              <input type="number" class="precise-input doc-tbx-input" data-target="dset" value="${dsetTbX}" />
             </div>
             <div class="control-label-row" style="margin-top: 8px;">
               <label class="control-label">Origin Y</label>
-              <input type="number" class="precise-input doc-tby-input" data-target="dset" value="${dsetTbY}" style="width: 80px;" />
+              <input type="number" class="precise-input doc-tby-input" data-target="dset" value="${dsetTbY}" />
             </div>
           </div>
           <hr style="border: 0; border-top: 1px solid var(--vscode-panel-border); margin: 16px 0;" />
@@ -68,7 +68,7 @@ export const DocumentEditor = {
             html += `
               <div class="control-label-row">
                 <label class="control-label" title="${key}">${paramDef.label || key}</label>
-                <input type="text" class="precise-input doc-tbparam-input" data-param-key="${key}" value="${val}" style="width: 120px;" />
+                <input type="text" class="precise-input doc-tbparam-input" data-param-key="${key}" value="${val}" />
               </div>
             `;
           }
@@ -118,11 +118,11 @@ export const DocumentEditor = {
             </div>
             <div class="control-label-row" style="margin-top: 8px;">
               <label class="control-label">Origin X</label>
-              <input type="number" class="precise-input doc-tbx-input" data-target="sheet" value="${sheetTbX}" style="width: 80px;" />
+              <input type="number" class="precise-input doc-tbx-input" data-target="sheet" value="${sheetTbX}" />
             </div>
             <div class="control-label-row" style="margin-top: 8px;">
               <label class="control-label">Origin Y</label>
-              <input type="number" class="precise-input doc-tby-input" data-target="sheet" value="${sheetTbY}" style="width: 80px;" />
+              <input type="number" class="precise-input doc-tby-input" data-target="sheet" value="${sheetTbY}" />
             </div>
           </div>
         `;

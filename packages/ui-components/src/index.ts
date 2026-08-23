@@ -1,3 +1,7 @@
+import { PropertiesManager } from './managers/PropertiesManager';
+import { CanvasManager } from './managers/CanvasManager';
+import { InteractionManager } from './managers/InteractionManager';
+
 import { DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, renderDetail, renderSheet, resolveScaleMultiplier } from '@aeckit/core-solver';
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from './editors';
 import { Viewport } from '@aeckit/core-solver';
@@ -14,45 +18,48 @@ export interface VisualizerUIOptions {
 }
 
 export class VisualizerUI {
-  private container: HTMLElement;
-  private doc: VisualizerDocument;
-  private viewportsMap: Map<string, DetailDocument>;
-  private titleBlockMap: Map<string, TitleBlockDocument | DetailDocument>;
-  private onChange: (doc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>) => void;
-  private options: VisualizerUIOptions;
+  public container: HTMLElement;
+  public doc: VisualizerDocument;
+  public viewportsMap: Map<string, DetailDocument>;
+  public titleBlockMap: Map<string, TitleBlockDocument | DetailDocument>;
+  public onChange: (doc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>) => void;
+  public options: VisualizerUIOptions;
 
   // Drawing Set state
-  private activeSheetIndex = 0;
-  private sandboxWidth = 24;
-  private sandboxHeight = 18;
+  public activeSheetIndex = 0;
+  public sandboxWidth = 24;
+  public sandboxHeight = 18;
 
   // Selection state
-  private selectedComponentIds: Set<string> = new Set();
-  private primaryComponentType: string | null = null;
+  public selectedComponentIds: Set<string> = new Set();
+  public primaryComponentType: string | null = null;
 
   // Zoom & Pan state
-  private zoom = 1.0;
-  private panX = 0;
-  private panY = 0;
-  private isDragging = false;
-  private startX = 0;
-  private startY = 0;
-  private lastUpdateTime = 0;
+  public zoom = 1.0;
+  public panX = 0;
+  public panY = 0;
+  public isDragging = false;
+  public startX = 0;
+  public startY = 0;
+  public lastUpdateTime = 0;
 
   // DOM references
-  private leftPanel!: HTMLElement;
-  private rightPanel!: HTMLElement;
-  private svgViewport!: HTMLElement;
-  private svgWrapper!: HTMLElement;
-  private propertiesCardContainer!: HTMLElement;
-  private sheetDropdownContainer!: HTMLElement;
-  private editOverlay!: HTMLElement;
-  private btnMoveOverlay!: HTMLElement;
-  private croppingComponentId: string | null = null;
-  private btnCropOverlay!: HTMLElement;
-  private btnDeleteOverlay!: HTMLElement;
-  private btnOpenOverlay!: HTMLElement;
-  private grabbers: Record<string, HTMLElement> = {};
+  public leftPanel!: HTMLElement;
+  public rightPanel!: HTMLElement;
+  public svgViewport!: HTMLElement;
+  public svgWrapper!: HTMLElement;
+  public propertiesCardContainer!: HTMLElement;
+  public sheetDropdownContainer!: HTMLElement;
+  public editOverlay!: HTMLElement;
+  public btnMoveOverlay!: HTMLElement;
+  public croppingComponentId: string | null = null;
+  public btnCropOverlay!: HTMLElement;
+  public btnDeleteOverlay!: HTMLElement;
+  public btnOpenOverlay!: HTMLElement;
+  public grabbers: Record<string, HTMLElement> = {};
+  public propertiesManager!: PropertiesManager;
+  public canvasManager!: CanvasManager;
+  public interactionManager!: InteractionManager;
 
   constructor(
     container: HTMLElement,
@@ -69,12 +76,16 @@ export class VisualizerUI {
     this.onChange = onChange;
     this.options = options || {};
 
+    this.propertiesManager = new PropertiesManager(this);
+    this.canvasManager = new CanvasManager(this);
+    this.interactionManager = new InteractionManager(this);
     this.initLayout();
     this.render();
-    this.setupInteractivity();
+    this.canvasManager.setupListeners();
+    this.interactionManager.setupListeners();
   }
 
-  private isProject(): boolean {
+  public isProject(): boolean {
     return this.doc.type === 'CAD::Project';
   }
 
@@ -296,7 +307,7 @@ export class VisualizerUI {
 
     const resetBtn = this.rightPanel.querySelector('#reset-view-btn') as HTMLButtonElement;
     resetBtn.addEventListener('click', () => {
-      this.resetView();
+      this.canvasManager.resetView();
     });
 
     const btnAddRect = this.rightPanel.querySelector('#btn-add-rect') as HTMLButtonElement;
@@ -462,813 +473,8 @@ export class VisualizerUI {
     });
   }
 
-  private setupInteractivity() {
-    this.btnDeleteOverlay.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.deleteSelectedComponent();
-    });
-
-    this.btnMoveOverlay.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      if (this.selectedComponentIds.size === 0) return;
-
-      const startMouseX = e.clientX;
-      const startMouseY = e.clientY;
-      
-      const rootSvg = this.svgWrapper?.querySelector('svg');
-      if (!rootSvg) return;
-
-      const initialStates = new Map<string, any>();
-      this.selectedComponentIds.forEach(cid => {
-        let comp = null;
-        if (this.primaryComponentType === 'CAD::Viewport') {
-          const sheet = this.getActiveSheet();
-          comp = sheet?.viewports?.find(v => v.componentId === cid) || null;
-        } else {
-          const doc = this.findDocumentForComponent(cid);
-          if (doc && doc.geometry) {
-            let autoIndex = 0;
-            comp = doc.geometry.find(s => {
-              const sid = s.componentId || 'shape_' + autoIndex++;
-              return sid === cid;
-            }) || null;
-          }
-        }
-        
-        if (comp) {
-          const isLine = (comp as any).type === 'Line' || (comp as any).type === 'CAD::Shape::Line' || (comp as any).componentType === 'Line';
-          initialStates.set(cid, {
-            comp,
-            isLine,
-            x: Number(comp.x) || 0,
-            y: Number(comp.y) || 0,
-            x1: Number((comp as any).x1) || 0,
-            y1: Number((comp as any).y1) || 0,
-            x2: Number((comp as any).x2) || 0,
-            y2: Number((comp as any).y2) || 0,
-          });
-        }
-      });
-
-      if (initialStates.size === 0) return;
-
-      const firstCid = Array.from(this.selectedComponentIds)[0];
-      const selectedEl = this.svgWrapper?.querySelector(`[data-component-id="${firstCid}"]`);
-      const parentEl = (selectedEl?.parentElement as unknown as SVGGraphicsElement) || rootSvg;
-      const ctm = parentEl.getScreenCTM();
-      if (!ctm) return;
-      const inverse = ctm.inverse();
-
-      const onMouseMove = (moveEvt: MouseEvent) => {
-        this.isDragging = true;
-        
-        const ptStart = rootSvg.createSVGPoint();
-        ptStart.x = startMouseX;
-        ptStart.y = startMouseY;
-        const svgStart = ptStart.matrixTransform(inverse);
-
-        const ptCurrent = rootSvg.createSVGPoint();
-        ptCurrent.x = moveEvt.clientX;
-        ptCurrent.y = moveEvt.clientY;
-        const svgCurrent = ptCurrent.matrixTransform(inverse);
-
-        const svgDx = svgCurrent.x - svgStart.x;
-        const svgDy = svgCurrent.y - svgStart.y;
-
-        initialStates.forEach(state => {
-          if (state.isLine) {
-            (state.comp as any).x1 = Math.round((state.x1 + svgDx) * 1000) / 1000;
-            (state.comp as any).y1 = Math.round((state.y1 - svgDy) * 1000) / 1000;
-            (state.comp as any).x2 = Math.round((state.x2 + svgDx) * 1000) / 1000;
-            (state.comp as any).y2 = Math.round((state.y2 - svgDy) * 1000) / 1000;
-          } else {
-            state.comp.x = Math.round((state.x + svgDx) * 1000) / 1000;
-            state.comp.y = Math.round((state.y - svgDy) * 1000) / 1000;
-          }
-        });
-
-        this.render();
-      };
-
-      const onMouseUp = () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-        this.updateAndNotify();
-        setTimeout(() => { this.isDragging = false; }, 0);
-      };
-
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-    });
-
-    this.btnMoveOverlay.addEventListener('click', (e) => {
-      e.stopPropagation(); // prevent click from bubbling
-    });
-
-    this.btnOpenOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
-    this.btnOpenOverlay.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (this.primaryComponentType === 'CAD::Viewport') {
-        const sheet = this.getActiveSheet();
-        if (!sheet) return;
-        const cid = Array.from(this.selectedComponentIds)[0];
-        const vp = sheet.viewports?.find(v => v.componentId === cid);
-        if (vp && typeof vp.detail === 'string') {
-          let filename = vp.detail;
-          if (filename.startsWith('../')) {
-            filename = filename.substring(3);
-          }
-          if (filename !== 'inline-detail') {
-            window.dispatchEvent(new CustomEvent('dac-open-file', { detail: { filename } }));
-          }
-        }
-      }
-    });
-
-    this.btnCropOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
-    this.btnDeleteOverlay.addEventListener('mousedown', (e) => e.stopPropagation());
-
-    this.btnCropOverlay.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const comp = this.getSelectedShape();
-      if (comp && (this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image')) {
-        const isCrop = this.croppingComponentId === comp.componentId;
-        
-        if (isCrop) {
-          this.croppingComponentId = null;
-        } else {
-          this.croppingComponentId = comp.componentId;
-        }
-        
-        this.updateAndNotify();
-        this.render();
-      }
-    });
-
-    Object.entries(this.grabbers).forEach(([dir, grabber]) => {
-      grabber.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        const comp = this.getSelectedShape();
-        if (!comp) return;
-
-        const startMouseX = e.clientX;
-        const startMouseY = e.clientY;
-        const startCompX = Number(comp.x) || 0;
-        const startCompY = Number(comp.y) || 0;
-        const startCompW = Number(comp.width) || 0;
-        const startCompH = Number(comp.height) || 0;
-        const startCropX = Number((comp as any).cropX) || 0;
-        const startCropY = Number((comp as any).cropY) || 0;
-        const startImgW = Number((comp as any).imgWidth) || startCompW;
-        const startImgH = Number((comp as any).imgHeight) || startCompH;
-        const startCompX1 = Number((comp as any).x1) || 0;
-        const startCompY1 = Number((comp as any).y1) || 0;
-        const startCompX2 = Number((comp as any).x2) || 0;
-        const startCompY2 = Number((comp as any).y2) || 0;
-
-        const onMouseMove = (moveEvt: MouseEvent) => {
-          this.isDragging = true;
-          const rootSvg = this.svgWrapper?.querySelector('svg');
-          if (!rootSvg) return;
-
-          const singleCid = Array.from(this.selectedComponentIds)[0];
-          const selectedEl = this.svgWrapper?.querySelector(`[data-component-id="${singleCid}"]`);
-          const parentEl = (selectedEl?.parentElement as unknown as SVGGraphicsElement) || rootSvg;
-          const ctm = parentEl.getScreenCTM();
-          if (!ctm) return;
-
-          const inverse = ctm.inverse();
-
-          const ptStart = rootSvg.createSVGPoint();
-          ptStart.x = startMouseX;
-          ptStart.y = startMouseY;
-          const svgStart = ptStart.matrixTransform(inverse);
-
-          const ptCurrent = rootSvg.createSVGPoint();
-          ptCurrent.x = moveEvt.clientX;
-          ptCurrent.y = moveEvt.clientY;
-          const svgCurrent = ptCurrent.matrixTransform(inverse);
-
-          const svgDx = svgCurrent.x - svgStart.x;
-          // SVG Dy is positive when dragging DOWN on the screen
-          const svgDy = svgCurrent.y - svgStart.y;
-          
-          if (dir === 'line-start') {
-             (comp as any).x1 = Math.round((startCompX1 + svgDx) * 1000) / 1000;
-             (comp as any).y1 = Math.round((startCompY1 - svgDy) * 1000) / 1000;
-             this.render();
-             return;
-          }
-          if (dir === 'line-end') {
-             (comp as any).x2 = Math.round((startCompX2 + svgDx) * 1000) / 1000;
-             (comp as any).y2 = Math.round((startCompY2 - svgDy) * 1000) / 1000;
-             this.render();
-             return;
-          }
-
-          let newX = startCompX;
-          let newY = startCompY;
-          let newW = startCompW;
-          let newH = startCompH;
-          let newCropX = startCropX;
-          let newCropY = startCropY;
-
-          let vpScale = 1;
-          if (this.primaryComponentType === 'CAD::Viewport') {
-             vpScale = resolveScaleMultiplier((comp as any).scale || '1:1');
-          }
-
-          // West (Left) edge dragging
-          if (dir.includes('w')) {
-            newX = startCompX + svgDx;
-            newW = startCompW - svgDx;
-            if (this.primaryComponentType === 'CAD::Viewport') {
-              newCropX = startCropX + svgDx / vpScale;
-            } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && this.croppingComponentId === comp.componentId) {
-              newCropX = startCropX + svgDx;
-            }
-          }
-          // East (Right) edge dragging
-          if (dir.includes('e')) {
-            newW = startCompW + svgDx;
-          }
-          // North (Top) edge dragging
-          if (dir.includes('n')) {
-            newH = startCompH - svgDy;
-            if (this.primaryComponentType === 'CAD::Viewport') {
-              newCropY = startCropY - svgDy / vpScale;
-            } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && this.croppingComponentId === comp.componentId) {
-              newCropY = startCropY - svgDy;
-            }
-          }
-          // South (Bottom) edge dragging
-          if (dir.includes('s')) {
-            newY = startCompY - svgDy;
-            newH = startCompH + svgDy;
-          }
-
-          if ((comp as any).lockAspectRatio) {
-            const aspect = startCompW / startCompH;
-            const ratioX = newW / startCompW;
-            const ratioY = newH / startCompH;
-            
-            // Determine which axis drives the scale
-            let driveW = true;
-            if (dir === 'n' || dir === 's') driveW = false;
-            else if (dir === 'e' || dir === 'w') driveW = true;
-            else driveW = Math.abs(ratioX - 1) > Math.abs(ratioY - 1);
-
-            if (driveW) {
-              const lockedH = newW / aspect;
-              if (dir.includes('n')) {
-                // For North (Top), top edge (Y+H) changes, bottom edge (Y) is anchored
-                newH = lockedH;
-              }
-              if (dir.includes('s')) {
-                // For South (Bottom), top edge (Y+H) is anchored, bottom edge (Y) moves
-                const topEdge = startCompY + startCompH;
-                newH = lockedH;
-                newY = topEdge - newH;
-              }
-            } else {
-              const lockedW = newH * aspect;
-              if (dir.includes('e')) {
-                // For East (Right), left edge (X) is anchored
-                newW = lockedW;
-              }
-              if (dir.includes('w')) {
-                // For West (Left), right edge (X+W) is anchored
-                const rightEdge = startCompX + startCompW;
-                newW = lockedW;
-                newX = rightEdge - newW;
-              }
-            }
-          }
-
-          // Enforce minimum dimensions
-          const minSize = 0.1;
-          if (newW < minSize) {
-             const diff = minSize - newW;
-             if (dir.includes('w')) {
-                newX -= diff;
-                if (this.primaryComponentType === 'CAD::Viewport') {
-                  newCropX -= diff / vpScale;
-                } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && this.croppingComponentId === comp.componentId) {
-                  newCropX -= diff;
-                }
-             }
-             newW = minSize;
-          }
-          if (newH < minSize) {
-             const diff = minSize - newH;
-             if (dir.includes('n')) {
-                // If we pushed the North edge past the limit, revert the cropY compensation
-                if (this.primaryComponentType === 'CAD::Viewport') {
-                  newCropY += diff / vpScale;
-                } else if ((this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image') && this.croppingComponentId === comp.componentId) {
-                  newCropY += diff;
-                }
-             }
-             if (dir.includes('s')) {
-                newY -= diff;
-                // No cropY compensation to revert for South edge
-             }
-             newH = minSize;
-          }
-
-          comp.x = Math.round(newX * 1000) / 1000;
-          comp.y = Math.round(newY * 1000) / 1000;
-          comp.width = Math.round(newW * 1000) / 1000;
-          comp.height = Math.round(newH * 1000) / 1000;
-          
-          const isImage = this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image';
-          
-          if (this.primaryComponentType === 'CAD::Viewport' || (isImage && this.croppingComponentId === comp.componentId)) {
-            (comp as any).cropX = Math.round(newCropX * 1000) / 1000;
-            (comp as any).cropY = Math.round(newCropY * 1000) / 1000;
-          } else if (isImage) {
-            const scaleX = newW / startCompW;
-            const scaleY = newH / startCompH;
-            (comp as any).cropX = Math.round(startCropX * scaleX * 1000) / 1000;
-            (comp as any).cropY = Math.round(startCropY * scaleY * 1000) / 1000;
-            (comp as any).imgWidth = Math.round(startImgW * scaleX * 1000) / 1000;
-            (comp as any).imgHeight = Math.round(startImgH * scaleY * 1000) / 1000;
-          }
-
-          this.render();
-        };
-
-        const onMouseUp = () => {
-          window.removeEventListener('mousemove', onMouseMove);
-          window.removeEventListener('mouseup', onMouseUp);
-          this.updateAndNotify();
-          setTimeout(() => { this.isDragging = false; }, 0);
-        };
-
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
-      });
-      
-      grabber.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    });
-
-    this.svgViewport.addEventListener('contextmenu', (e) => e.preventDefault());
-
-    this.svgViewport.addEventListener('mousedown', (e) => {
-      // 1. PANNING (Middle or Right Click)
-      if (e.button === 1 || e.button === 2) {
-        this.isDragging = false;
-        this.startX = e.clientX - this.panX;
-        this.startY = e.clientY - this.panY;
-        this.svgViewport.style.cursor = 'grabbing';
-
-        const onMouseMove = (moveEvt: MouseEvent) => {
-          this.isDragging = true;
-          this.panX = moveEvt.clientX - this.startX;
-          this.panY = moveEvt.clientY - this.startY;
-          this.updateZoomPan();
-        };
-
-        const onMouseUp = () => {
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-          this.svgViewport.style.cursor = 'crosshair';
-          setTimeout(() => { this.isDragging = false; }, 50);
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-        return;
-      }
-
-      // 2. SELECTION (Left Click)
-      if (e.button === 0) {
-        if (this.doc.type === 'CAD::Project') {
-          return;
-        }
-
-        const startMouseX = e.clientX;
-        const startMouseY = e.clientY;
-        let isSelecting = false;
-        let selectionBox: SVGRectElement | null = null;
-        const rootSvg = this.svgWrapper?.querySelector('svg');
-
-        const onMouseMove = (moveEvt: MouseEvent) => {
-          const dx = moveEvt.clientX - startMouseX;
-          const dy = moveEvt.clientY - startMouseY;
-          if (!isSelecting && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
-            isSelecting = true;
-            this.isDragging = true;
-            if (rootSvg) {
-              selectionBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-              selectionBox.setAttribute('stroke-width', '1');
-              selectionBox.setAttribute('vector-effect', 'non-scaling-stroke');
-              rootSvg.appendChild(selectionBox);
-            }
-          }
-
-          if (isSelecting && selectionBox && rootSvg) {
-            const ctm = rootSvg.getScreenCTM();
-            if (ctm) {
-              const inverse = ctm.inverse();
-              const ptStart = rootSvg.createSVGPoint();
-              ptStart.x = startMouseX;
-              ptStart.y = startMouseY;
-              const svgStart = ptStart.matrixTransform(inverse);
-
-              const ptCurrent = rootSvg.createSVGPoint();
-              ptCurrent.x = moveEvt.clientX;
-              ptCurrent.y = moveEvt.clientY;
-              const svgCurrent = ptCurrent.matrixTransform(inverse);
-
-              const x = Math.min(svgStart.x, svgCurrent.x);
-              const y = Math.min(svgStart.y, svgCurrent.y);
-              const w = Math.abs(svgCurrent.x - svgStart.x);
-              const h = Math.abs(svgCurrent.y - svgStart.y);
-
-              selectionBox.setAttribute('x', String(x));
-              selectionBox.setAttribute('y', String(y));
-              selectionBox.setAttribute('width', String(w));
-              selectionBox.setAttribute('height', String(h));
-              
-              const isLeftToRight = moveEvt.clientX >= startMouseX;
-              if (isLeftToRight) {
-                selectionBox.setAttribute('fill', 'rgba(59, 130, 246, 0.2)');
-                selectionBox.setAttribute('stroke', 'rgba(59, 130, 246, 0.8)');
-                selectionBox.removeAttribute('stroke-dasharray');
-              } else {
-                selectionBox.setAttribute('fill', 'rgba(34, 197, 94, 0.2)');
-                selectionBox.setAttribute('stroke', 'rgba(34, 197, 94, 0.8)');
-                selectionBox.setAttribute('stroke-dasharray', '4,4');
-              }
-            }
-          }
-        };
-
-        const onMouseUp = (upEvt: MouseEvent) => {
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-
-          if (isSelecting) {
-            if (selectionBox) {
-              const boxRect = selectionBox.getBoundingClientRect();
-              selectionBox.remove();
-              
-              const newSelection = new Set<string>();
-              if (upEvt.shiftKey || upEvt.metaKey) {
-                this.selectedComponentIds.forEach(id => newSelection.add(id));
-              }
-
-              const interactives = this.svgWrapper.querySelectorAll('.interactive-component');
-              const isLeftToRight = upEvt.clientX >= startMouseX;
-              
-              interactives.forEach(group => {
-                const groupRect = group.getBoundingClientRect();
-                
-                let isSelected = false;
-                if (isLeftToRight) {
-                  isSelected = (
-                    groupRect.left >= boxRect.left &&
-                    groupRect.right <= boxRect.right &&
-                    groupRect.top >= boxRect.top &&
-                    groupRect.bottom <= boxRect.bottom
-                  );
-                } else {
-                  isSelected = !(
-                    groupRect.right < boxRect.left || 
-                    groupRect.left > boxRect.right || 
-                    groupRect.bottom < boxRect.top || 
-                    groupRect.top > boxRect.bottom
-                  );
-                }
-                
-                if (isSelected) {
-                  const cid = group.getAttribute('data-component-id');
-                  if (cid) {
-                    if (upEvt.shiftKey || upEvt.metaKey) {
-                      if (newSelection.has(cid)) newSelection.delete(cid);
-                      else newSelection.add(cid);
-                    } else {
-                      newSelection.add(cid);
-                    }
-                  }
-                }
-              });
-              
-              this.selectedComponentIds = newSelection;
-              this.updatePrimaryComponentType();
-              if (this.options.onSelectionChange) this.options.onSelectionChange(this.getSelectedComponentIds(), this.primaryComponentType);
-              this.render();
-            }
-            setTimeout(() => { this.isDragging = false; }, 50);
-          } else {
-            // Just a click
-            const target = e.target as SVGElement;
-            const interactiveGroup = target.closest('.interactive-component') as SVGGElement | null;
-            
-            if (interactiveGroup) {
-              const cid = interactiveGroup.getAttribute('data-component-id');
-              if (cid) {
-                if (upEvt.shiftKey || upEvt.metaKey) {
-                  if (this.selectedComponentIds.has(cid)) this.selectedComponentIds.delete(cid);
-                  else this.selectedComponentIds.add(cid);
-                } else {
-                  this.selectedComponentIds.clear();
-                  this.selectedComponentIds.add(cid);
-                }
-                this.updatePrimaryComponentType();
-              }
-              if (this.options.onSelectionChange) this.options.onSelectionChange(this.getSelectedComponentIds(), this.primaryComponentType);
-              this.render();
-            } else {
-              this.selectedComponentIds.clear();
-              this.primaryComponentType = null;
-              if (this.options.onSelectionChange) this.options.onSelectionChange([], null);
-              this.render();
-            }
-          }
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-      }
-    });
-
-    this.svgViewport.addEventListener('wheel', (e) => {
-      e.preventDefault();
-
-      const rect = this.svgViewport.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      const worldX = (mouseX - this.panX) / this.zoom;
-      const worldY = (mouseY - this.panY) / this.zoom;
-
-      const zoomSpeed = 0.0012;
-      const factor = 1 - e.deltaY * zoomSpeed;
-      this.zoom = Math.max(0.05, Math.min(10.0, this.zoom * factor)); // Allow much wider zoom out for D-size sheets
-
-      this.panX = mouseX - worldX * this.zoom;
-      this.panY = mouseY - worldY * this.zoom;
-      this.updateZoomPan();
-    });
-  }
-
-  private updateZoomPan() {
-    if (this.svgWrapper) {
-      this.svgWrapper.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
-    }
-    this.updateOverlayPositions();
-  }
-
-  private updateOverlayPositions() {
-    if (this.selectedComponentIds.size === 0 || !this.svgWrapper) {
-      if (this.btnMoveOverlay) this.btnMoveOverlay.style.display = 'none';
-      if (this.btnCropOverlay) this.btnCropOverlay.style.display = 'none';
-      if (this.btnDeleteOverlay) this.btnDeleteOverlay.style.display = 'none';
-      if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
-      return;
-    }
-
-    const rootSvg = this.svgWrapper.querySelector('svg');
-    if (!rootSvg) return;
-
-    if (this.selectedComponentIds.size > 1) {
-      if (this.btnCropOverlay) this.btnCropOverlay.style.display = 'none';
-      if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
-
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      const containerRect = this.svgViewport.getBoundingClientRect();
-
-      this.selectedComponentIds.forEach(id => {
-        const el = this.svgWrapper?.querySelector(`[data-component-id="${id}"]`) as SVGGraphicsElement;
-        if (!el) return;
-        const bbox = el.getBBox();
-        const screenCTM = el.getScreenCTM();
-        if (!screenCTM) return;
-
-        const tl = rootSvg.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
-        const tr = rootSvg.createSVGPoint(); tr.x = bbox.x + bbox.width; tr.y = bbox.y;
-        const bl = rootSvg.createSVGPoint(); bl.x = bbox.x; bl.y = bbox.y + bbox.height;
-        const br = rootSvg.createSVGPoint(); br.x = bbox.x + bbox.width; br.y = bbox.y + bbox.height;
-
-        if (typeof tl.matrixTransform === 'function') {
-          const pts = [tl, tr, bl, br].map(p => p.matrixTransform(screenCTM));
-          pts.forEach(p => {
-            minX = Math.min(minX, p.x);
-            minY = Math.min(minY, p.y);
-            maxX = Math.max(maxX, p.x);
-            maxY = Math.max(maxY, p.y);
-          });
-        }
-      });
-
-      if (minX === Infinity) return;
-
-      const pxTop = minY - containerRect.top;
-      const pxRight = maxX - containerRect.left;
-
-      this.btnMoveOverlay.style.display = 'flex';
-      this.btnMoveOverlay.style.left = `${pxRight - 52}px`;
-      this.btnMoveOverlay.style.top = `${pxTop - 36}px`;
-
-      this.btnDeleteOverlay.style.display = 'flex';
-      this.btnDeleteOverlay.style.left = `${pxRight - 24}px`;
-      this.btnDeleteOverlay.style.top = `${pxTop - 36}px`;
-      return;
-    }
-
-    const cid = Array.from(this.selectedComponentIds)[0];
-    const selectedEl = this.svgWrapper.querySelector(`[data-component-id="${cid}"]`) as SVGGraphicsElement;
-    if (!selectedEl) {
-      if (this.btnMoveOverlay) this.btnMoveOverlay.style.display = 'none';
-      if (this.btnCropOverlay) this.btnCropOverlay.style.display = 'none';
-      if (this.btnDeleteOverlay) this.btnDeleteOverlay.style.display = 'none';
-      if (this.btnOpenOverlay) this.btnOpenOverlay.style.display = 'none';
-      if (this.grabbers) Object.values(this.grabbers).forEach(g => g.style.display = 'none');
-      return;
-    }
-
-    // Get bounding box in SVG coordinate space
-    let bbox = selectedEl.getBBox();
-    
-    // For viewports, align to the viewport frame border rather than the title label if it exists
-    if (this.primaryComponentType === 'CAD::Viewport') {
-      const borderRect = selectedEl.querySelector('rect[stroke="#475569"]') as SVGGElement | null;
-      if (borderRect) {
-        bbox = borderRect.getBBox();
-      }
-    }
-
-    
-    const rootSvgEl = this.svgWrapper.querySelector('svg');
-    if (!rootSvgEl) return;
-    
-    const screenCTM = selectedEl.getScreenCTM();
-    if (!screenCTM) return;
-
-    const isLine = this.primaryComponentType === 'Line' || this.primaryComponentType === 'CAD::Shape::Line';
-    let pts: DOMPoint[] = [];
-
-    if (isLine) {
-      const lineNode = selectedEl.querySelector('line');
-      if (lineNode) {
-        const pStart = rootSvgEl.createSVGPoint(); pStart.x = lineNode.x1.baseVal.value; pStart.y = lineNode.y1.baseVal.value;
-        const pEnd = rootSvgEl.createSVGPoint(); pEnd.x = lineNode.x2.baseVal.value; pEnd.y = lineNode.y2.baseVal.value;
-        if (typeof pStart.matrixTransform === 'function') {
-          pts = [pStart.matrixTransform(screenCTM), pEnd.matrixTransform(screenCTM)];
-        }
-      }
-    } else {
-      const tl = rootSvgEl.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
-      const tr = rootSvgEl.createSVGPoint(); tr.x = bbox.x + bbox.width; tr.y = bbox.y;
-      const bl = rootSvgEl.createSVGPoint(); bl.x = bbox.x; bl.y = bbox.y + bbox.height;
-      const br = rootSvgEl.createSVGPoint(); br.x = bbox.x + bbox.width; br.y = bbox.y + bbox.height;
-
-      // Handle JSDOM test environment where matrixTransform is missing
-      if (typeof tl.matrixTransform === 'function') {
-        pts = [tl, tr, bl, br].map(p => p.matrixTransform(screenCTM));
-      }
-    }
-
-    if (pts.length === 0) return;
-
-    const screenMinX = Math.min(...pts.map(p => p.x));
-    const screenMaxX = Math.max(...pts.map(p => p.x));
-    const screenMinY = Math.min(...pts.map(p => p.y));
-    const screenMaxY = Math.max(...pts.map(p => p.y));
-
-    // Convert from browser screen coordinates to the overlay container coordinates
-    const containerRect = this.svgViewport.getBoundingClientRect();
-    const pxLeft = screenMinX - containerRect.left;
-    const pxTop = screenMinY - containerRect.top;
-    const pxRight = screenMaxX - containerRect.left;
-    const pxBottom = screenMaxY - containerRect.top;
-
-    this.btnMoveOverlay.style.display = 'flex';
-    this.btnMoveOverlay.style.left = `${pxRight - 52}px`;
-    this.btnMoveOverlay.style.top = `${pxTop - 36}px`;
-
-    const isImage = this.primaryComponentType === 'CAD::Annotation::Image' || this.primaryComponentType === 'Image';
-    if (isImage) {
-      this.btnCropOverlay.style.display = 'flex';
-      this.btnCropOverlay.style.left = `${pxRight - 80}px`;
-      this.btnCropOverlay.style.top = `${pxTop - 36}px`;
-      
-      const comp = this.getSelectedShape();
-      const isCrop = comp && this.croppingComponentId === comp.componentId;
-      this.btnCropOverlay.style.background = isCrop ? '#3b82f6' : '#1e293b';
-      this.btnCropOverlay.style.borderColor = isCrop ? '#2563eb' : '#475569';
-      
-      if (isCrop) {
-        this.editOverlay.classList.add('crop-mode');
-      } else {
-        this.editOverlay.classList.remove('crop-mode');
-      }
-    } else {
-      this.btnCropOverlay.style.display = 'none';
-      this.editOverlay.classList.remove('crop-mode');
-    }
-
-    this.btnDeleteOverlay.style.display = 'flex';
-    this.btnDeleteOverlay.style.left = `${pxRight - 24}px`;
-    this.btnDeleteOverlay.style.top = `${pxTop - 36}px`;
-
-    if (this.primaryComponentType === 'CAD::Viewport') {
-      this.btnOpenOverlay.style.display = 'flex';
-      this.btnOpenOverlay.style.left = `${pxRight - 80}px`;
-      this.btnOpenOverlay.style.top = `${pxTop - 36}px`;
-    } else {
-      this.btnOpenOverlay.style.display = 'none';
-    }
-
-    const canResize = this.primaryComponentType === 'Rectangle' || this.primaryComponentType === 'CAD::Shape::Rectangle' || this.primaryComponentType === 'CAD::Viewport' || this.primaryComponentType === 'Image' || this.primaryComponentType === 'CAD::Annotation::Image';
-    
-    if (isLine && pts.length === 2) {
-      const pxLeft0 = pts[0].x - containerRect.left;
-      const pxTop0 = pts[0].y - containerRect.top;
-      const pxLeft1 = pts[1].x - containerRect.left;
-      const pxTop1 = pts[1].y - containerRect.top;
-
-      this.grabbers['line-start'].style.left = `${pxLeft0}px`; this.grabbers['line-start'].style.top = `${pxTop0}px`;
-      this.grabbers['line-end'].style.left = `${pxLeft1}px`; this.grabbers['line-end'].style.top = `${pxTop1}px`;
-      
-      this.grabbers['line-start'].style.display = 'block';
-      this.grabbers['line-end'].style.display = 'block';
-      
-      ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(d => {
-        if (this.grabbers[d]) this.grabbers[d].style.display = 'none';
-      });
-    } else if (canResize) {
-      const cx = (pxLeft + pxRight) / 2;
-      const cy = (pxTop + pxBottom) / 2;
-      
-      this.grabbers['nw'].style.left = `${pxLeft}px`; this.grabbers['nw'].style.top = `${pxTop}px`;
-      this.grabbers['n'].style.left = `${cx}px`; this.grabbers['n'].style.top = `${pxTop}px`;
-      this.grabbers['ne'].style.left = `${pxRight}px`; this.grabbers['ne'].style.top = `${pxTop}px`;
-      this.grabbers['e'].style.left = `${pxRight}px`; this.grabbers['e'].style.top = `${cy}px`;
-      this.grabbers['se'].style.left = `${pxRight}px`; this.grabbers['se'].style.top = `${pxBottom}px`;
-      this.grabbers['s'].style.left = `${cx}px`; this.grabbers['s'].style.top = `${pxBottom}px`;
-      this.grabbers['sw'].style.left = `${pxLeft}px`; this.grabbers['sw'].style.top = `${pxBottom}px`;
-      this.grabbers['w'].style.left = `${pxLeft}px`; this.grabbers['w'].style.top = `${cy}px`;
-      
-      Object.values(this.grabbers).forEach(g => {
-        if (g.getAttribute('data-dir') !== 'line-start' && g.getAttribute('data-dir') !== 'line-end') {
-          g.style.display = 'block';
-        }
-      });
-      if (this.grabbers['line-start']) this.grabbers['line-start'].style.display = 'none';
-      if (this.grabbers['line-end']) this.grabbers['line-end'].style.display = 'none';
-    } else {
-      Object.values(this.grabbers).forEach(g => g.style.display = 'none');
-    }
-  }
-
-  private deleteSelectedComponent() {
-    if (this.selectedComponentIds.size === 0) return;
-    
-    let hasDeleted = false;
-
-    this.selectedComponentIds.forEach(cid => {
-      let deleted = false;
-      
-      const activeSheet = this.getActiveSheet();
-      if (activeSheet && activeSheet.viewports) {
-        const idx = activeSheet.viewports.findIndex(v => v.componentId === cid);
-        if (idx > -1) {
-          activeSheet.viewports.splice(idx, 1);
-          deleted = true;
-        }
-      }
-
-      if (!deleted) {
-        const doc = this.findDocumentForComponent(cid);
-        if (doc && doc.geometry) {
-          let autoIndex = 0;
-          const idx = doc.geometry.findIndex(shape => {
-            const sid = shape.componentId || 'shape_' + autoIndex++;
-            return sid === cid;
-          });
-          if (idx > -1) {
-            doc.geometry.splice(idx, 1);
-            deleted = true;
-          }
-        }
-      }
-      
-      if (deleted) hasDeleted = true;
-    });
-
-    if (hasDeleted) {
-      this.selectedComponentIds.clear();
-      this.primaryComponentType = null;
-      this.updateAndNotify();
-    }
-  }
-
-  private getSelectedShape(): any {
+  
+  public getSelectedShape(): any {
     if (this.selectedComponentIds.size === 0) return null;
     const cid = Array.from(this.selectedComponentIds)[0]; // Primarily used when 1 item is selected
 
@@ -1291,7 +497,7 @@ export class VisualizerUI {
     return null;
   }
 
-  private updatePrimaryComponentType() {
+  public updatePrimaryComponentType() {
     if (this.selectedComponentIds.size === 1) {
       const cid = Array.from(this.selectedComponentIds)[0];
       const selectedGroup = this.svgWrapper.querySelector(`[data-component-id="${cid}"]`);
@@ -1303,7 +509,7 @@ export class VisualizerUI {
     }
   }
 
-  private findDocumentForComponent(docId: string): DetailDocument | null {
+  public findDocumentForComponent(docId: string): DetailDocument | null {
     if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
       return this.doc as DetailDocument;
     }
@@ -1343,304 +549,8 @@ export class VisualizerUI {
     return null;
   }
 
-  /**
-   * Generates dynamic form sliders for parameter variables associated with the selection
-   */
-  private renderPropertyEditor() {
-    if (!this.propertiesCardContainer) return;
-
-    if (this.selectedComponentIds.size === 0) {
-      // Nothing selected, render Document Properties
-      let scheduleHtml = '';
-      if (this.doc.type === 'CAD::SheetConfiguration') {
-        const sheet = this.getActiveSheet();
-        if (sheet && sheet.viewports && sheet.viewports.length > 0) {
-          scheduleHtml = `
-            <div class="card" style="margin-top: 12px;">
-              <h3 style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8;">Detail Schedule</h3>
-              <div class="properties-editor-body" style="padding: 0;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
-                  <thead>
-                    <tr style="border-bottom: 1px solid #334155;">
-                      <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal; width: 30px;">#</th>
-                      <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal;">Title</th>
-                      <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal; width: 60px;">Scale</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${sheet.viewports.map(vp => `
-                      <tr class="schedule-row" data-cid="${vp.componentId}" style="border-bottom: 1px solid #1e293b; cursor: pointer; transition: background 0.1s;">
-                        <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${vp.hideDetailNumber ? '-' : (vp.detailNumber || '1')}</td>
-                        <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;" title="${vp.title || (typeof vp.detail === 'string' ? vp.detail.split('/').pop()?.replace('.json', '') : 'Detail')}">${vp.title || (typeof vp.detail === 'string' ? vp.detail.split('/').pop()?.replace('.json', '') : 'Detail')}</td>
-                        <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${vp.hideScale ? '-' : (vp.scale || '')}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          `;
-        }
-      }
-
-      let tbDoc: any = null;
-      if (this.doc.type === 'CAD::Project') {
-        const ds = this.doc as any;
-        tbDoc = typeof ds.defaultTitleBlockRef === 'string' ? this.titleBlockMap.get(ds.defaultTitleBlockRef) : ds.defaultTitleBlockRef;
-      }
-
-      this.propertiesCardContainer.innerHTML = `
-        <div class="card">
-          <div class="properties-editor-body">
-            ${DocumentEditor.renderHTML(this.doc, this.getActiveSheet(), tbDoc)}
-          </div>
-        </div>
-        ${scheduleHtml}
-      `;
-      DocumentEditor.bindListeners({
-        container: this.propertiesCardContainer,
-        getLatestDoc: () => {
-          this.lastUpdateTime = Date.now();
-          return this.doc;
-        },
-        getActiveSheet: () => {
-          this.lastUpdateTime = Date.now();
-          return this.getActiveSheet();
-        },
-        updateAndNotify: () => this.updateAndNotify()
-      });
-      this.injectInlineApplyButtons();
-
-      if (scheduleHtml) {
-        const rows = this.propertiesCardContainer.querySelectorAll('.schedule-row');
-        rows.forEach(row => {
-          row.addEventListener('click', () => {
-            if (this.isProject()) return;
-            const cid = row.getAttribute('data-cid');
-            if (cid) {
-              this.selectedComponentIds.clear();
-              this.selectedComponentIds.add(cid);
-              this.primaryComponentType = 'CAD::Viewport';
-              if (this.options.onSelectionChange) this.options.onSelectionChange(this.getSelectedComponentIds(), this.primaryComponentType);
-              this.render();
-            }
-          });
-          row.addEventListener('mouseenter', () => {
-            (row as HTMLElement).style.backgroundColor = '#1e293b';
-          });
-          row.addEventListener('mouseleave', () => {
-            (row as HTMLElement).style.backgroundColor = 'transparent';
-          });
-        });
-      }
-
-      return;
-    }
-
-    if (this.selectedComponentIds.size > 1) {
-      this.propertiesCardContainer.innerHTML = `
-        <div class="card">
-          <div class="properties-editor-body" style="text-align: center; color: #94a3b8; padding: 16px;">
-            <p style="margin-bottom: 8px;">${this.selectedComponentIds.size} Items Selected</p>
-            <p style="font-size: 11px;">Property editing is disabled for multiple selections.</p>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    const cid = Array.from(this.selectedComponentIds)[0];
-
-    if (this.primaryComponentType === 'CAD::Viewport') {
-      const activeSheet = this.getActiveSheet();
-      if (!activeSheet || !activeSheet.viewports) return;
-      
-      const vpIndex = activeSheet.viewports.findIndex(v => v.componentId === cid);
-      if (vpIndex === -1) return;
-      const vp = activeSheet.viewports[vpIndex];
-
-      this.propertiesCardContainer.innerHTML = `
-        <div class="card">
-          <h3>Viewport Properties</h3>
-          <div class="properties-editor-body">
-            ${ViewportEditor.renderHTML(vp, vpIndex)}
-          </div>
-        </div>
-      `;
-
-      ViewportEditor.bindListeners({
-        container: this.propertiesCardContainer,
-        shapeIndex: vpIndex,
-        getLatestShape: () => {
-          this.lastUpdateTime = Date.now();
-          const sheet = this.getActiveSheet();
-          return sheet && sheet.viewports ? sheet.viewports[vpIndex] : null;
-        },
-        updateAndNotify: () => this.updateAndNotify()
-      });
-      this.injectInlineApplyButtons();
-      return;
-    }
-
-    // We must find which detail document the component belongs to.
-    const targetDoc = this.findDocumentForComponent(cid);
-
-    if (!targetDoc) {
-      this.propertiesCardContainer.innerHTML = `
-        <div class="card">
-          <div class="card-body" style="color: var(--vscode-descriptionForeground); text-align: center;">
-            No document found for selection.
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    // Filter parameters belonging to the selected componentId
-    const componentParams: [string, any][] = [];
-    if (targetDoc.parameters) {
-      for (const [key, param] of Object.entries(targetDoc.parameters)) {
-        if (param.componentId === cid) {
-          componentParams.push([key, param]);
-        }
-      }
-    }
-
-    // Find matching geometry shapes for direct property editing (Text, Font Size, Stroke Width)
-    const matchingShapes: { shape: any; index: number }[] = [];
-    if (targetDoc.geometry && Array.isArray(targetDoc.geometry)) {
-      let autoIndex = 0;
-      targetDoc.geometry.forEach((shape, idx) => {
-        const sid = shape.componentId || 'shape_' + autoIndex++;
-        if (sid === cid) {
-          matchingShapes.push({ shape, index: idx });
-        }
-      });
-    }
-
-    const niceName = this.primaryComponentType?.split('::').pop() || 'Selected Component';
-
-    if (componentParams.length === 0 && matchingShapes.length === 0) {
-      this.propertiesCardContainer.innerHTML = `
-        <div class="card">
-          <h3>${niceName}</h3>
-          <div class="card-body" style="color: var(--vscode-descriptionForeground); text-align: center; padding: 16px;">
-            This component contains no editable properties.
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    let controlsHtml = '';
-    let shapesHtml = '';
-
-    const isParametricConstruct = componentParams.length > 0;
-
-    if (isParametricConstruct) {
-      controlsHtml = ParametricEditor.renderHTML(componentParams);
-    } else {
-      shapesHtml = matchingShapes.map(({ shape, index }) => {
-        const editor = getEditorForShape(shape.type);
-        return editor.renderHTML(shape, index);
-      }).join('');
-    }
-
-    this.propertiesCardContainer.innerHTML = `
-      <div class="card">
-        <h3>${niceName}</h3>
-        <div class="properties-editor-body">
-          ${controlsHtml}
-          ${shapesHtml}
-        </div>
-      </div>
-    `;
-
-    if (isParametricConstruct) {
-      ParametricEditor.bindListeners({
-        container: this.propertiesCardContainer,
-        componentParams,
-        getLatestDoc: () => {
-          this.lastUpdateTime = Date.now();
-          return this.findDocumentForComponent(cid) || (this.doc as DetailDocument);
-        },
-        updateAndNotify: () => this.updateAndNotify()
-      });
-    } else {
-      matchingShapes.forEach(({ shape, index }) => {
-        const editor = getEditorForShape(shape.type);
-        editor.bindListeners({
-          container: this.propertiesCardContainer,
-          shapeIndex: index,
-          getLatestShape: () => {
-            this.lastUpdateTime = Date.now();
-            const latestDoc = this.findDocumentForComponent(cid) || (this.doc as DetailDocument);
-            return latestDoc.geometry && Array.isArray(latestDoc.geometry) ? latestDoc.geometry[index] : null;
-          },
-          updateAndNotify: () => this.updateAndNotify()
-        });
-      });
-    }
-    
-    this.injectInlineApplyButtons();
-  }
-
-  private injectInlineApplyButtons() {
-    if (!this.propertiesCardContainer) return;
-    
-    const textInputs = this.propertiesCardContainer.querySelectorAll('input[type="text"], input[type="number"]');
-    textInputs.forEach(input => {
-      // Don't inject if it already has one or is part of a complex slider group
-      if (input.parentElement && input.parentElement.classList.contains('param-slider-group')) return;
-
-      const htmlInput = input as HTMLInputElement;
-
-      // Create a wrapper to contain the input and the absolutely positioned button
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'position: relative; display: flex; align-items: center; justify-content: flex-end;';
-      
-      // Fix field widths: copy inline width if exists, otherwise expand text fields
-      if (htmlInput.style.width) {
-        wrapper.style.width = htmlInput.style.width;
-      } else if (htmlInput.type === 'text') {
-        wrapper.style.width = '140px'; 
-      } else {
-        wrapper.style.width = '55px'; // .precise-input CSS default
-      }
-
-      // Insert wrapper and move input inside
-      htmlInput.parentNode?.insertBefore(wrapper, htmlInput);
-      wrapper.appendChild(htmlInput);
-
-      // Make input fill wrapper and leave padding for the button
-      htmlInput.style.width = '100%';
-      htmlInput.style.boxSizing = 'border-box';
-      htmlInput.style.paddingRight = '18px';
-
-      const btn = document.createElement('button');
-      btn.innerHTML = '✓';
-      btn.title = "Apply Change";
-      btn.className = 'inline-apply-btn';
-      btn.style.cssText = 'display: none; background: transparent; border: none; color: #22c55e; cursor: pointer; padding: 0; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-weight: bold; font-size: 14px; outline: none; z-index: 10;';
-      
-      wrapper.appendChild(btn);
-
-      htmlInput.addEventListener('input', () => {
-        btn.style.display = 'block';
-      });
-
-      // Use mousedown so it fires before the input loses focus and triggers 'change' automatically
-      btn.addEventListener('mousedown', (e) => {
-        e.preventDefault(); 
-        htmlInput.blur();
-      });
-
-      htmlInput.addEventListener('change', () => {
-        btn.style.display = 'none';
-      });
-    });
-  }
-
+  
+  
   private renderSVG() {
     try {
       let svg = '';
@@ -1690,7 +600,7 @@ export class VisualizerUI {
 
         if (!sheet) {
           this.svgWrapper.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" style="background-color: #0f172a;"><text x="50%" y="50%" fill="#94a3b8" text-anchor="middle">No sheets found in Drawing Set</text></svg>`;
-          this.updateOverlayPositions();
+          this.interactionManager.updateOverlayPositions();
           return;
         }
 
@@ -1796,7 +706,7 @@ export class VisualizerUI {
     }
   }
 
-  private updateAndNotify() {
+  public updateAndNotify() {
     this.renderSVG();
     this.onChange(this.doc, this.viewportsMap, this.titleBlockMap);
   }
@@ -1813,48 +723,8 @@ export class VisualizerUI {
     // Maintain selection state
     this.renderSVG();
     if (Date.now() - this.lastUpdateTime > 500) {
-      this.renderPropertyEditor(); // Re-render props since we don't have updatePropertyValues hooked up fully for DrawingSets yet
+      this.propertiesManager.renderPropertyEditor(); // Re-render props since we don't have updatePropertyValues hooked up fully for DrawingSets yet
     }
-  }
-
-  public resetView() {
-    this.selectedComponentIds.clear();
-    this.primaryComponentType = null;
-
-    // Temporarily disable transition for synchronous measurement
-    const origTransition = this.svgWrapper.style.transition;
-    this.svgWrapper.style.transition = 'none';
-    this.zoom = 1.0;
-    this.panX = 0;
-    this.panY = 0;
-    this.updateZoomPan();
-
-    const extentsEl = this.svgWrapper.querySelector('.drawing-extents') as SVGElement | null;
-    if (extentsEl && this.svgViewport) {
-      const viewportRect = this.svgViewport.getBoundingClientRect();
-      const extentsRect = extentsEl.getBoundingClientRect();
-
-      if ((extentsRect.width > 0 || extentsRect.height > 0) && viewportRect.width > 0 && viewportRect.height > 0) {
-        const padding = 60; // 30px padding on edges
-        const availableWidth = Math.max(10, viewportRect.width - padding);
-        const availableHeight = Math.max(10, viewportRect.height - padding);
-
-        const scaleX = extentsRect.width > 0 ? availableWidth / extentsRect.width : 10.0;
-        const scaleY = extentsRect.height > 0 ? availableHeight / extentsRect.height : 10.0;
-        const newZoom = Math.max(0.05, Math.min(10.0, Math.min(scaleX, scaleY)));
-
-        const extentsCenterX = (extentsRect.left - viewportRect.left) + extentsRect.width / 2;
-        const extentsCenterY = (extentsRect.top - viewportRect.top) + extentsRect.height / 2;
-
-        this.zoom = newZoom;
-        this.panX = (viewportRect.width / 2) - extentsCenterX * this.zoom;
-        this.panY = (viewportRect.height / 2) - extentsCenterY * this.zoom;
-      }
-    }
-
-    // Restore transition
-    this.svgWrapper.style.transition = origTransition;
-    this.render();
   }
 
   public selectComponent(componentId: string | null, componentType: string | null = null) {
@@ -1869,10 +739,14 @@ export class VisualizerUI {
     this.render();
   }
 
+  public resetView() {
+    this.canvasManager.resetView();
+  }
+
   public render() {
     this.renderSheetDropdown();
     this.renderSVG();
-    this.renderPropertyEditor();
-    this.updateZoomPan();
+    this.propertiesManager.renderPropertyEditor();
+    this.canvasManager.updateZoomPan();
   }
 }
