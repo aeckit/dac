@@ -1,90 +1,28 @@
-import * as monaco from 'monaco-editor';
+
 import * as uiComponents from '@aeckit/ui-components';
 const { VisualizerUI } = uiComponents;
 import type { VisualizerDocument, VisualizerUI as VisualizerUIType } from '@aeckit/ui-components';
 import type { DetailDocument, SheetConfiguration, ProjectDocument } from '@aeckit/core-solver';
 import { WorkspaceManager } from './Workspace';
+import { JsonEditorManager } from './managers/JsonEditorManager';
+import { FileManagerUI } from './managers/FileManagerUI';
+import { getUniqueName } from './utils/DocumentUtils';
 
 // -----------------------------------------------------------------------------
 // Initialization
 // -----------------------------------------------------------------------------
-const workspace = new WorkspaceManager(() => {
-  renderFileList();
-  updateEditor();
-  updateVisualizer();
-  updateActiveFileName();
-});
-
-let editor: monaco.editor.IStandaloneCodeEditor;
+let jsonEditor: JsonEditorManager | null = null;
+let fileManager: FileManagerUI | null = null;
 let uiInstance: VisualizerUIType | null = null;
-let isUpdatingEditor = false;
-let isEditingSubComponent = false;
-let currentSubComponentId: string | null = null;
-let currentSubComponentFilename: string | null = null;
 
-function getSubComponent(doc: any, id: string): any {
-  if (!doc) return null;
-  if (doc.type === 'CAD::Detail' || doc.type === 'CAD::TitleBlock') {
-    let autoIndex = 0;
-    for (const g of doc.geometry || []) {
-      const cid = g.componentId || `shape_${autoIndex++}`;
-      if (cid === id) return g;
-    }
+const workspace = new WorkspaceManager(() => {
+  fileManager?.render();
+  jsonEditor?.updateEditor();
+  updateVisualizer();
+  if (activeFilenameEl) {
+    activeFilenameEl.textContent = workspace.activeFilename || 'No file selected';
   }
-  if (doc.type === 'CAD::SheetConfiguration') {
-    return doc.viewports?.find((v: any) => v.componentId === id);
-  }
-  if (doc.type === 'CAD::Project') {
-    const ds = doc as any;
-    if (Array.isArray(ds.sheets)) {
-      for (const sheet of ds.sheets) {
-        if (typeof sheet === 'object') {
-          const v = sheet.viewports?.find((v: any) => v.componentId === id);
-          if (v) return v;
-        }
-      }
-    }
-  }
-  return null;
-}
-
-function updateSubComponent(doc: any, id: string, newComponent: any): boolean {
-  if (!doc) return false;
-  if (doc.type === 'CAD::Detail' || doc.type === 'CAD::TitleBlock') {
-    let autoIndex = 0;
-    const geom = doc.geometry || [];
-    for (let i = 0; i < geom.length; i++) {
-      const g = geom[i];
-      const cid = g.componentId || `shape_${autoIndex++}`;
-      if (cid === id) {
-        geom[i] = newComponent;
-        return true;
-      }
-    }
-  }
-  if (doc.type === 'CAD::SheetConfiguration') {
-    const idx = doc.viewports?.findIndex((v: any) => v.componentId === id);
-    if (idx !== undefined && idx !== -1) {
-      doc.viewports[idx] = newComponent;
-      return true;
-    }
-  }
-  if (doc.type === 'CAD::Project') {
-    const ds = doc as any;
-    if (Array.isArray(ds.sheets)) {
-      for (const sheet of ds.sheets) {
-        if (typeof sheet === 'object') {
-          const idx = sheet.viewports?.findIndex((v: any) => v.componentId === id);
-          if (idx !== undefined && idx !== -1) {
-            sheet.viewports[idx] = newComponent;
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
-}
+});
 
 // -----------------------------------------------------------------------------
 // DOM Elements
@@ -99,114 +37,13 @@ const toastEl = document.getElementById('toast') as HTMLElement;
 // Setup Monaco Editor
 // -----------------------------------------------------------------------------
 function initEditor() {
-  editor = monaco.editor.create(editorContainer, {
-    value: workspace.getActiveFileContentString(),
-    language: 'json',
-    theme: 'vs-dark',
-    automaticLayout: true,
-    minimap: { enabled: false },
-    formatOnType: true,
+  return new JsonEditorManager({
+    container: editorContainer,
+    workspace,
+    onUpdateVisualizer: updateVisualizer,
+    getSelectedComponentIds: () => uiInstance?.getSelectedComponentIds() || [],
+    getStatusPill: () => document.getElementById('json-validity-status')
   });
-
-  editor.onDidChangeModelContent(() => {
-    if (isUpdatingEditor) return;
-    const val = editor.getValue();
-    const statusPill = document.getElementById('json-validity-status');
-    
-    if (isEditingSubComponent && currentSubComponentId && currentSubComponentFilename) {
-      try {
-        const parsed = JSON.parse(val);
-        const doc = workspace.getFiles()[currentSubComponentFilename];
-        if (doc && updateSubComponent(doc, currentSubComponentId, parsed)) {
-          // Trigger workspace update
-          workspace.updateActiveFile(workspace.getActiveFileContent()!);
-          updateVisualizer();
-          
-          if (statusPill) statusPill.style.display = 'none';
-        }
-      } catch (e: any) {
-        if (statusPill) {
-          const firstLine = e.message ? e.message.split('\n')[0] : 'Unknown error';
-          statusPill.style.display = 'flex';
-          statusPill.innerHTML = '<span class="status-indicator" style="background-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5);"></span>JSON Error';
-          statusPill.style.color = '#ef4444';
-          statusPill.title = firstLine;
-        }
-      }
-    } else {
-      const result = workspace.updateActiveFileFromString(val);
-      
-      if (statusPill) {
-        if (result.success) {
-          statusPill.style.display = 'none';
-        } else {
-          const firstLine = result.error ? result.error.split('\n')[0] : 'Unknown error';
-          statusPill.style.display = 'flex';
-          statusPill.innerHTML = '<span class="status-indicator" style="background-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5);"></span>JSON Error';
-          statusPill.style.color = '#ef4444';
-          statusPill.title = firstLine;
-        }
-      }
-
-      if (result.success) {
-        updateVisualizer();
-      }
-    }
-  });
-}
-
-function updateEditor() {
-  if (!editor) return;
-  isUpdatingEditor = true;
-  const currentVal = editor.getValue();
-  
-  const selectedIds = uiInstance?.getSelectedComponentIds() || [];
-  let newVal = '';
-  
-  if (selectedIds.length === 1) {
-    const id = selectedIds[0];
-    const doc = workspace.getActiveFileContent();
-    let comp = getSubComponent(doc, id);
-    let filename = workspace.activeFilename;
-    
-    if (!comp && doc?.type === 'CAD::Project') {
-       // Check if it's in a referenced sheet
-       const ds = doc as ProjectDocument;
-       // We can iterate over string sheets to find the component
-       for (const sheetRef of ds.sheets) {
-         if (typeof sheetRef === 'string') {
-           const sheetDoc = workspace.getFiles()[sheetRef];
-           comp = getSubComponent(sheetDoc, id);
-           if (comp) {
-             filename = sheetRef;
-             break;
-           }
-         }
-       }
-    }
-    
-    if (comp) {
-      newVal = JSON.stringify(comp, null, 2);
-      isEditingSubComponent = true;
-      currentSubComponentId = id;
-      currentSubComponentFilename = filename;
-    } else {
-      newVal = workspace.getActiveFileContentString();
-      isEditingSubComponent = false;
-      currentSubComponentId = null;
-      currentSubComponentFilename = null;
-    }
-  } else {
-    newVal = workspace.getActiveFileContentString();
-    isEditingSubComponent = false;
-    currentSubComponentId = null;
-    currentSubComponentFilename = null;
-  }
-
-  if (currentVal !== newVal) {
-    editor.setValue(newVal);
-  }
-  isUpdatingEditor = false;
 }
 
 // -----------------------------------------------------------------------------
@@ -275,7 +112,7 @@ function updateVisualizer() {
           });
         }
         workspace.updateActiveFile(newDoc);
-        updateEditor();
+        jsonEditor?.updateEditor();
       },
       viewportsMap,
       titleBlockMap,
@@ -283,7 +120,7 @@ function updateVisualizer() {
         sheetsMap, 
         parentProject: parentProject || undefined,
         onSelectionChange: () => {
-          updateEditor();
+          jsonEditor?.updateEditor();
         }
       }
     );
@@ -301,7 +138,7 @@ function updateVisualizer() {
   } else {
     // If selection changed previously, updateConfig might re-render. Make sure to hook onSelectionChange if we didn't recreate it
     if ((uiInstance as any).options) {
-      (uiInstance as any).options.onSelectionChange = () => updateEditor();
+      (uiInstance as any).options.onSelectionChange = () => jsonEditor?.updateEditor();
     }
     uiInstance.updateConfig(vizDoc, viewportsMap, titleBlockMap, sheetsMap, parentProject);
     if (currentVisualizerFilename !== workspace.activeFilename) {
@@ -312,217 +149,23 @@ function updateVisualizer() {
   currentVisualizerFilename = workspace.activeFilename;
 }
 
-// -----------------------------------------------------------------------------
-// File Manager UI
-// -----------------------------------------------------------------------------
-function renderFileList() {
-  fileListEl.innerHTML = '';
-  const files = workspace.getFiles();
-  
-  const createDeleteButton = (filename: string) => {
-    const delBtn = document.createElement('span');
-    delBtn.textContent = '×';
-    delBtn.style.color = '#ff6b6b';
-    delBtn.style.marginLeft = '8px';
-    delBtn.style.cursor = 'pointer';
-    delBtn.onclick = (e) => {
-      e.stopPropagation();
-      workspace.deleteFile(filename);
-    };
-    return delBtn;
-  };
-
-  const renderSectionTitle = (title: string) => {
-    const header = document.createElement('div');
-    header.textContent = title;
-    header.style.fontSize = '10px';
-    header.style.textTransform = 'uppercase';
-    header.style.color = '#94a3b8';
-    header.style.padding = '12px 12px 4px 12px';
-    header.style.fontWeight = 'bold';
-    header.style.letterSpacing = '0.5px';
-    fileListEl.appendChild(header);
-  };
-
-  const projects = Object.keys(files).filter(k => files[k].type === 'CAD::Project');
-  const sheets = Object.keys(files).filter(k => files[k].type === 'CAD::SheetConfiguration');
-  const titleBlocks = Object.keys(files).filter(k => files[k].type === 'CAD::TitleBlock');
-  const details = Object.keys(files).filter(k => files[k].type === 'CAD::Detail');
-  
-  // Also collect any unclassified files
-  const classified = new Set([...projects, ...sheets, ...titleBlocks, ...details]);
-  const others = Object.keys(files).filter(k => !classified.has(k));
-  details.push(...others);
-
-  // Render Projects
-  if (projects.length > 0) {
-    renderSectionTitle('Projects');
-    
-    projects.forEach(projFile => {
-      // 1) Render Project Item
-      const li = document.createElement('li');
-      li.className = 'file-item' + (projFile === workspace.activeFilename ? ' active' : '');
-      li.style.fontWeight = 'bold';
-      
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = projFile;
-      li.appendChild(nameSpan);
-      
-      const delBtn = createDeleteButton(projFile);
-      delBtn.style.marginLeft = 'auto';
-      li.appendChild(delBtn);
-      
-      li.onclick = () => {
-        const isJson = tabContentJson?.classList.contains('active');
-        workspace.setActiveFile(projFile);
-        if (isJson) tabBtnJson?.click();
-      };
-      
-      fileListEl.appendChild(li);
-
-      // 2) Render Sheets under this Project
-      const projDoc = files[projFile] as any;
-      if (projDoc && Array.isArray(projDoc.sheets)) {
-        projDoc.sheets.forEach((sheetRef: any) => {
-          const sheetName = typeof sheetRef === 'string' ? sheetRef : sheetRef.sheetName; // Handle embedded vs referenced
-          if (sheetName && files[sheetName]) {
-            const sli = document.createElement('li');
-            sli.className = 'file-item' + (sheetName === workspace.activeFilename ? ' active' : '');
-            sli.style.paddingLeft = '24px'; // Indent under project
-            sli.style.borderLeft = '1px solid #334155'; // Visual tree line
-            
-            const sNameSpan = document.createElement('span');
-            sNameSpan.textContent = "↳ " + sheetName;
-            sli.appendChild(sNameSpan);
-            
-            const sDelBtn = createDeleteButton(sheetName);
-            sDelBtn.style.marginLeft = 'auto';
-            sli.appendChild(sDelBtn);
-            
-            sli.onclick = () => {
-              const isJson = tabContentJson?.classList.contains('active');
-              workspace.setActiveFile(sheetName);
-              if (isJson) tabBtnJson?.click();
-            };
-            fileListEl.appendChild(sli);
-            
-            // Remove it from the general "sheets" pool so it doesn't render twice
-            const idx = sheets.indexOf(sheetName);
-            if (idx > -1) sheets.splice(idx, 1);
-          }
-        });
+function initFileManager() {
+  return new FileManagerUI({
+    container: fileListEl,
+    workspace,
+    onFileSelect: (filename: string) => {
+      const isJson = tabContentJson?.classList.contains('active');
+      workspace.setActiveFile(filename);
+      if (isJson) tabBtnJson?.click();
+    },
+    onInsertDetail: (filename: string) => {
+      if (uiInstance && uiInstance.getActiveSheet()) {
+        uiInstance.insertViewport(filename);
+      } else {
+        showToast('Open a Sheet or Drawing Set first to insert this detail.');
       }
-    });
-  }
-
-  // Render Unassigned Sheets (orphans)
-  if (sheets.length > 0) {
-    renderSectionTitle('Unassigned Sheets');
-    
-    sheets.forEach(sheetFile => {
-      const li = document.createElement('li');
-      li.className = 'file-item' + (sheetFile === workspace.activeFilename ? ' active' : '');
-      
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = sheetFile;
-      li.appendChild(nameSpan);
-      
-      const delBtn = createDeleteButton(sheetFile);
-      delBtn.style.marginLeft = 'auto';
-      li.appendChild(delBtn);
-      
-      li.onclick = () => {
-        const isJson = tabContentJson?.classList.contains('active');
-        workspace.setActiveFile(sheetFile);
-        if (isJson) tabBtnJson?.click();
-      };
-      
-      fileListEl.appendChild(li);
-    });
-  }
-
-  // Render Title Blocks
-  if (titleBlocks.length > 0) {
-    renderSectionTitle('Title Blocks');
-    
-    titleBlocks.forEach(tbFile => {
-      const li = document.createElement('li');
-      li.className = 'file-item' + (tbFile === workspace.activeFilename ? ' active' : '');
-      
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = tbFile;
-      li.appendChild(nameSpan);
-      
-      const delBtn = createDeleteButton(tbFile);
-      delBtn.style.marginLeft = 'auto';
-      li.appendChild(delBtn);
-      
-      li.onclick = () => {
-        const isJson = tabContentJson?.classList.contains('active');
-        workspace.setActiveFile(tbFile);
-        if (isJson) tabBtnJson?.click();
-      };
-      
-      fileListEl.appendChild(li);
-    });
-  }
-
-  // Render Details
-  if (details.length > 0) {
-    renderSectionTitle('Details');
-    
-    details.forEach(detFile => {
-      const li = document.createElement('li');
-      li.className = 'file-item' + (detFile === workspace.activeFilename ? ' active' : '');
-      
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = detFile;
-      li.appendChild(nameSpan);
-      
-      const addBtn = document.createElement('span');
-      addBtn.textContent = '+';
-      addBtn.style.color = '#4ade80';
-      addBtn.style.marginLeft = 'auto';
-      addBtn.style.marginRight = '8px';
-      addBtn.style.cursor = 'pointer';
-      addBtn.title = 'Insert into active sheet';
-      addBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (uiInstance && uiInstance.getActiveSheet()) {
-          uiInstance.insertViewport(detFile);
-        } else {
-          showToast('Open a Sheet or Drawing Set first to insert this detail.');
-        }
-      };
-      li.appendChild(addBtn);
-      
-      const delBtn = createDeleteButton(detFile);
-      li.appendChild(delBtn);
-      
-      li.onclick = () => {
-        const isJson = tabContentJson?.classList.contains('active');
-        workspace.setActiveFile(detFile);
-        if (isJson) tabBtnJson?.click();
-      };
-      
-      fileListEl.appendChild(li);
-    });
-  }
-}
-
-function updateActiveFileName() {
-  activeFilenameEl.textContent = workspace.activeFilename || 'No file selected';
-}
-
-function getUniqueName(base: string) {
-  let name = base + '.json';
-  let i = 1;
-  const files = workspace.getFiles();
-  while (files[name]) {
-    name = `${base}-${i}.json`;
-    i++;
-  }
-  return name;
+    }
+  });
 }
 
 document.getElementById('btn-new-detail')?.addEventListener('click', () => {
@@ -533,7 +176,7 @@ document.getElementById('btn-new-detail')?.addEventListener('click', () => {
     scale: '1"=1\'-0"',
     geometry: []
   };
-  workspace.createFile(getUniqueName('detail'), doc);
+  workspace.createFile(getUniqueName('detail', () => workspace.getFiles()), doc);
   if (isJson) tabBtnJson?.click();
 });
 
@@ -545,7 +188,7 @@ document.getElementById('btn-new-sheet')?.addEventListener('click', () => {
     sheetName: 'New Sheet',
     viewports: []
   };
-  workspace.createFile(getUniqueName('sheet'), doc);
+  workspace.createFile(getUniqueName('sheet', () => workspace.getFiles()), doc);
   if (isJson) tabBtnJson?.click();
 });
 
@@ -556,7 +199,7 @@ document.getElementById('btn-new-set')?.addEventListener('click', () => {
     projectName: 'New Project',
     sheets: []
   };
-  workspace.createFile(getUniqueName('project'), doc);
+  workspace.createFile(getUniqueName('project', () => workspace.getFiles()), doc);
   if (isJson) tabBtnJson?.click();
 });
 
@@ -588,9 +231,7 @@ if (paneResizer && workspacePane && rightPane) {
 
     rightPane.style.flex = 'none';
     rightPane.style.width = `${clampedWidth}px`;
-    if (editor) {
-      editor.layout();
-    }
+    jsonEditor?.layout();
   });
 
   document.addEventListener('mouseup', () => {
@@ -598,9 +239,7 @@ if (paneResizer && workspacePane && rightPane) {
       isResizing = false;
       paneResizer.classList.remove('resizing');
       document.body.style.cursor = '';
-      if (editor) {
-        editor.layout();
-      }
+      jsonEditor?.layout();
     }
   });
 }
@@ -626,9 +265,7 @@ tabBtnJson?.addEventListener('click', () => {
   tabBtnInspector?.classList.remove('active');
   tabContentJson?.classList.add('active');
   tabContentInspector?.classList.remove('active');
-  if (editor) {
-    editor.layout();
-  }
+  jsonEditor?.layout();
 });
 
 function showToast(msg: string) {
@@ -675,7 +312,7 @@ function initPaneToggles() {
       btnToggleLeft.classList.toggle('collapsed', isCollapsed);
       btnToggleLeft.title = isCollapsed ? 'Expand Left Sidebar' : 'Collapse Left Sidebar';
     }
-    setTimeout(() => editor?.layout(), 200);
+    setTimeout(() => jsonEditor?.layout(), 200);
   };
 
   const toggleRight = () => {
@@ -687,7 +324,7 @@ function initPaneToggles() {
       btnToggleRight.classList.toggle('collapsed', isCollapsed);
       btnToggleRight.title = isCollapsed ? 'Expand Inspector/JSON' : 'Collapse Inspector/JSON';
     }
-    setTimeout(() => editor?.layout(), 50);
+    setTimeout(() => jsonEditor?.layout(), 50);
   };
 
   window.addEventListener('dac-toggle-left-pane', toggleLeft);
@@ -697,7 +334,7 @@ function initPaneToggles() {
     if (filename && workspace.getFiles()[filename]) {
       const isJson = tabContentJson?.classList.contains('active');
       workspace.setActiveFile(filename);
-      updateEditor();
+      jsonEditor?.updateEditor();
       if (isJson) tabBtnJson?.click();
     } else {
       showToast('File not found: ' + filename);
@@ -708,15 +345,18 @@ function initPaneToggles() {
 // -----------------------------------------------------------------------------
 // Boot
 // -----------------------------------------------------------------------------
-initEditor();
+jsonEditor = initEditor();
+fileManager = initFileManager();
 initPaneToggles();
-renderFileList();
-updateActiveFileName();
+fileManager?.render();
+if (activeFilenameEl) {
+  activeFilenameEl.textContent = workspace.activeFilename || 'No file selected';
+}
 updateVisualizer();
 
 // Handle window resize for Monaco
 window.addEventListener('resize', () => {
-  if (editor && editorContainer.classList.contains('visible')) {
-    editor.layout();
+  if (editorContainer.classList.contains('visible')) {
+    jsonEditor?.layout();
   }
 });
