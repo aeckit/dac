@@ -10,6 +10,7 @@ export interface VisualizerUIOptions {
   parentProject?: ProjectDocument;
   sheetsMap?: Map<string, SheetConfiguration>;
   editorFactory?: (container: HTMLElement, initialValue: string, onChange: (value: string) => void) => any;
+  onSelectionChange?: (selectedIds: string[], primaryType: string | null) => void;
 }
 
 export class VisualizerUI {
@@ -86,6 +87,14 @@ export class VisualizerUI {
       return this.resolveSheet(ds.sheets[this.activeSheetIndex]);
     }
     return null;
+  }
+
+  public getSelectedComponentIds(): string[] {
+    return Array.from(this.selectedComponentIds);
+  }
+
+  public getPrimaryComponentType(): string | null {
+    return this.primaryComponentType;
   }
 
   public resolveSheet(sheetRef: string | SheetConfiguration): SheetConfiguration | null {
@@ -447,6 +456,8 @@ export class VisualizerUI {
     selectEl.addEventListener('change', () => {
       this.activeSheetIndex = parseInt(selectEl.value, 10);
       this.selectedComponentIds.clear(); // Clear selection when switching sheets
+      this.primaryComponentType = null;
+      if (this.options.onSelectionChange) this.options.onSelectionChange([], null);
       this.render();
     });
   }
@@ -948,6 +959,7 @@ export class VisualizerUI {
               
               this.selectedComponentIds = newSelection;
               this.updatePrimaryComponentType();
+              if (this.options.onSelectionChange) this.options.onSelectionChange(this.getSelectedComponentIds(), this.primaryComponentType);
               this.render();
             }
             setTimeout(() => { this.isDragging = false; }, 50);
@@ -968,10 +980,12 @@ export class VisualizerUI {
                 }
                 this.updatePrimaryComponentType();
               }
+              if (this.options.onSelectionChange) this.options.onSelectionChange(this.getSelectedComponentIds(), this.primaryComponentType);
               this.render();
             } else {
               this.selectedComponentIds.clear();
               this.primaryComponentType = null;
+              if (this.options.onSelectionChange) this.options.onSelectionChange([], null);
               this.render();
             }
           }
@@ -1407,6 +1421,7 @@ export class VisualizerUI {
               this.selectedComponentIds.clear();
               this.selectedComponentIds.add(cid);
               this.primaryComponentType = 'CAD::Viewport';
+              if (this.options.onSelectionChange) this.options.onSelectionChange(this.getSelectedComponentIds(), this.primaryComponentType);
               this.render();
             }
           });
@@ -1845,7 +1860,12 @@ export class VisualizerUI {
   public selectComponent(componentId: string | null, componentType: string | null = null) {
     this.selectedComponentIds.clear();
     if (componentId) this.selectedComponentIds.add(componentId);
-    this.primaryComponentType = componentType;
+    if (componentType) this.primaryComponentType = componentType;
+    
+    if (this.options.onSelectionChange) {
+      this.options.onSelectionChange(this.getSelectedComponentIds(), this.primaryComponentType);
+    }
+    
     this.render();
   }
 

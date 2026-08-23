@@ -18,6 +18,64 @@ const workspace = new WorkspaceManager(() => {
 let editor: monaco.editor.IStandaloneCodeEditor;
 let uiInstance: VisualizerUIType | null = null;
 let isUpdatingEditor = false;
+let isEditingSubComponent = false;
+let currentSubComponentId: string | null = null;
+let currentSubComponentFilename: string | null = null;
+
+function getSubComponent(doc: any, id: string): any {
+  if (!doc) return null;
+  if (doc.type === 'CAD::Detail' || doc.type === 'CAD::TitleBlock') {
+    return doc.geometry?.find((g: any) => g.componentId === id);
+  }
+  if (doc.type === 'CAD::SheetConfiguration') {
+    return doc.viewports?.find((v: any) => v.componentId === id);
+  }
+  if (doc.type === 'CAD::Project') {
+    const ds = doc as any;
+    if (Array.isArray(ds.sheets)) {
+      for (const sheet of ds.sheets) {
+        if (typeof sheet === 'object') {
+          const v = sheet.viewports?.find((v: any) => v.componentId === id);
+          if (v) return v;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function updateSubComponent(doc: any, id: string, newComponent: any): boolean {
+  if (!doc) return false;
+  if (doc.type === 'CAD::Detail' || doc.type === 'CAD::TitleBlock') {
+    const idx = doc.geometry?.findIndex((g: any) => g.componentId === id);
+    if (idx !== undefined && idx !== -1) {
+      doc.geometry[idx] = newComponent;
+      return true;
+    }
+  }
+  if (doc.type === 'CAD::SheetConfiguration') {
+    const idx = doc.viewports?.findIndex((v: any) => v.componentId === id);
+    if (idx !== undefined && idx !== -1) {
+      doc.viewports[idx] = newComponent;
+      return true;
+    }
+  }
+  if (doc.type === 'CAD::Project') {
+    const ds = doc as any;
+    if (Array.isArray(ds.sheets)) {
+      for (const sheet of ds.sheets) {
+        if (typeof sheet === 'object') {
+          const idx = sheet.viewports?.findIndex((v: any) => v.componentId === id);
+          if (idx !== undefined && idx !== -1) {
+            sheet.viewports[idx] = newComponent;
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
 
 // -----------------------------------------------------------------------------
 // DOM Elements
@@ -44,23 +102,46 @@ function initEditor() {
   editor.onDidChangeModelContent(() => {
     if (isUpdatingEditor) return;
     const val = editor.getValue();
-    const result = workspace.updateActiveFileFromString(val);
-    
     const statusPill = document.getElementById('json-validity-status');
-    if (statusPill) {
-      if (result.success) {
-        statusPill.style.display = 'none';
-      } else {
-        const firstLine = result.error ? result.error.split('\\n')[0] : 'Unknown error';
-        statusPill.style.display = 'flex';
-        statusPill.innerHTML = '<span class="status-indicator" style="background-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5);"></span>JSON Error';
-        statusPill.style.color = '#ef4444';
-        statusPill.title = firstLine;
+    
+    if (isEditingSubComponent && currentSubComponentId && currentSubComponentFilename) {
+      try {
+        const parsed = JSON.parse(val);
+        const doc = workspace.getFiles()[currentSubComponentFilename];
+        if (doc && updateSubComponent(doc, currentSubComponentId, parsed)) {
+          // Trigger workspace update
+          workspace.updateActiveFile(workspace.getActiveFileContent()!);
+          updateVisualizer();
+          
+          if (statusPill) statusPill.style.display = 'none';
+        }
+      } catch (e: any) {
+        if (statusPill) {
+          const firstLine = e.message ? e.message.split('\n')[0] : 'Unknown error';
+          statusPill.style.display = 'flex';
+          statusPill.innerHTML = '<span class="status-indicator" style="background-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5);"></span>JSON Error';
+          statusPill.style.color = '#ef4444';
+          statusPill.title = firstLine;
+        }
       }
-    }
+    } else {
+      const result = workspace.updateActiveFileFromString(val);
+      
+      if (statusPill) {
+        if (result.success) {
+          statusPill.style.display = 'none';
+        } else {
+          const firstLine = result.error ? result.error.split('\n')[0] : 'Unknown error';
+          statusPill.style.display = 'flex';
+          statusPill.innerHTML = '<span class="status-indicator" style="background-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5);"></span>JSON Error';
+          statusPill.style.color = '#ef4444';
+          statusPill.title = firstLine;
+        }
+      }
 
-    if (result.success) {
-      updateVisualizer();
+      if (result.success) {
+        updateVisualizer();
+      }
     }
   });
 }
@@ -69,7 +150,50 @@ function updateEditor() {
   if (!editor) return;
   isUpdatingEditor = true;
   const currentVal = editor.getValue();
-  const newVal = workspace.getActiveFileContentString();
+  
+  const selectedIds = uiInstance?.getSelectedComponentIds() || [];
+  let newVal = '';
+  
+  if (selectedIds.length === 1) {
+    const id = selectedIds[0];
+    const doc = workspace.getActiveFileContent();
+    let comp = getSubComponent(doc, id);
+    let filename = workspace.activeFilename;
+    
+    if (!comp && doc?.type === 'CAD::Project') {
+       // Check if it's in a referenced sheet
+       const ds = doc as ProjectDocument;
+       // We can iterate over string sheets to find the component
+       for (const sheetRef of ds.sheets) {
+         if (typeof sheetRef === 'string') {
+           const sheetDoc = workspace.getFiles()[sheetRef];
+           comp = getSubComponent(sheetDoc, id);
+           if (comp) {
+             filename = sheetRef;
+             break;
+           }
+         }
+       }
+    }
+    
+    if (comp) {
+      newVal = JSON.stringify(comp, null, 2);
+      isEditingSubComponent = true;
+      currentSubComponentId = id;
+      currentSubComponentFilename = filename;
+    } else {
+      newVal = workspace.getActiveFileContentString();
+      isEditingSubComponent = false;
+      currentSubComponentId = null;
+      currentSubComponentFilename = null;
+    }
+  } else {
+    newVal = workspace.getActiveFileContentString();
+    isEditingSubComponent = false;
+    currentSubComponentId = null;
+    currentSubComponentFilename = null;
+  }
+
   if (currentVal !== newVal) {
     editor.setValue(newVal);
   }
@@ -146,7 +270,13 @@ function updateVisualizer() {
       },
       viewportsMap,
       titleBlockMap,
-      { sheetsMap, parentProject: parentProject || undefined }
+      { 
+        sheetsMap, 
+        parentProject: parentProject || undefined,
+        onSelectionChange: () => {
+          updateEditor();
+        }
+      }
     );
 
     // After instantiation, detach the Drawing Inspector and move to tabs
@@ -160,6 +290,10 @@ function updateVisualizer() {
       tabInspector.appendChild(leftSidebar);
     }
   } else {
+    // If selection changed previously, updateConfig might re-render. Make sure to hook onSelectionChange if we didn't recreate it
+    if ((uiInstance as any).options) {
+      (uiInstance as any).options.onSelectionChange = () => updateEditor();
+    }
     uiInstance.updateConfig(vizDoc, viewportsMap, titleBlockMap, sheetsMap, parentProject);
     if (currentVisualizerFilename !== workspace.activeFilename) {
       uiInstance.resetView(); // Auto-deselect and re-center on file switch
