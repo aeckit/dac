@@ -120,7 +120,17 @@ export class VisualizerUI {
     if (activeSheet) {
       if (!activeSheet.viewports) activeSheet.viewports = [];
       const id = 'viewport_' + Date.now().toString(36);
-      activeSheet.viewports.push({ detail: detailName, x: 2, y: 2, scale: '1:1', componentId: id });
+      const detailNumber = String(activeSheet.viewports.length + 1);
+      activeSheet.viewports.push({ 
+        detail: detailName, 
+        x: 2, 
+        y: 2, 
+        width: 10, 
+        height: 8, 
+        scale: '1:1', 
+        detailNumber,
+        componentId: id 
+      });
       this.updateAndNotify();
     }
   }
@@ -232,7 +242,7 @@ export class VisualizerUI {
             <div id="edit-overlay-btn-move" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: move; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;" title="Move">
               <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M9 19l3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
             </div>
-            <div id="edit-overlay-btn-open" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #3b82f6; border: 1px solid #2563eb; border-radius: 4px; color: #f8fafc; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;" title="Open Detail">
+            <div id="edit-overlay-btn-open" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;" title="Open Detail">
               <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </div>
             <div id="edit-overlay-btn-crop" style="display: none; position: absolute; pointer-events: auto; width: 24px; height: 24px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #f8fafc; cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 14px;" title="Toggle Crop Mode">

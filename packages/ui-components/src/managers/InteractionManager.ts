@@ -548,6 +548,7 @@ export class InteractionManager {
       if (this.ui.btnMoveOverlay) this.ui.btnMoveOverlay.style.display = 'none';
       if (this.ui.btnCropOverlay) this.ui.btnCropOverlay.style.display = 'none';
       if (this.ui.btnDeleteOverlay) this.ui.btnDeleteOverlay.style.display = 'none';
+      if (this.ui.btnOpenOverlay) this.ui.btnOpenOverlay.style.display = 'none';
       if (this.ui.grabbers) Object.values(this.ui.grabbers).forEach(g => g.style.display = 'none');
       return;
     }
@@ -557,6 +558,7 @@ export class InteractionManager {
 
     if (this.ui.selectedComponentIds.size > 1) {
       if (this.ui.btnCropOverlay) this.ui.btnCropOverlay.style.display = 'none';
+      if (this.ui.btnOpenOverlay) this.ui.btnOpenOverlay.style.display = 'none';
       if (this.ui.grabbers) Object.values(this.ui.grabbers).forEach(g => g.style.display = 'none');
 
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
