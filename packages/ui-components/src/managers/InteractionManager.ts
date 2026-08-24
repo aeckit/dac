@@ -210,8 +210,6 @@ export class InteractionManager {
           let newY = startCompY;
           let newW = startCompW;
           let newH = startCompH;
-          let newCropX = startCropX;
-          let newCropY = startCropY;
 
           let vpScale = 1;
           if (this.ui.primaryComponentType === 'CAD::Viewport') {
@@ -222,11 +220,6 @@ export class InteractionManager {
           if (dir.includes('w')) {
             newX = startCompX + svgDx;
             newW = startCompW - svgDx;
-            if (this.ui.primaryComponentType === 'CAD::Viewport') {
-              newCropX = startCropX + svgDx / vpScale;
-            } else if ((this.ui.primaryComponentType === 'CAD::Annotation::Image' || this.ui.primaryComponentType === 'Image') && this.ui.croppingComponentId === comp.componentId) {
-              newCropX = startCropX + svgDx;
-            }
           }
           // East (Right) edge dragging
           if (dir.includes('e')) {
@@ -235,11 +228,6 @@ export class InteractionManager {
           // North (Top) edge dragging
           if (dir.includes('n')) {
             newH = startCompH - svgDy;
-            if (this.ui.primaryComponentType === 'CAD::Viewport') {
-              newCropY = startCropY - svgDy / vpScale;
-            } else if ((this.ui.primaryComponentType === 'CAD::Annotation::Image' || this.ui.primaryComponentType === 'Image') && this.ui.croppingComponentId === comp.componentId) {
-              newCropY = startCropY - svgDy;
-            }
           }
           // South (Bottom) edge dragging
           if (dir.includes('s')) {
@@ -291,27 +279,13 @@ export class InteractionManager {
              const diff = minSize - newW;
              if (dir.includes('w')) {
                 newX -= diff;
-                if (this.ui.primaryComponentType === 'CAD::Viewport') {
-                  newCropX -= diff / vpScale;
-                } else if ((this.ui.primaryComponentType === 'CAD::Annotation::Image' || this.ui.primaryComponentType === 'Image') && this.ui.croppingComponentId === comp.componentId) {
-                  newCropX -= diff;
-                }
              }
              newW = minSize;
           }
           if (newH < minSize) {
              const diff = minSize - newH;
-             if (dir.includes('n')) {
-                // If we pushed the North edge past the limit, revert the cropY compensation
-                if (this.ui.primaryComponentType === 'CAD::Viewport') {
-                  newCropY += diff / vpScale;
-                } else if ((this.ui.primaryComponentType === 'CAD::Annotation::Image' || this.ui.primaryComponentType === 'Image') && this.ui.croppingComponentId === comp.componentId) {
-                  newCropY += diff;
-                }
-             }
              if (dir.includes('s')) {
                 newY -= diff;
-                // No cropY compensation to revert for South edge
              }
              newH = minSize;
           }
@@ -323,9 +297,16 @@ export class InteractionManager {
           
           const isImage = this.ui.primaryComponentType === 'CAD::Annotation::Image' || this.ui.primaryComponentType === 'Image';
           
-          if (this.ui.primaryComponentType === 'CAD::Viewport' || (isImage && this.ui.croppingComponentId === comp.componentId)) {
-            (comp as any).cropX = Math.round(newCropX * 1000) / 1000;
-            (comp as any).cropY = Math.round(newCropY * 1000) / 1000;
+          if (this.ui.primaryComponentType === 'CAD::Viewport') {
+            const cropDx = (newX - startCompX) / vpScale;
+            const cropDy = (newY - startCompY) / vpScale;
+            (comp as any).cropX = Math.round((startCropX + cropDx) * 1000) / 1000;
+            (comp as any).cropY = Math.round((startCropY + cropDy) * 1000) / 1000;
+          } else if (isImage && this.ui.croppingComponentId === comp.componentId) {
+            const cropDx = (newX - startCompX);
+            const cropDy = (newY - startCompY);
+            (comp as any).cropX = Math.round((startCropX + cropDx) * 1000) / 1000;
+            (comp as any).cropY = Math.round((startCropY + cropDy) * 1000) / 1000;
           } else if (isImage) {
             const scaleX = newW / startCompW;
             const scaleY = newH / startCompH;
