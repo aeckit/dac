@@ -5,6 +5,9 @@ export interface FileManagerOptions {
   workspace: WorkspaceManager;
   onFileSelect: (filename: string) => void;
   onInsertDetail: (filename: string) => void;
+  onNewProject: () => void;
+  onNewSheet: () => void;
+  onNewDetail: () => void;
 }
 
 export class FileManagerUI {
@@ -14,7 +17,7 @@ export class FileManagerUI {
   }
 
   public render() {
-    const { container, workspace, onFileSelect, onInsertDetail } = this.options;
+    const { container, workspace, onFileSelect, onInsertDetail, onNewProject, onNewSheet, onNewDetail } = this.options;
     container.innerHTML = '';
     const files = workspace.getFiles();
     
@@ -31,15 +34,37 @@ export class FileManagerUI {
       return delBtn;
     };
 
-    const renderSectionTitle = (title: string) => {
+    const renderSectionTitle = (title: string, onAdd?: () => void) => {
       const header = document.createElement('div');
-      header.textContent = title;
-      header.style.fontSize = '10px';
-      header.style.textTransform = 'uppercase';
-      header.style.color = '#94a3b8';
-      header.style.padding = '12px 12px 4px 12px';
-      header.style.fontWeight = 'bold';
-      header.style.letterSpacing = '0.5px';
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'center';
+      header.style.padding = '12px 15px 4px 15px';
+      
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = title;
+      titleSpan.style.fontSize = '10px';
+      titleSpan.style.textTransform = 'uppercase';
+      titleSpan.style.color = '#94a3b8';
+      titleSpan.style.fontWeight = 'bold';
+      titleSpan.style.letterSpacing = '0.5px';
+      header.appendChild(titleSpan);
+      
+      if (onAdd) {
+        const addBtn = document.createElement('span');
+        addBtn.textContent = '+';
+        addBtn.style.color = '#4ade80';
+        addBtn.style.cursor = 'pointer';
+        addBtn.style.fontSize = '14px';
+        addBtn.style.lineHeight = '10px';
+        addBtn.title = `New ${title.replace(/s$/, '')}`;
+        addBtn.onclick = (e) => {
+          e.stopPropagation();
+          onAdd();
+        };
+        header.appendChild(addBtn);
+      }
+      
       container.appendChild(header);
     };
 
@@ -52,8 +77,11 @@ export class FileManagerUI {
     const others = Object.keys(files).filter(k => !classified.has(k));
     details.push(...others);
 
+    const activeFileDoc = workspace.activeFilename ? files[workspace.activeFilename] : null;
+    const isSheetActive = activeFileDoc && activeFileDoc.type === 'CAD::SheetConfiguration';
+
+    renderSectionTitle('Projects', onNewProject);
     if (projects.length > 0) {
-      renderSectionTitle('Projects');
       projects.forEach(projFile => {
         const li = document.createElement('li');
         li.className = 'file-item' + (projFile === workspace.activeFilename ? ' active' : '');
@@ -99,8 +127,8 @@ export class FileManagerUI {
       });
     }
 
+    renderSectionTitle('Unassigned Sheets', onNewSheet);
     if (sheets.length > 0) {
-      renderSectionTitle('Unassigned Sheets');
       sheets.forEach(sheetFile => {
         const li = document.createElement('li');
         li.className = 'file-item' + (sheetFile === workspace.activeFilename ? ' active' : '');
@@ -137,8 +165,8 @@ export class FileManagerUI {
       });
     }
 
+    renderSectionTitle('Details', onNewDetail);
     if (details.length > 0) {
-      renderSectionTitle('Details');
       details.forEach(detFile => {
         const li = document.createElement('li');
         li.className = 'file-item' + (detFile === workspace.activeFilename ? ' active' : '');
@@ -147,20 +175,25 @@ export class FileManagerUI {
         nameSpan.textContent = detFile;
         li.appendChild(nameSpan);
         
-        const addBtn = document.createElement('span');
-        addBtn.textContent = '+';
-        addBtn.style.color = '#4ade80';
-        addBtn.style.marginLeft = 'auto';
-        addBtn.style.marginRight = '8px';
-        addBtn.style.cursor = 'pointer';
-        addBtn.title = 'Insert into active sheet';
-        addBtn.onclick = (e) => {
-          e.stopPropagation();
-          onInsertDetail(detFile);
-        };
-        li.appendChild(addBtn);
+        if (isSheetActive) {
+          const addBtn = document.createElement('span');
+          addBtn.textContent = '+';
+          addBtn.style.color = '#4ade80';
+          addBtn.style.marginLeft = 'auto';
+          addBtn.style.marginRight = '8px';
+          addBtn.style.cursor = 'pointer';
+          addBtn.title = 'Insert into active sheet';
+          addBtn.onclick = (e) => {
+            e.stopPropagation();
+            onInsertDetail(detFile);
+          };
+          li.appendChild(addBtn);
+        }
         
         const delBtn = createDeleteButton(detFile);
+        if (!isSheetActive) {
+          delBtn.style.marginLeft = 'auto';
+        }
         li.appendChild(delBtn);
         
         li.onclick = () => onFileSelect(detFile);

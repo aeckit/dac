@@ -164,44 +164,41 @@ function initFileManager() {
       } else {
         showToast('Open a Sheet or Drawing Set first to insert this detail.');
       }
+    },
+    onNewProject: () => {
+      const isJson = tabContentJson?.classList.contains('active');
+      const doc: ProjectDocument = {
+        type: 'CAD::Project',
+        projectName: 'New Project',
+        sheets: []
+      };
+      workspace.createFile(getUniqueName('project', () => workspace.getFiles()), doc);
+      if (isJson) tabBtnJson?.click();
+    },
+    onNewSheet: () => {
+      const isJson = tabContentJson?.classList.contains('active');
+      const doc: SheetConfiguration = {
+        type: 'CAD::SheetConfiguration',
+        sheetNumber: 'A101',
+        sheetName: 'New Sheet',
+        viewports: []
+      };
+      workspace.createFile(getUniqueName('sheet', () => workspace.getFiles()), doc);
+      if (isJson) tabBtnJson?.click();
+    },
+    onNewDetail: () => {
+      const isJson = tabContentJson?.classList.contains('active');
+      const doc: DetailDocument = {
+        type: 'CAD::Detail',
+        version: '1.0',
+        scale: '1"=1\'-0"',
+        geometry: []
+      };
+      workspace.createFile(getUniqueName('detail', () => workspace.getFiles()), doc);
+      if (isJson) tabBtnJson?.click();
     }
   });
 }
-
-document.getElementById('btn-new-detail')?.addEventListener('click', () => {
-  const isJson = tabContentJson?.classList.contains('active');
-  const doc: DetailDocument = {
-    type: 'CAD::Detail',
-    version: '1.0',
-    scale: '1"=1\'-0"',
-    geometry: []
-  };
-  workspace.createFile(getUniqueName('detail', () => workspace.getFiles()), doc);
-  if (isJson) tabBtnJson?.click();
-});
-
-document.getElementById('btn-new-sheet')?.addEventListener('click', () => {
-  const isJson = tabContentJson?.classList.contains('active');
-  const doc: SheetConfiguration = {
-    type: 'CAD::SheetConfiguration',
-    sheetNumber: 'A101',
-    sheetName: 'New Sheet',
-    viewports: []
-  };
-  workspace.createFile(getUniqueName('sheet', () => workspace.getFiles()), doc);
-  if (isJson) tabBtnJson?.click();
-});
-
-document.getElementById('btn-new-set')?.addEventListener('click', () => {
-  const isJson = tabContentJson?.classList.contains('active');
-  const doc: ProjectDocument = {
-    type: 'CAD::Project',
-    projectName: 'New Project',
-    sheets: []
-  };
-  workspace.createFile(getUniqueName('project', () => workspace.getFiles()), doc);
-  if (isJson) tabBtnJson?.click();
-});
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
