@@ -6,7 +6,7 @@ export interface FileManagerOptions {
   onFileSelect: (filename: string) => void;
   onInsertDetail: (filename: string) => void;
   onNewProject: () => void;
-  onNewSheet: () => void;
+  onNewSheet: (projectFilename: string) => void;
   onNewDetail: () => void;
 }
 
@@ -123,31 +123,29 @@ export class FileManagerUI {
               if (idx > -1) sheets.splice(idx, 1);
             }
           });
+          
+          const addSheetLi = document.createElement('li');
+          addSheetLi.className = 'file-item';
+          addSheetLi.style.paddingLeft = '24px';
+          addSheetLi.style.borderLeft = '1px solid #334155';
+          addSheetLi.style.color = '#4ade80';
+          addSheetLi.style.fontSize = '12px';
+          
+          const addSheetSpan = document.createElement('span');
+          addSheetSpan.textContent = '+ Add Sheet';
+          addSheetLi.appendChild(addSheetSpan);
+          
+          addSheetLi.onclick = (e) => {
+            e.stopPropagation();
+            onNewSheet(projFile);
+          };
+          container.appendChild(addSheetLi);
         }
       });
     }
 
-    renderSectionTitle('Unassigned Sheets', onNewSheet);
-    if (sheets.length > 0) {
-      sheets.forEach(sheetFile => {
-        const li = document.createElement('li');
-        li.className = 'file-item' + (sheetFile === workspace.activeFilename ? ' active' : '');
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = sheetFile;
-        li.appendChild(nameSpan);
-        
-        const delBtn = createDeleteButton(sheetFile);
-        delBtn.style.marginLeft = 'auto';
-        li.appendChild(delBtn);
-        
-        li.onclick = () => onFileSelect(sheetFile);
-        container.appendChild(li);
-      });
-    }
-
+    renderSectionTitle('Title Blocks');
     if (titleBlocks.length > 0) {
-      renderSectionTitle('Title Blocks');
       titleBlocks.forEach(tbFile => {
         const li = document.createElement('li');
         li.className = 'file-item' + (tbFile === workspace.activeFilename ? ' active' : '');

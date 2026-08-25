@@ -78,6 +78,13 @@ export class WorkspaceManager {
       this.onChange();
     }
   }
+
+  public updateFile(filename: string, content: VisualizerDocument | SheetConfiguration) {
+    if (this.files[filename]) {
+      this.files[filename] = content;
+      this.onChange();
+    }
+  }
   
   public updateActiveFileFromString(jsonString: string): { success: boolean, error?: string } {
     if (!this.activeFilename) return { success: false, error: 'No active file' };

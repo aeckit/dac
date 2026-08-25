@@ -175,7 +175,7 @@ function initFileManager() {
       workspace.createFile(getUniqueName('project', () => workspace.getFiles()), doc);
       if (isJson) tabBtnJson?.click();
     },
-    onNewSheet: () => {
+    onNewSheet: (projectFilename: string) => {
       const isJson = tabContentJson?.classList.contains('active');
       const doc: SheetConfiguration = {
         type: 'CAD::SheetConfiguration',
@@ -183,7 +183,15 @@ function initFileManager() {
         sheetName: 'New Sheet',
         viewports: []
       };
-      workspace.createFile(getUniqueName('sheet', () => workspace.getFiles()), doc);
+      const newSheetName = getUniqueName('sheet', () => workspace.getFiles());
+      workspace.createFile(newSheetName, doc);
+      
+      const projDoc = workspace.getFiles()[projectFilename] as any;
+      if (projDoc && projDoc.sheets) {
+        projDoc.sheets.push(newSheetName);
+        workspace.updateFile(projectFilename, projDoc);
+      }
+      
       if (isJson) tabBtnJson?.click();
     },
     onNewDetail: () => {
