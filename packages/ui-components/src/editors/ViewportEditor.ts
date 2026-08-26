@@ -9,8 +9,8 @@ export const ViewportEditor = {
       <div class="form-group" data-vp-index="${index}">
         <div class="control-label-row">
           <label class="control-label">Source File</label>
-          <div style="display: flex; gap: 4px; align-items: center;">
-            <input type="text" class="precise-input vp-detail-input" value="${detailName}" />
+          <div style="display: flex; gap: 4px; align-items: center; flex: 0 0 50%; max-width: 50%;">
+            <input type="text" class="precise-input vp-detail-input" style="flex: 1; width: 100%;" value="${detailName}" />
             <button class="vp-open-btn" style="background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #fff; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" title="Open Detail">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </button>
