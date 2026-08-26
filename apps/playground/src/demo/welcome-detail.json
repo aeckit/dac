@@ -10,8 +10,7 @@
       "y": "16",
       "text": "Welcome to AECKit Playground!",
       "fontSize": "48",
-      "color": "#f1f5f9",
-      "space": "paper"
+      "color": "#f1f5f9"
     },
     {
       "type": "CAD::Annotation::Text",
@@ -19,8 +18,7 @@
       "y": "14",
       "text": "This playground lets you explore the AECKit CAD\nframework directly in your browser.\n\n1. Use the left sidebar to manage Projects, Sheets, and Details.\n2. Projects contain Sheets. Sheets contain Viewports.\n3. Viewports render Details at a specific scale.",
       "fontSize": "20",
-      "color": "#cbd5e1",
-      "space": "paper"
+      "color": "#cbd5e1"
     },
     {
       "type": "CAD::Shape::Rectangle",

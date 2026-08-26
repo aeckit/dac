@@ -25,7 +25,6 @@ export interface GeometryPrimitive {
   imgHeight?: any;
   hatch?: string;
   offset?: number;
-  space?: string;
   href?: string;
   lockAspectRatio?: boolean;
   componentId?: string;

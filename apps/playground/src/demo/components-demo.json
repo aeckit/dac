@@ -10,8 +10,7 @@
       "y": "8",
       "text": "Components & Tools",
       "fontSize": "24",
-      "color": "#a78bfa",
-      "space": "paper"
+      "color": "#a78bfa"
     },
     {
       "type": "CAD::Annotation::Text",
@@ -19,8 +18,7 @@
       "y": "7",
       "text": "Use the bottom toolbar to add Viewports to sheets.\n\nWhen editing a detail, you can add lines,\nrectangles, and text elements.\n\nTry clicking on the shapes below to edit\ntheir properties.",
       "fontSize": "14",
-      "color": "#94a3b8",
-      "space": "paper"
+      "color": "#94a3b8"
     },
     {
       "type": "CAD::Shape::Rectangle",

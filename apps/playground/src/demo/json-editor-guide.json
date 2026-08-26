@@ -10,8 +10,7 @@
       "y": "16",
       "text": "JSON Mode & Editing",
       "fontSize": "36",
-      "color": "#38bdf8",
-      "space": "paper"
+      "color": "#38bdf8"
     },
     {
       "type": "CAD::Annotation::Text",
@@ -19,8 +18,7 @@
       "y": "14",
       "text": "Click on any element in the canvas to select it.\n\nThen, open the Properties pane on the right and\nclick the 'JSON' toggle to view its raw data.\n\nYou can edit the JSON directly (e.g., change the\n'color' or 'width' property) and watch the canvas\nupdate in real-time!",
       "fontSize": "16",
-      "color": "#94a3b8",
-      "space": "paper"
+      "color": "#94a3b8"
     },
     {
       "type": "CAD::Shape::Rectangle",

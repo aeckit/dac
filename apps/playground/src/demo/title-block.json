@@ -3,8 +3,16 @@
   "version": "1.0",
   "scale": "1:1",
   "parameters": {
-    "projectAddress": { "type": "string", "label": "Project Address", "default": "N/A" },
-    "projectNumber": { "type": "string", "label": "Project Number", "default": "0000" }
+    "projectAddress": {
+      "type": "string",
+      "label": "Project Address",
+      "default": "N/A"
+    },
+    "projectNumber": {
+      "type": "string",
+      "label": "Project Number",
+      "default": "0000"
+    }
   },
   "geometry": [
     {
@@ -33,8 +41,7 @@
       "y": "23",
       "text": "PROJECT:",
       "fontSize": "16",
-      "color": "#64748b",
-      "space": "paper"
+      "color": "#64748b"
     },
     {
       "type": "CAD::Annotation::Text",
@@ -42,8 +49,7 @@
       "y": "22.5",
       "text": "{parameters.projectName}",
       "fontSize": "24",
-      "color": "#e2e8f0",
-      "space": "paper"
+      "color": "#e2e8f0"
     },
     {
       "type": "CAD::Annotation::Text",
@@ -51,8 +57,7 @@
       "y": "20",
       "text": "ADDRESS:",
       "fontSize": "16",
-      "color": "#64748b",
-      "space": "paper"
+      "color": "#64748b"
     },
     {
       "type": "CAD::Annotation::Text",
@@ -60,8 +65,7 @@
       "y": "21.5",
       "text": "{parameters.projectAddress}",
       "fontSize": "14",
-      "color": "#64748b",
-      "space": "paper"
+      "color": "#64748b"
     },
     {
       "type": "CAD::Shape::Line",
@@ -78,8 +82,7 @@
       "y": "3.5",
       "text": "SHEET NUMBER:",
       "fontSize": "16",
-      "color": "#64748b",
-      "space": "paper"
+      "color": "#64748b"
     },
     {
       "type": "CAD::Annotation::Text",
@@ -87,8 +90,7 @@
       "y": "3",
       "text": "{parameters.sheetNumber}",
       "fontSize": "48",
-      "color": "#38bdf8",
-      "space": "paper"
+      "color": "#38bdf8"
     }
   ]
 }
