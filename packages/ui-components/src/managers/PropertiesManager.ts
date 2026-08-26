@@ -15,54 +15,55 @@ export class PropertiesManager {
   public renderPropertyEditor() {
     if (!this.ui.propertiesCardContainer) return;
 
-    if (this.ui.selectedComponentIds.size === 0) {
-      // Nothing selected, render Document Properties
-      let scheduleHtml = '';
-      if (this.ui.doc.type === 'CAD::SheetConfiguration') {
-        const sheet = this.ui.getActiveSheet();
-        if (sheet && sheet.viewports && sheet.viewports.length > 0) {
-          scheduleHtml = `
-            <div class="card" style="margin-top: 12px;">
-              <h3 style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8;">Detail Schedule</h3>
-              <div class="properties-editor-body" style="padding: 0;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
-                  <thead>
-                    <tr style="border-bottom: 1px solid #334155;">
-                      <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal; width: 30px;">#</th>
-                      <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal;">Title</th>
-                      <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal; width: 60px;">Scale</th>
+    let scheduleHtml = '';
+    if (this.ui.doc.type === 'CAD::SheetConfiguration') {
+      const sheet = this.ui.getActiveSheet();
+      if (sheet && sheet.viewports && sheet.viewports.length > 0) {
+        scheduleHtml = `
+          <div class="card" style="margin-top: 12px;">
+            <h3 style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8;">Detail Schedule</h3>
+            <div class="properties-editor-body" style="padding: 0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                <thead>
+                  <tr style="border-bottom: 1px solid #334155;">
+                    <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal; width: 30px;">#</th>
+                    <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal;">Title</th>
+                    <th style="padding: 6px 4px; color: #94a3b8; font-weight: normal; width: 60px;">Scale</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sheet.viewports.map(vp => `
+                    <tr class="schedule-row" data-cid="${vp.componentId}" style="border-bottom: 1px solid #1e293b; cursor: pointer; transition: background 0.1s;">
+                      <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${vp.hideDetailNumber ? '-' : (vp.detailNumber || '1')}</td>
+                      <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;" title="${vp.title || (typeof vp.detail === 'string' ? vp.detail.split('/').pop()?.replace('.json', '') : 'Detail')}">${vp.title || (typeof vp.detail === 'string' ? vp.detail.split('/').pop()?.replace('.json', '') : 'Detail')}</td>
+                      <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${vp.hideScale ? '-' : (vp.scale || '')}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    ${sheet.viewports.map(vp => `
-                      <tr class="schedule-row" data-cid="${vp.componentId}" style="border-bottom: 1px solid #1e293b; cursor: pointer; transition: background 0.1s;">
-                        <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${vp.hideDetailNumber ? '-' : (vp.detailNumber || '1')}</td>
-                        <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;" title="${vp.title || (typeof vp.detail === 'string' ? vp.detail.split('/').pop()?.replace('.json', '') : 'Detail')}">${vp.title || (typeof vp.detail === 'string' ? vp.detail.split('/').pop()?.replace('.json', '') : 'Detail')}</td>
-                        <td style="padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${vp.hideScale ? '-' : (vp.scale || '')}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
+                  `).join('')}
+                </tbody>
+              </table>
             </div>
-          `;
-        }
-      }
-
-      let tbDoc: any = null;
-      if (this.ui.doc.type === 'CAD::Project') {
-        const ds = this.ui.doc as any;
-        tbDoc = typeof ds.defaultTitleBlockRef === 'string' ? this.ui.titleBlockMap.get(ds.defaultTitleBlockRef) : ds.defaultTitleBlockRef;
-      }
-
-      this.ui.propertiesCardContainer.innerHTML = `
-        <div class="card">
-          <div class="properties-editor-body">
-            ${DocumentEditor.renderHTML(this.ui.doc, this.ui.getActiveSheet(), tbDoc)}
           </div>
+        `;
+      }
+    }
+
+    let tbDoc: any = null;
+    if (this.ui.doc.type === 'CAD::Project') {
+      const ds = this.ui.doc as any;
+      tbDoc = typeof ds.defaultTitleBlockRef === 'string' ? this.ui.titleBlockMap.get(ds.defaultTitleBlockRef) : ds.defaultTitleBlockRef;
+    }
+
+    let html = `
+      <div class="card">
+        <div class="properties-editor-body">
+          ${DocumentEditor.renderHTML(this.ui.doc, this.ui.getActiveSheet(), tbDoc)}
         </div>
-        ${scheduleHtml}
-      `;
+      </div>
+    `;
+
+    if (this.ui.selectedComponentIds.size === 0) {
+      html += scheduleHtml;
+      this.ui.propertiesCardContainer.innerHTML = html;
       DocumentEditor.bindListeners({
         container: this.ui.propertiesCardContainer,
         getLatestDoc: () => {
@@ -75,8 +76,7 @@ export class PropertiesManager {
         },
         updateAndNotify: () => this.ui.updateAndNotify()
       });
-      this.injectInlineApplyButtons();
-
+      
       if (scheduleHtml) {
         const rows = this.ui.propertiesCardContainer.querySelectorAll('.schedule-row');
         rows.forEach(row => {
@@ -99,12 +99,11 @@ export class PropertiesManager {
           });
         });
       }
-
       return;
     }
 
     if (this.ui.selectedComponentIds.size > 1) {
-      this.ui.propertiesCardContainer.innerHTML = `
+      html += `
         <div class="card">
           <div class="properties-editor-body" style="text-align: center; color: #94a3b8; padding: 16px;">
             <p style="margin-bottom: 8px;">${this.ui.selectedComponentIds.size} Items Selected</p>
@@ -112,6 +111,20 @@ export class PropertiesManager {
           </div>
         </div>
       `;
+      this.ui.propertiesCardContainer.innerHTML = html;
+      
+      DocumentEditor.bindListeners({
+        container: this.ui.propertiesCardContainer,
+        getLatestDoc: () => {
+          this.ui.lastUpdateTime = Date.now();
+          return this.ui.doc;
+        },
+        getActiveSheet: () => {
+          this.ui.lastUpdateTime = Date.now();
+          return this.ui.getActiveSheet();
+        },
+        updateAndNotify: () => this.ui.updateAndNotify()
+      });
       return;
     }
 
@@ -125,14 +138,27 @@ export class PropertiesManager {
       if (vpIndex === -1) return;
       const vp = activeSheet.viewports[vpIndex];
 
-      this.ui.propertiesCardContainer.innerHTML = `
+      html += `
         <div class="card">
-          <h3>Viewport Properties</h3>
           <div class="properties-editor-body">
             ${ViewportEditor.renderHTML(vp, vpIndex)}
           </div>
         </div>
       `;
+      this.ui.propertiesCardContainer.innerHTML = html;
+
+      DocumentEditor.bindListeners({
+        container: this.ui.propertiesCardContainer,
+        getLatestDoc: () => {
+          this.ui.lastUpdateTime = Date.now();
+          return this.ui.doc;
+        },
+        getActiveSheet: () => {
+          this.ui.lastUpdateTime = Date.now();
+          return this.ui.getActiveSheet();
+        },
+        updateAndNotify: () => this.ui.updateAndNotify()
+      });
 
       ViewportEditor.bindListeners({
         container: this.ui.propertiesCardContainer,
@@ -144,7 +170,6 @@ export class PropertiesManager {
         },
         updateAndNotify: () => this.ui.updateAndNotify()
       });
-      this.injectInlineApplyButtons();
       return;
     }
 
@@ -187,14 +212,26 @@ export class PropertiesManager {
     const niceName = this.ui.primaryComponentType?.split('::').pop() || 'Selected Component';
 
     if (componentParams.length === 0 && matchingShapes.length === 0) {
-      this.ui.propertiesCardContainer.innerHTML = `
+      html += `
         <div class="card">
-          <h3>${niceName}</h3>
           <div class="card-body" style="color: var(--vscode-descriptionForeground); text-align: center; padding: 16px;">
             This component contains no editable properties.
           </div>
         </div>
       `;
+      this.ui.propertiesCardContainer.innerHTML = html;
+      DocumentEditor.bindListeners({
+        container: this.ui.propertiesCardContainer,
+        getLatestDoc: () => {
+          this.ui.lastUpdateTime = Date.now();
+          return this.ui.doc;
+        },
+        getActiveSheet: () => {
+          this.ui.lastUpdateTime = Date.now();
+          return this.ui.getActiveSheet();
+        },
+        updateAndNotify: () => this.ui.updateAndNotify()
+      });
       return;
     }
 
@@ -212,15 +249,28 @@ export class PropertiesManager {
       }).join('');
     }
 
-    this.ui.propertiesCardContainer.innerHTML = `
+    html += `
       <div class="card">
-        <h3>${niceName}</h3>
         <div class="properties-editor-body">
           ${controlsHtml}
           ${shapesHtml}
         </div>
       </div>
     `;
+    this.ui.propertiesCardContainer.innerHTML = html;
+
+    DocumentEditor.bindListeners({
+      container: this.ui.propertiesCardContainer,
+      getLatestDoc: () => {
+        this.ui.lastUpdateTime = Date.now();
+        return this.ui.doc;
+      },
+      getActiveSheet: () => {
+        this.ui.lastUpdateTime = Date.now();
+        return this.ui.getActiveSheet();
+      },
+      updateAndNotify: () => this.ui.updateAndNotify()
+    });
 
     if (isParametricConstruct) {
       ParametricEditor.bindListeners({
@@ -247,59 +297,5 @@ export class PropertiesManager {
         });
       });
     }
-    
-    this.injectInlineApplyButtons();
-  }
-
-  public injectInlineApplyButtons() {
-    if (!this.ui.propertiesCardContainer) return;
-    
-    const textInputs = this.ui.propertiesCardContainer.querySelectorAll('input[type="text"], input[type="number"]');
-    textInputs.forEach(input => {
-      // Don't inject if it already has one or is part of a complex slider group
-      if (input.parentElement && input.parentElement.classList.contains('param-slider-group')) return;
-
-      const htmlInput = input as HTMLInputElement;
-
-      // Create a wrapper to contain the input and the absolutely positioned button
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'position: relative; display: flex; align-items: center; justify-content: flex-end;';
-      
-      // Give the wrapper flex-grow so it expands to match dropdowns
-      wrapper.style.flex = '1';
-      wrapper.style.minWidth = '0';
-      wrapper.classList.add('precise-input-wrapper');
-
-      // Insert wrapper and move input inside
-      htmlInput.parentNode?.insertBefore(wrapper, htmlInput);
-      wrapper.appendChild(htmlInput);
-
-      // Make input fill wrapper and leave padding for the button
-      htmlInput.style.width = '100%';
-      htmlInput.style.boxSizing = 'border-box';
-      htmlInput.style.paddingRight = '18px';
-
-      const btn = document.createElement('button');
-      btn.innerHTML = '✓';
-      btn.title = "Apply Change";
-      btn.className = 'inline-apply-btn';
-      btn.style.cssText = 'display: none; background: transparent; border: none; color: #22c55e; cursor: pointer; padding: 0; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-weight: bold; font-size: 14px; outline: none; z-index: 10;';
-      
-      wrapper.appendChild(btn);
-
-      htmlInput.addEventListener('input', () => {
-        btn.style.display = 'block';
-      });
-
-      // Use mousedown so it fires before the input loses focus and triggers 'change' automatically
-      btn.addEventListener('mousedown', (e) => {
-        e.preventDefault(); 
-        htmlInput.blur();
-      });
-
-      htmlInput.addEventListener('change', () => {
-        btn.style.display = 'none';
-      });
-    });
   }
 }

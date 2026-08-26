@@ -156,8 +156,7 @@ export class VisualizerUI {
 
     this.container.innerHTML = `
       <div class="panel left-panel" id="left-sidebar">
-        <div class="control-header">
-          <h2>Drawing Inspector</h2>
+        <div class="control-header" style="padding: 0; border: none; min-height: 0;">
           <div class="status-pill" id="json-validity-status" style="display: none; color: #ef4444;"><span class="status-indicator" style="background-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5);"></span>JSON Error</div>
         </div>
         
