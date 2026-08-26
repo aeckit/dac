@@ -1,0 +1,94 @@
+{
+  "type": "CAD::TitleBlock",
+  "version": "1.0",
+  "scale": "1:1",
+  "parameters": {
+    "projectAddress": { "type": "string", "label": "Project Address", "default": "N/A" },
+    "projectNumber": { "type": "string", "label": "Project Number", "default": "0000" }
+  },
+  "geometry": [
+    {
+      "type": "CAD::Shape::Rectangle",
+      "x": "0.25",
+      "y": "0.25",
+      "width": "35.5",
+      "height": "23.5",
+      "strokeWidth": "4",
+      "color": "#1e293b",
+      "fill": "none"
+    },
+    {
+      "type": "CAD::Shape::Rectangle",
+      "x": "31",
+      "y": "0.25",
+      "width": "4.75",
+      "height": "23.5",
+      "strokeWidth": "2",
+      "color": "#334155",
+      "fill": "none"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "31.5",
+      "y": "23",
+      "text": "PROJECT:",
+      "fontSize": "16",
+      "color": "#64748b",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "31.5",
+      "y": "22.5",
+      "text": "{parameters.projectName}",
+      "fontSize": "24",
+      "color": "#e2e8f0",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "31.5",
+      "y": "20",
+      "text": "ADDRESS:",
+      "fontSize": "16",
+      "color": "#64748b",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "31.5",
+      "y": "21.5",
+      "text": "{parameters.projectAddress}",
+      "fontSize": "14",
+      "color": "#64748b",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "x1": "31",
+      "y1": "0.25",
+      "x2": "31",
+      "y2": "23.75",
+      "color": "#334155",
+      "strokeWidth": "2"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "31.5",
+      "y": "3.5",
+      "text": "SHEET NUMBER:",
+      "fontSize": "16",
+      "color": "#64748b",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "32",
+      "y": "3",
+      "text": "{parameters.sheetNumber}",
+      "fontSize": "48",
+      "color": "#38bdf8",
+      "space": "paper"
+    }
+  ]
+}

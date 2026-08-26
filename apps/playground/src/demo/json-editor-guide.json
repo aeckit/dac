@@ -1,0 +1,46 @@
+{
+  "type": "CAD::Detail",
+  "version": "1.0",
+  "scale": "1:1",
+  "parameters": {},
+  "geometry": [
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "1",
+      "y": "16",
+      "text": "JSON Mode & Editing",
+      "fontSize": "36",
+      "color": "#38bdf8",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "1",
+      "y": "14",
+      "text": "Click on any element in the canvas to select it.\n\nThen, open the Properties pane on the right and\nclick the 'JSON' toggle to view its raw data.\n\nYou can edit the JSON directly (e.g., change the\n'color' or 'width' property) and watch the canvas\nupdate in real-time!",
+      "fontSize": "16",
+      "color": "#94a3b8",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Shape::Rectangle",
+      "x": "0",
+      "y": "0",
+      "width": "18",
+      "height": "18",
+      "strokeWidth": "2",
+      "color": "#38bdf8",
+      "fill": "none",
+      "componentId": "border"
+    },
+    {
+      "type": "CAD::Shape::Circle",
+      "cx": "9",
+      "cy": "4",
+      "r": "3",
+      "color": "#f43f5e",
+      "fill": "#881337",
+      "componentId": "demo-circle"
+    }
+  ]
+}

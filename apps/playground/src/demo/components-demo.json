@@ -1,0 +1,57 @@
+{
+  "type": "CAD::Detail",
+  "version": "1.0",
+  "scale": "1:1",
+  "parameters": {},
+  "geometry": [
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "1",
+      "y": "8",
+      "text": "Components & Tools",
+      "fontSize": "24",
+      "color": "#a78bfa",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": "1",
+      "y": "7",
+      "text": "Use the bottom toolbar to add Viewports to sheets.\n\nWhen editing a detail, you can add lines,\nrectangles, and text elements.\n\nTry clicking on the shapes below to edit\ntheir properties.",
+      "fontSize": "14",
+      "color": "#94a3b8",
+      "space": "paper"
+    },
+    {
+      "type": "CAD::Shape::Rectangle",
+      "x": "0",
+      "y": "0",
+      "width": "12",
+      "height": "10",
+      "strokeWidth": "2",
+      "color": "#a78bfa",
+      "fill": "none",
+      "componentId": "border"
+    },
+    {
+      "type": "CAD::Shape::Rectangle",
+      "x": "1",
+      "y": "1",
+      "width": "4",
+      "height": "2",
+      "color": "#22c55e",
+      "fill": "#14532d",
+      "componentId": "demo-rect"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "x1": "6",
+      "y1": "1",
+      "x2": "10",
+      "y2": "3",
+      "color": "#eab308",
+      "strokeWidth": "4",
+      "componentId": "demo-line"
+    }
+  ]
+}

@@ -1,8 +1,7 @@
-
 import * as uiComponents from '@aeckit/ui-components';
 const { VisualizerUI } = uiComponents;
 import type { VisualizerDocument, VisualizerUI as VisualizerUIType } from '@aeckit/ui-components';
-import type { DetailDocument, SheetConfiguration, ProjectDocument } from '@aeckit/core-solver';
+import type { ProjectDocument, SheetConfiguration, DetailDocument, TitleBlockDocument } from '@aeckit/core-solver';
 import { WorkspaceManager } from './Workspace';
 import { JsonEditorManager } from './managers/JsonEditorManager';
 import { FileManagerUI } from './managers/FileManagerUI';
@@ -154,9 +153,8 @@ function initFileManager() {
     container: fileListEl,
     workspace,
     onFileSelect: (filename: string) => {
-      const isJson = tabContentJson?.classList.contains('active');
       workspace.setActiveFile(filename);
-      if (isJson) tabBtnJson?.click();
+      if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
     },
     onInsertDetail: (filename: string) => {
       if (uiInstance && uiInstance.getActiveSheet()) {
@@ -166,17 +164,15 @@ function initFileManager() {
       }
     },
     onNewProject: () => {
-      const isJson = tabContentJson?.classList.contains('active');
       const doc: ProjectDocument = {
         type: 'CAD::Project',
         projectName: 'New Project',
         sheets: []
       };
       workspace.createFile(getUniqueName('project', () => workspace.getFiles()), doc);
-      if (isJson) tabBtnJson?.click();
+      if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
     },
     onNewSheet: (projectFilename: string) => {
-      const isJson = tabContentJson?.classList.contains('active');
       const doc: SheetConfiguration = {
         type: 'CAD::SheetConfiguration',
         sheetNumber: 'A101',
@@ -192,10 +188,18 @@ function initFileManager() {
         workspace.updateFile(projectFilename, projDoc);
       }
       
-      if (isJson) tabBtnJson?.click();
+      if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
+    },
+    onNewTitleBlock: () => {
+      const doc: TitleBlockDocument = {
+        type: 'CAD::TitleBlock',
+        version: '1.0',
+        geometry: []
+      };
+      workspace.createFile(getUniqueName('titleblock', () => workspace.getFiles()), doc);
+      if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
     },
     onNewDetail: () => {
-      const isJson = tabContentJson?.classList.contains('active');
       const doc: DetailDocument = {
         type: 'CAD::Detail',
         version: '1.0',
@@ -203,7 +207,7 @@ function initFileManager() {
         geometry: []
       };
       workspace.createFile(getUniqueName('detail', () => workspace.getFiles()), doc);
-      if (isJson) tabBtnJson?.click();
+      if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
     }
   });
 }
@@ -252,25 +256,20 @@ if (paneResizer && workspacePane && rightPane) {
 // -----------------------------------------------------------------------------
 // General UI Actions
 // -----------------------------------------------------------------------------
-// Tab logic for Right Pane
-const tabBtnInspector = document.getElementById('tab-btn-inspector');
-const tabBtnJson = document.getElementById('tab-btn-json');
+// Toggle logic for Right Pane
+const toggleJson = document.getElementById('toggle-json') as HTMLInputElement;
 const tabContentInspector = document.getElementById('tab-content-inspector');
 const tabContentJson = document.getElementById('tab-content-json');
 
-tabBtnInspector?.addEventListener('click', () => {
-  tabBtnInspector.classList.add('active');
-  tabBtnJson?.classList.remove('active');
-  tabContentInspector?.classList.add('active');
-  tabContentJson?.classList.remove('active');
-});
-
-tabBtnJson?.addEventListener('click', () => {
-  tabBtnJson.classList.add('active');
-  tabBtnInspector?.classList.remove('active');
-  tabContentJson?.classList.add('active');
-  tabContentInspector?.classList.remove('active');
-  jsonEditor?.layout();
+toggleJson?.addEventListener('change', () => {
+  if (toggleJson.checked) {
+    tabContentJson?.classList.add('active');
+    tabContentInspector?.classList.remove('active');
+    jsonEditor?.layout();
+  } else {
+    tabContentInspector?.classList.add('active');
+    tabContentJson?.classList.remove('active');
+  }
 });
 
 function showToast(msg: string) {
@@ -337,10 +336,9 @@ function initPaneToggles() {
   window.addEventListener('dac-open-file', ((e: CustomEvent) => {
     const filename = e.detail?.filename;
     if (filename && workspace.getFiles()[filename]) {
-      const isJson = tabContentJson?.classList.contains('active');
       workspace.setActiveFile(filename);
       jsonEditor?.updateEditor();
-      if (isJson) tabBtnJson?.click();
+      if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
     } else {
       showToast('File not found: ' + filename);
     }

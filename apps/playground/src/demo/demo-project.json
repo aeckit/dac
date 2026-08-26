@@ -1,0 +1,13 @@
+{
+  "type": "CAD::Project",
+  "projectName": "PLAYGROUND TUTORIAL",
+  "parameters": {
+    "projectAddress": "AECKit Virtual Space",
+    "projectNumber": "2026-001"
+  },
+  "defaultTitleBlockRef": "title-block.json",
+  "defaultPaperSize": "ARCH D",
+  "sheets": [
+    "DEMO-1.json"
+  ]
+}

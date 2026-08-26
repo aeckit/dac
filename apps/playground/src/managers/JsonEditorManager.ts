@@ -1,6 +1,5 @@
 import * as monaco from 'monaco-editor';
 import type { WorkspaceManager } from '../Workspace';
-import { getSubComponent, updateSubComponent } from '../utils/DocumentUtils';
 
 export interface JsonEditorOptions {
   container: HTMLElement;
@@ -13,9 +12,6 @@ export interface JsonEditorOptions {
 export class JsonEditorManager {
   private editor: monaco.editor.IStandaloneCodeEditor;
   private isUpdatingEditor = false;
-  private isEditingSubComponent = false;
-  private currentSubComponentId: string | null = null;
-  private currentSubComponentFilename: string | null = null;
 
   private options: JsonEditorOptions;
 
@@ -48,87 +44,42 @@ export class JsonEditorManager {
     this.isUpdatingEditor = true;
     const currentVal = this.editor.getValue();
     
-    const selectedIds = this.options.getSelectedComponentIds();
-    let newVal = '';
     const { workspace } = this.options;
+    const content = workspace.getActiveFileContentString();
     
-    if (selectedIds.length === 1) {
-      const id = selectedIds[0];
-      const doc = workspace.getActiveFileContent();
-      let comp = getSubComponent(doc, id);
-      let filename = workspace.activeFilename;
-      
-      if (!comp && doc?.type === 'CAD::Project') {
-         const ds = doc as any;
-         for (const sheetRef of ds.sheets || []) {
-           if (typeof sheetRef === 'string') {
-             const sheetDoc = workspace.getFiles()[sheetRef];
-             comp = getSubComponent(sheetDoc, id);
-             if (comp) {
-               filename = sheetRef;
-               break;
-             }
-           }
-         }
-      }
-      
-      if (comp) {
-        newVal = JSON.stringify(comp, null, 2);
-        this.isEditingSubComponent = true;
-        this.currentSubComponentId = id;
-        this.currentSubComponentFilename = filename;
-      } else {
-        newVal = workspace.getActiveFileContentString();
-        this.isEditingSubComponent = false;
-        this.currentSubComponentId = null;
-        this.currentSubComponentFilename = null;
-      }
-    } else {
-      newVal = workspace.getActiveFileContentString();
-      this.isEditingSubComponent = false;
-      this.currentSubComponentId = null;
-      this.currentSubComponentFilename = null;
+    if (currentVal !== content) {
+      this.editor.setValue(content);
     }
-  
-    if (currentVal !== newVal) {
-      this.editor.setValue(newVal);
-    }
-    this.isUpdatingEditor = false;
+    
+    setTimeout(() => {
+      this.isUpdatingEditor = false;
+    }, 100);
   }
 
   private handleContentChange() {
-    if (this.isUpdatingEditor) return;
+    if (this.isUpdatingEditor || !this.editor) return;
+    
+    const { workspace, onUpdateVisualizer } = this.options;
     const val = this.editor.getValue();
     const statusPill = this.options.getStatusPill();
-    const { workspace, onUpdateVisualizer } = this.options;
     
-    if (this.isEditingSubComponent && this.currentSubComponentId && this.currentSubComponentFilename) {
-      try {
-        const parsed = JSON.parse(val);
-        const doc = workspace.getFiles()[this.currentSubComponentFilename];
-        if (doc && updateSubComponent(doc, this.currentSubComponentId, parsed)) {
-          workspace.updateActiveFile(workspace.getActiveFileContent()!);
-          onUpdateVisualizer();
-          if (statusPill) statusPill.style.display = 'none';
-        }
-      } catch (e: any) {
-        this.showError(statusPill, e.message);
-      }
-    } else {
-      const result = workspace.updateActiveFileFromString(val);
+    try {
+      JSON.parse(val); // validate json
+      const res = workspace.updateActiveFileFromString(val);
       if (statusPill) {
-        if (result.success) {
+        if (res.success) {
           statusPill.style.display = 'none';
         } else {
-          this.showError(statusPill, result.error);
+          this.showError(statusPill, res.error);
         }
       }
-      if (result.success) {
+      if (res.success) {
         onUpdateVisualizer();
       }
+    } catch (e: any) {
+      this.showError(statusPill, e.message);
     }
   }
-
   private showError(statusPill: HTMLElement | null, message?: string) {
     if (!statusPill) return;
     const firstLine = message ? message.split('\n')[0] : 'Unknown error';

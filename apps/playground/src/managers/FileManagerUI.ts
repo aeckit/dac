@@ -7,6 +7,7 @@ export interface FileManagerOptions {
   onInsertDetail: (filename: string) => void;
   onNewProject: () => void;
   onNewSheet: (projectFilename: string) => void;
+  onNewTitleBlock: () => void;
   onNewDetail: () => void;
 }
 
@@ -17,7 +18,7 @@ export class FileManagerUI {
   }
 
   public render() {
-    const { container, workspace, onFileSelect, onInsertDetail, onNewProject, onNewSheet, onNewDetail } = this.options;
+    const { container, workspace, onFileSelect, onInsertDetail, onNewProject, onNewSheet, onNewTitleBlock, onNewDetail } = this.options;
     container.innerHTML = '';
     const files = workspace.getFiles();
     
@@ -144,7 +145,7 @@ export class FileManagerUI {
       });
     }
 
-    renderSectionTitle('Title Blocks');
+    renderSectionTitle('Title Blocks', onNewTitleBlock);
     if (titleBlocks.length > 0) {
       titleBlocks.forEach(tbFile => {
         const li = document.createElement('li');

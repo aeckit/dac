@@ -1,7 +1,14 @@
 import LZString from 'lz-string';
 import type { SheetConfiguration, DetailDocument } from '@aeckit/core-solver';
 import type { VisualizerDocument } from '@aeckit/ui-components';
-import { defaultFiles } from './default-files';
+const demoModules = import.meta.glob('./demo/*.json', { eager: true });
+const defaultFiles: Record<string, any> = {};
+for (const path in demoModules) {
+  const fileName = path.split('/').pop();
+  if (fileName) {
+    defaultFiles[fileName] = (demoModules[path] as any).default;
+  }
+}
 
 export type FileMap = Record<string, VisualizerDocument | SheetConfiguration>;
 

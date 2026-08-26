@@ -432,9 +432,20 @@ body {
 
 .control-label-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.control-label-row > .precise-input,
+.control-label-row > .precise-input-wrapper,
+.control-label-row > select {
+  flex: 0 0 50% !important;
+  max-width: 50% !important;
+  width: 50% !important;
+  margin-left: auto;
+  box-sizing: border-box;
 }
 
 .control-label {
@@ -452,11 +463,6 @@ body {
   padding: 3px 6px;
   font-family: monospace;
   font-size: 11px;
-  text-align: right;
-}
-
-input[type="text"].precise-input,
-textarea.precise-input {
   text-align: left;
 }
 
@@ -629,4 +635,51 @@ input:checked + .slider-round:before {
   margin: 10px 0 0 0;
   white-space: pre-wrap;
   font-size: 11px;
+}
+
+/* Modern JSON Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+}
+
+.toggle-switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #334155;
+  transition: .2s;
+  border-radius: 16px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #94a3b8;
+  transition: .2s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #4ade80;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(12px);
+  background-color: #ffffff;
 }

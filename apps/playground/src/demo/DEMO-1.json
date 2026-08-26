@@ -1,0 +1,37 @@
+{
+  "type": "CAD::SheetConfiguration",
+  "sheetNumber": "DEMO-1",
+  "sheetName": "Playground Tutorial",
+  "viewports": [
+    {
+      "detail": "welcome-detail.json",
+      "x": "1",
+      "y": "10",
+      "width": "15",
+      "height": "13",
+      "scale": "1:1.5",
+      "detailNumber": "1",
+      "componentId": "vp_welcome"
+    },
+    {
+      "detail": "json-editor-guide.json",
+      "x": "17",
+      "y": "10",
+      "width": "13",
+      "height": "13",
+      "scale": "1:1.5",
+      "detailNumber": "2",
+      "componentId": "vp_json"
+    },
+    {
+      "detail": "components-demo.json",
+      "x": "1",
+      "y": "1",
+      "width": "15",
+      "height": "8",
+      "scale": "1:1.5",
+      "detailNumber": "3",
+      "componentId": "vp_components"
+    }
+  ]
+}
