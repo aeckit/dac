@@ -4,56 +4,56 @@
   "scale": "1\"=1'-0\"",
   "geometry": [
     {
-      "type": "CAD::Rectangle",
+      "type": "CAD::Shape::Rectangle",
       "x": 0,
       "y": 0,
-      "w": 8,
-      "h": 1.5,
-      "stroke": "#94a3b8",
-      "fill": "rgba(255,255,255,0.1)"
+      "fill": "rgba(255,255,255,0.1)",
+      "width": 8,
+      "height": 1.5,
+      "color": "#94a3b8"
     },
     {
-      "type": "CAD::Rectangle",
+      "type": "CAD::Shape::Rectangle",
       "x": 0,
       "y": 1.5,
-      "w": 5.5,
-      "h": 1.5,
-      "stroke": "#94a3b8"
+      "width": 5.5,
+      "height": 1.5,
+      "color": "#94a3b8"
     },
     {
-      "type": "CAD::Line",
+      "type": "CAD::Shape::Line",
       "x1": 0,
       "y1": 1.5,
       "x2": 5.5,
       "y2": 3,
-      "stroke": "#94a3b8"
+      "color": "#94a3b8"
     },
     {
-      "type": "CAD::Line",
+      "type": "CAD::Shape::Line",
       "x1": 0,
       "y1": 3,
       "x2": 5.5,
       "y2": 1.5,
-      "stroke": "#94a3b8"
+      "color": "#94a3b8"
     },
     {
-      "type": "CAD::Line",
+      "type": "CAD::Shape::Line",
       "x1": 2.75,
       "y1": 3,
       "x2": 2.75,
       "y2": 12,
-      "stroke": "#94a3b8"
+      "color": "#94a3b8"
     },
     {
-      "type": "CAD::Line",
+      "type": "CAD::Shape::Line",
       "x1": 0,
       "y1": 3,
       "x2": 0,
       "y2": 12,
-      "stroke": "#94a3b8"
+      "color": "#94a3b8"
     },
     {
-      "type": "CAD::Text",
+      "type": "CAD::Annotation::Text",
       "text": "2x6 SILL PLATE",
       "x": 7,
       "y": 2.25,
@@ -61,7 +61,7 @@
       "color": "#f8fafc"
     },
     {
-      "type": "CAD::Text",
+      "type": "CAD::Annotation::Text",
       "text": "CONCRETE FOUNDATION",
       "x": 9,
       "y": 0.75,
