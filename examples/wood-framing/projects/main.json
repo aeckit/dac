@@ -1,0 +1,7 @@
+{
+  "type": "CAD::Project",
+  "projectName": "Wood Framing Examples",
+  "sheets": [
+    "sheets/S-101.json"
+  ]
+}

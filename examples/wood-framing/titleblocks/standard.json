@@ -1,0 +1,72 @@
+{
+  "type": "CAD::TitleBlock",
+  "version": "1.0",
+  "geometry": [
+    {
+      "type": "CAD::Rectangle",
+      "x": 0.5,
+      "y": 0.5,
+      "w": 35,
+      "h": 23,
+      "stroke": "#f8fafc",
+      "strokeWidth": 0.02
+    },
+    {
+      "type": "CAD::Rectangle",
+      "x": 31,
+      "y": 0.5,
+      "w": 4.5,
+      "h": 23,
+      "stroke": "#f8fafc",
+      "strokeWidth": 0.02
+    },
+    {
+      "type": "CAD::Text",
+      "text": "AEC KIT",
+      "x": 33.25,
+      "y": 2,
+      "fontSize": 0.4,
+      "color": "#f8fafc"
+    },
+    {
+      "type": "CAD::Text",
+      "text": "PROJECT:",
+      "x": 31.2,
+      "y": 4,
+      "fontSize": 0.15,
+      "color": "#94a3b8"
+    },
+    {
+      "type": "CAD::Text",
+      "text": "{projectName}",
+      "x": 31.2,
+      "y": 4.3,
+      "fontSize": 0.25,
+      "color": "#f8fafc"
+    },
+    {
+      "type": "CAD::Text",
+      "text": "SHEET:",
+      "x": 31.2,
+      "y": 5,
+      "fontSize": 0.15,
+      "color": "#94a3b8"
+    },
+    {
+      "type": "CAD::Text",
+      "text": "{sheetName}",
+      "x": 31.2,
+      "y": 5.3,
+      "fontSize": 0.25,
+      "color": "#f8fafc"
+    },
+    {
+      "type": "CAD::Text",
+      "text": "{sheetNumber}",
+      "x": 33.25,
+      "y": 22,
+      "fontSize": 0.8,
+      "color": "#f8fafc"
+    }
+  ]
+}
