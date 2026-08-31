@@ -19,7 +19,132 @@ export class WorkspaceManager {
 
   constructor(onChange: () => void) {
     this.onChange = onChange;
-    this.loadFromHash();
+  }
+
+  public async init() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const githubRepo = urlParams.get('github');
+    
+    if (githubRepo) {
+      await this.loadFromGitHub(githubRepo);
+    } else {
+      this.loadFromHash();
+    }
+  }
+
+  private async loadFromGitHub(inputRepo: string) {
+    try {
+      // Clean up URL if provided
+      let repoStr = inputRepo.replace(/^https?:\/\/github\.com\//, '');
+      const parts = repoStr.split('/').filter(Boolean);
+      
+      let repo = '';
+      let branch = 'main';
+      let subDir = '';
+
+      if (parts.length >= 2) {
+        repo = `${parts[0]}/${parts[1]}`;
+      } else {
+        throw new Error('Invalid repository format. Expected owner/repo.');
+      }
+
+      if (parts.length > 4 && (parts[2] === 'tree' || parts[2] === 'blob')) {
+        branch = parts[3];
+        subDir = parts.slice(4).join('/') + '/';
+      } else if (parts.length > 2) {
+        subDir = parts.slice(2).join('/') + '/';
+      }
+
+      // Dispatch an event so main.ts can show loading state
+      window.dispatchEvent(new CustomEvent('github-import-start', { detail: { repo: inputRepo } }));
+
+      // Fetch tree
+      let treeUrl = `https://api.github.com/repos/${repo}/git/trees/${branch}?recursive=1`;
+      let res = await fetch(treeUrl);
+      
+      if (res.status === 404 && branch === 'main') {
+        // Fallback to master if default branch was assumed as main
+        branch = 'master';
+        treeUrl = `https://api.github.com/repos/${repo}/git/trees/${branch}?recursive=1`;
+        res = await fetch(treeUrl);
+      }
+      
+      if (!res.ok) {
+        throw new Error(`GitHub API error: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      if (!data.tree) throw new Error('No tree found in repository');
+
+      this.files = {};
+      const allowedDirs = ['projects/', 'sheets/', 'details/', 'titleblocks/'];
+      
+      const filePromises = data.tree.map(async (item: any) => {
+        if (item.type !== 'blob' || !item.path.endsWith('.json')) return;
+        if (subDir && !item.path.startsWith(subDir)) return;
+        
+        const relativePath = subDir ? item.path.substring(subDir.length) : item.path;
+        
+        // Root directory or allowed subdirectories
+        const isRoot = !relativePath.includes('/');
+        const inAllowedDir = allowedDirs.some(dir => relativePath.startsWith(dir));
+        
+        if (isRoot || inAllowedDir) {
+          const fetchUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${item.path}`;
+          
+          try {
+            const fileRes = await fetch(fetchUrl);
+            if (fileRes.ok) {
+              const fileData = await fileRes.json();
+              this.files[relativePath] = fileData;
+            }
+          } catch (e) {
+            console.error('Failed to fetch file', item.path, e);
+          }
+        }
+      });
+
+      await Promise.all(filePromises);
+
+      const keys = Object.keys(this.files);
+      if (keys.length === 0) {
+        throw new Error('No valid JSON files found in allowed directories');
+      }
+
+      this.activeFilename = keys.find(k => this.files[k].type === 'CAD::Project') || keys[0];
+      
+      window.dispatchEvent(new CustomEvent('github-import-success'));
+      const url = new URL(window.location.href);
+      url.searchParams.delete('github');
+      window.history.replaceState(null, '', url.toString());
+      this.syncToLocalStorage();
+      this.onChange();
+    } catch (err: any) {
+      console.error(err);
+      window.dispatchEvent(new CustomEvent('github-import-error', { detail: { message: err.message } }));
+      this.loadFromHash(); // fallback
+      this.onChange();
+    }
+  }
+
+  private loadFromStorageOrDefault() {
+    try {
+      const stored = localStorage.getItem('dac-workspace');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.files) {
+          this.files = parsed.files;
+          this.activeFilename = parsed.activeFilename || Object.keys(this.files)[0] || null;
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load from localStorage:', e);
+    }
+    
+    // Default fallback
+    this.files = JSON.parse(JSON.stringify(defaultFiles)); // Deep copy to avoid mutating the original
+    this.activeFilename = 'demo-project.json';
   }
 
   private loadFromHash() {
@@ -36,6 +161,7 @@ export class WorkspaceManager {
           } else {
             this.files = parsed.files;
             this.activeFilename = parsed.activeFilename || Object.keys(this.files)[0] || null;
+            this.syncToLocalStorage();
             return;
           }
         }
@@ -44,9 +170,19 @@ export class WorkspaceManager {
       }
     }
     
-    // Default fallback
-    this.files = JSON.parse(JSON.stringify(defaultFiles)); // Deep copy to avoid mutating the original
-    this.activeFilename = 'demo-project.json';
+    this.loadFromStorageOrDefault();
+  }
+
+  public syncToLocalStorage() {
+    const state = {
+      files: this.files,
+      activeFilename: this.activeFilename
+    };
+    try {
+      localStorage.setItem('dac-workspace', JSON.stringify(state));
+    } catch (e) {
+      console.error('Failed to sync to localStorage:', e);
+    }
   }
 
   public syncToHash() {
@@ -75,6 +211,7 @@ export class WorkspaceManager {
   public setActiveFile(filename: string) {
     if (this.files[filename]) {
       this.activeFilename = filename;
+      this.syncToLocalStorage();
       this.onChange();
     }
   }
@@ -82,6 +219,7 @@ export class WorkspaceManager {
   public updateActiveFile(content: VisualizerDocument | SheetConfiguration) {
     if (this.activeFilename) {
       this.files[this.activeFilename] = content;
+      this.syncToLocalStorage();
       this.onChange();
     }
   }
@@ -89,6 +227,7 @@ export class WorkspaceManager {
   public updateFile(filename: string, content: VisualizerDocument | SheetConfiguration) {
     if (this.files[filename]) {
       this.files[filename] = content;
+      this.syncToLocalStorage();
       this.onChange();
     }
   }
@@ -98,6 +237,7 @@ export class WorkspaceManager {
     try {
       const parsed = JSON.parse(jsonString);
       this.files[this.activeFilename] = parsed;
+      this.syncToLocalStorage();
       this.onChange();
       return { success: true };
     } catch (e: any) {
@@ -109,6 +249,7 @@ export class WorkspaceManager {
     if (!this.files[filename]) {
       this.files[filename] = content;
       this.activeFilename = filename;
+      this.syncToLocalStorage();
       this.onChange();
     }
   }
@@ -119,6 +260,7 @@ export class WorkspaceManager {
       if (this.activeFilename === filename) {
         this.activeFilename = Object.keys(this.files)[0] || null;
       }
+      this.syncToLocalStorage();
       this.onChange();
     }
   }
@@ -128,6 +270,7 @@ export class WorkspaceManager {
       const newName = `copy-of-${filename}`;
       this.files[newName] = JSON.parse(JSON.stringify(this.files[filename]));
       this.activeFilename = newName;
+      this.syncToLocalStorage();
       this.onChange();
     }
   }

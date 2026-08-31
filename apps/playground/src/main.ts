@@ -7,6 +7,18 @@ import { JsonEditorManager } from './managers/JsonEditorManager';
 import { FileManagerUI } from './managers/FileManagerUI';
 import { getUniqueName } from './utils/DocumentUtils';
 
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+import JsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+
+(window as any).MonacoEnvironment = {
+  getWorker(_moduleId: string, label: string) {
+    if (label === 'json') {
+      return new JsonWorker();
+    }
+    return new EditorWorker();
+  }
+};
+
 // -----------------------------------------------------------------------------
 // Initialization
 // -----------------------------------------------------------------------------
@@ -349,13 +361,39 @@ function initPaneToggles() {
 // Boot
 // -----------------------------------------------------------------------------
 jsonEditor = initEditor();
-fileManager = initFileManager();
 initPaneToggles();
-fileManager?.render();
-if (activeFilenameEl) {
-  activeFilenameEl.textContent = workspace.activeFilename || 'No file selected';
-}
-updateVisualizer();
+
+workspace.init().then(() => {
+  fileManager = initFileManager();
+  fileManager?.render();
+  jsonEditor?.updateEditor();
+  if (activeFilenameEl) {
+    activeFilenameEl.textContent = workspace.activeFilename || 'No file selected';
+  }
+  updateVisualizer();
+});
+
+// GitHub Import UI listeners
+document.getElementById('btn-import-github')?.addEventListener('click', () => {
+  const repo = prompt('Enter public GitHub repository or URL (e.g., owner/repo or github.com/owner/repo/tree/main/path):');
+  if (repo) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('github', repo);
+    window.location.href = url.toString();
+  }
+});
+
+window.addEventListener('github-import-start', (e: any) => {
+  showToast(`Fetching ${e.detail.repo} from GitHub...`);
+});
+
+window.addEventListener('github-import-success', () => {
+  showToast('Successfully imported from GitHub!');
+});
+
+window.addEventListener('github-import-error', (e: any) => {
+  showToast(`GitHub Import Failed: ${e.detail.message}`);
+});
 
 // Handle window resize for Monaco
 window.addEventListener('resize', () => {
