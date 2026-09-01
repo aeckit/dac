@@ -126,6 +126,9 @@ export function compileGeometryGroups(
       const constructDoc = constructResolver(shape.constructId!);
       if (constructDoc) {
         const exploded = explodeConstruct(shape, constructDoc, resolvedParams);
+        const cid = shape.componentId || `shape_${autoIndex++}`;
+        const ctype = shape.componentType || 'ConstructReference';
+
         for (const childShape of exploded) {
           const drawer = L1_REGISTRY[childShape.type];
           if (!drawer) continue;
@@ -137,8 +140,6 @@ export function compileGeometryGroups(
             }
             
             const svg = drawer(childShape, {}, scale, canvasHeight);
-            const cid = shape.componentId || `shape_${autoIndex++}`;
-            const ctype = shape.componentType || 'ConstructReference';
 
             if (!groups[cid]) groups[cid] = { type: ctype, svgNodes: [] };
             groups[cid].svgNodes.push(svg);
