@@ -130,8 +130,27 @@ function updateVisualizer() {
       { 
         sheetsMap, 
         parentProject: parentProject || undefined,
+        constructResolver: (id: string) => {
+          const file = workspace.getFiles()[id];
+          if (file && file.type === 'CAD::Construct') return file as any;
+          return undefined;
+        },
         onSelectionChange: () => {
           jsonEditor?.updateEditor();
+        },
+        activeFilename: workspace.activeFilename || undefined,
+        onFileRename: (newName: string) => {
+          if (!workspace.activeFilename || newName === workspace.activeFilename) return;
+          const files = workspace.getFiles();
+          if (files[newName]) {
+            alert('A file with this name already exists.');
+            return;
+          }
+          const oldName = workspace.activeFilename;
+          workspace.renameFile(oldName, newName);
+          if (currentVisualizerFilename === oldName) {
+            currentVisualizerFilename = newName;
+          }
         }
       }
     );
@@ -150,6 +169,25 @@ function updateVisualizer() {
     // If selection changed previously, updateConfig might re-render. Make sure to hook onSelectionChange if we didn't recreate it
     if ((uiInstance as any).options) {
       (uiInstance as any).options.onSelectionChange = () => jsonEditor?.updateEditor();
+      (uiInstance as any).options.activeFilename = workspace.activeFilename || undefined;
+      (uiInstance as any).options.onFileRename = (newName: string) => {
+        if (!workspace.activeFilename || newName === workspace.activeFilename) return;
+        const files = workspace.getFiles();
+        if (files[newName]) {
+          alert('A file with this name already exists.');
+          return;
+        }
+        const oldName = workspace.activeFilename;
+        workspace.renameFile(oldName, newName);
+        if (currentVisualizerFilename === oldName) {
+          currentVisualizerFilename = newName;
+        }
+      };
+      (uiInstance as any).options.constructResolver = (id: string) => {
+        const file = workspace.getFiles()[id];
+        if (file && file.type === 'CAD::Construct') return file as any;
+        return undefined;
+      };
     }
     uiInstance.updateConfig(vizDoc, viewportsMap, titleBlockMap, sheetsMap, parentProject);
     if (currentVisualizerFilename !== workspace.activeFilename) {
@@ -220,6 +258,35 @@ function initFileManager() {
       };
       workspace.createFile(getUniqueName('detail', () => workspace.getFiles()), doc);
       if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
+    },
+    onNewConstruct: () => {
+      const doc: any = {
+        type: 'CAD::Construct',
+        version: '1.0',
+        parameters: {
+          width: { type: 'number', default: 5 },
+          height: { type: 'number', default: 10 }
+        },
+        geometry: []
+      };
+      workspace.createFile(getUniqueName('construct', () => workspace.getFiles()), doc);
+      if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
+    },
+    onInsertConstruct: (filename: string) => {
+      if (uiInstance && uiInstance.doc.geometry && Array.isArray(uiInstance.doc.geometry)) {
+        const ref = {
+          type: 'ConstructReference',
+          constructId: filename,
+          x: 0,
+          y: 0,
+          rotation: 0,
+          parameterOverrides: {}
+        };
+        uiInstance.doc.geometry.push(ref as any);
+        uiInstance.updateAndNotify();
+      } else {
+        showToast('Open a Detail or Construct first to insert this construct.');
+      }
     }
   });
 }

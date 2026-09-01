@@ -245,6 +245,18 @@ export class WorkspaceManager {
     }
   }
 
+    public renameFile(oldName: string, newName: string) {
+    if (this.files[oldName] && !this.files[newName]) {
+      this.files[newName] = this.files[oldName];
+      delete this.files[oldName];
+      if (this.activeFilename === oldName) {
+        this.activeFilename = newName;
+      }
+      this.syncToLocalStorage();
+      this.onChange();
+    }
+  }
+
   public createFile(filename: string, content: VisualizerDocument | SheetConfiguration) {
     if (!this.files[filename]) {
       this.files[filename] = content;

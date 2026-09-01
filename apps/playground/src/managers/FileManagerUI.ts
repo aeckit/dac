@@ -9,6 +9,8 @@ export interface FileManagerOptions {
   onNewSheet: (projectFilename: string) => void;
   onNewTitleBlock: () => void;
   onNewDetail: () => void;
+  onNewConstruct: () => void;
+  onInsertConstruct: (filename: string) => void;
 }
 
 export class FileManagerUI {
@@ -18,7 +20,7 @@ export class FileManagerUI {
   }
 
   public render() {
-    const { container, workspace, onFileSelect, onInsertDetail, onNewProject, onNewSheet, onNewTitleBlock, onNewDetail } = this.options;
+    const { container, workspace, onFileSelect, onInsertDetail, onNewProject, onNewSheet, onNewTitleBlock, onNewDetail, onNewConstruct, onInsertConstruct } = this.options;
     container.innerHTML = '';
     const files = workspace.getFiles();
     
@@ -33,6 +35,19 @@ export class FileManagerUI {
         workspace.deleteFile(filename);
       };
       return delBtn;
+    };
+
+    const attachRenameHandler = (span: HTMLElement, filename: string) => {
+      span.ondblclick = (e) => {
+        e.stopPropagation();
+        const newName = prompt('Enter new filename:', filename);
+        if (newName && newName !== filename && !files[newName]) {
+          workspace.renameFile(filename, newName);
+        } else if (newName && files[newName]) {
+          alert('A file with this name already exists.');
+        }
+      };
+      span.title = 'Double-click to rename';
     };
 
     const renderSectionTitle = (title: string, onAdd?: () => void) => {
@@ -73,13 +88,15 @@ export class FileManagerUI {
     const sheets = Object.keys(files).filter(k => files[k].type === 'CAD::SheetConfiguration');
     const titleBlocks = Object.keys(files).filter(k => files[k].type === 'CAD::TitleBlock');
     const details = Object.keys(files).filter(k => files[k].type === 'CAD::Detail');
+    const constructs = Object.keys(files).filter(k => files[k].type === 'CAD::Construct');
     
-    const classified = new Set([...projects, ...sheets, ...titleBlocks, ...details]);
+    const classified = new Set([...projects, ...sheets, ...titleBlocks, ...details, ...constructs]);
     const others = Object.keys(files).filter(k => !classified.has(k));
     details.push(...others);
 
     const activeFileDoc = workspace.activeFilename ? files[workspace.activeFilename] : null;
     const isSheetActive = activeFileDoc && activeFileDoc.type === 'CAD::SheetConfiguration';
+    const isDetailActive = activeFileDoc && (activeFileDoc.type === 'CAD::Detail' || activeFileDoc.type === 'CAD::TitleBlock' || activeFileDoc.type === 'CAD::Construct');
 
     renderSectionTitle('Projects', onNewProject);
     if (projects.length > 0) {
@@ -90,6 +107,7 @@ export class FileManagerUI {
         
         const nameSpan = document.createElement('span');
         nameSpan.textContent = projFile;
+        attachRenameHandler(nameSpan, projFile);
         li.appendChild(nameSpan);
         
         const delBtn = createDeleteButton(projFile);
@@ -111,6 +129,7 @@ export class FileManagerUI {
               
               const sNameSpan = document.createElement('span');
               sNameSpan.textContent = "↳ " + sheetName;
+              attachRenameHandler(sNameSpan, sheetName);
               sli.appendChild(sNameSpan);
               
               const sDelBtn = createDeleteButton(sheetName);
@@ -153,6 +172,7 @@ export class FileManagerUI {
         
         const nameSpan = document.createElement('span');
         nameSpan.textContent = tbFile;
+        attachRenameHandler(nameSpan, tbFile);
         li.appendChild(nameSpan);
         
         const delBtn = createDeleteButton(tbFile);
@@ -172,6 +192,7 @@ export class FileManagerUI {
         
         const nameSpan = document.createElement('span');
         nameSpan.textContent = detFile;
+        attachRenameHandler(nameSpan, detFile);
         li.appendChild(nameSpan);
         
         if (isSheetActive) {
@@ -196,6 +217,43 @@ export class FileManagerUI {
         li.appendChild(delBtn);
         
         li.onclick = () => onFileSelect(detFile);
+        container.appendChild(li);
+      });
+    }
+
+    renderSectionTitle('Constructs', onNewConstruct);
+    if (constructs.length > 0) {
+      constructs.forEach(cFile => {
+        const li = document.createElement('li');
+        li.className = 'file-item' + (cFile === workspace.activeFilename ? ' active' : '');
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = cFile;
+        attachRenameHandler(nameSpan, cFile);
+        li.appendChild(nameSpan);
+        
+        if (isDetailActive) {
+          const addBtn = document.createElement('span');
+          addBtn.textContent = '+';
+          addBtn.style.color = '#4ade80';
+          addBtn.style.marginLeft = 'auto';
+          addBtn.style.marginRight = '8px';
+          addBtn.style.cursor = 'pointer';
+          addBtn.title = 'Insert into active detail';
+          addBtn.onclick = (e) => {
+            e.stopPropagation();
+            onInsertConstruct(cFile);
+          };
+          li.appendChild(addBtn);
+        }
+        
+        const delBtn = createDeleteButton(cFile);
+        if (!isDetailActive) {
+          delBtn.style.marginLeft = 'auto';
+        }
+        li.appendChild(delBtn);
+        
+        li.onclick = () => onFileSelect(cFile);
         container.appendChild(li);
       });
     }
