@@ -1,4 +1,4 @@
-import { DetailDocument, TitleBlockDocument, SheetConfiguration, GeometryPrimitive } from './types';
+import { DetailDocument, TitleBlockDocument, SheetConfiguration, GeometryPrimitive, ConstructDocument } from './types';
 import { resolveScaleMultiplier, evaluateExpression } from './utils';
 import { L1_REGISTRY } from './drawers';
 
@@ -83,16 +83,140 @@ function getStyles(): string {
   `;
 }
 
+export function explodeConstruct(
+  shape: GeometryPrimitive, 
+  constructDoc: ConstructDocument, 
+  globalParams: Record<string, number | boolean> = {}
+): GeometryPrimitive[] {
+  const resolvedParams: Record<string, number | boolean> = { ...globalParams };
+  if (constructDoc.parameters) {
+    for (const [key, param] of Object.entries(constructDoc.parameters)) {
+      const val = param.value !== undefined ? param.value : param.default;
+      resolvedParams[key] = val;
+      if (param.options) {
+        const selectedOpt = param.options.find((opt: any) => opt.value === val);
+        if (selectedOpt && selectedOpt.variables) {
+          for (const [vKey, vVal] of Object.entries(selectedOpt.variables)) {
+            resolvedParams[`${key}.${vKey}`] = vVal as any;
+          }
+        }
+      }
+    }
+  }
+  if (shape.parameterOverrides) {
+    for (const [key, val] of Object.entries(shape.parameterOverrides)) {
+      resolvedParams[key] = evaluateExpression(val, globalParams);
+    }
+  }
+
+  const refX = evaluateExpression(shape.x || 0, globalParams);
+  const refY = evaluateExpression(shape.y || 0, globalParams);
+  const refRot = evaluateExpression(shape.rotation || 0, globalParams);
+
+  const results: GeometryPrimitive[] = [];
+  
+  for (const child of constructDoc.geometry) {
+    const cloned = JSON.parse(JSON.stringify(child));
+    
+    for (const key of Object.keys(cloned)) {
+      if (typeof cloned[key] === 'string' && cloned[key].includes('{parameters.')) {
+         cloned[key] = evaluateExpression(cloned[key], resolvedParams);
+      }
+    }
+
+    const points = [
+      ['x', 'y'],
+      ['x1', 'y1'],
+      ['x2', 'y2'],
+      ['cx', 'cy']
+    ];
+    
+    for (const [kx, ky] of points) {
+      if (cloned[kx] !== undefined && cloned[ky] !== undefined) {
+        const valX = evaluateExpression(cloned[kx], resolvedParams);
+        const valY = evaluateExpression(cloned[ky], resolvedParams);
+        if (refRot !== 0) {
+          const rad = refRot * Math.PI / 180;
+          const rx = valX * Math.cos(rad) - valY * Math.sin(rad);
+          const ry = valX * Math.sin(rad) + valY * Math.cos(rad);
+          cloned[kx] = rx + refX;
+          cloned[ky] = ry + refY;
+        } else {
+          cloned[kx] = valX + refX;
+          cloned[ky] = valY + refY;
+        }
+      } else if (cloned[kx] !== undefined) {
+        cloned[kx] = evaluateExpression(cloned[kx], resolvedParams) + refX;
+      } else if (cloned[ky] !== undefined) {
+        cloned[ky] = evaluateExpression(cloned[ky], resolvedParams) + refY;
+      }
+    }
+
+    if (cloned.dx !== undefined && cloned.dy !== undefined) {
+      const valDX = evaluateExpression(cloned.dx, resolvedParams);
+      const valDY = evaluateExpression(cloned.dy, resolvedParams);
+      if (refRot !== 0) {
+        const rad = refRot * Math.PI / 180;
+        cloned.dx = valDX * Math.cos(rad) - valDY * Math.sin(rad);
+        cloned.dy = valDX * Math.sin(rad) + valDY * Math.cos(rad);
+      } else {
+        cloned.dx = valDX;
+        cloned.dy = valDY;
+      }
+    } else if (cloned.dx !== undefined) {
+      cloned.dx = evaluateExpression(cloned.dx, resolvedParams);
+    } else if (cloned.dy !== undefined) {
+      cloned.dy = evaluateExpression(cloned.dy, resolvedParams);
+    }
+    
+    if (cloned.width !== undefined) cloned.width = evaluateExpression(cloned.width, resolvedParams);
+    if (cloned.height !== undefined) cloned.height = evaluateExpression(cloned.height, resolvedParams);
+    if (cloned.r !== undefined) cloned.r = evaluateExpression(cloned.r, resolvedParams);
+    if (cloned.fontSize !== undefined) cloned.fontSize = evaluateExpression(cloned.fontSize, resolvedParams);
+    
+    if (refRot !== 0) {
+      cloned.rotation = (evaluateExpression(cloned.rotation || 0, resolvedParams)) + refRot;
+    }
+
+    if (child.componentId) {
+      cloned.componentId = `${shape.componentId || 'construct'}_${child.componentId}`;
+    } else {
+      cloned.componentId = `${shape.componentId || 'construct'}_${Math.random().toString(36).substr(2, 5)}`;
+    }
+
+    results.push(cloned);
+  }
+
+  return results;
+}
+
 /**
  * Evaluates geometry shapes and groups them by componentId
  */
-export function compileGeometryGroups(doc: DetailDocument | TitleBlockDocument, scale: number, globalParams: Record<string, number | boolean> = {}, canvasHeight = 18, isInteractive = true): string {
+export function compileGeometryGroups(
+  doc: DetailDocument | TitleBlockDocument | ConstructDocument, 
+  scale: number, 
+  globalParams: Record<string, number | boolean> = {}, 
+  canvasHeight = 18, 
+  isInteractive = true,
+  constructResolver?: (id: string) => ConstructDocument | undefined
+): string {
   const resolvedParams: Record<string, number | boolean> = { ...globalParams };
 
   if (doc.parameters) {
     for (const [key, param] of Object.entries(doc.parameters)) {
       if (resolvedParams[key] === undefined) {
-        resolvedParams[key] = param.value !== undefined ? param.value : param.default;
+        const val = param.value !== undefined ? param.value : param.default;
+        resolvedParams[key] = val;
+        
+        if (param.options) {
+          const selectedOpt = param.options.find((opt: any) => opt.value === val);
+          if (selectedOpt && selectedOpt.variables) {
+            for (const [vKey, vVal] of Object.entries(selectedOpt.variables)) {
+              resolvedParams[`${key}.${vKey}`] = vVal as any;
+            }
+          }
+        }
       }
     }
   }
@@ -102,6 +226,36 @@ export function compileGeometryGroups(doc: DetailDocument | TitleBlockDocument, 
   let autoIndex = 0;
 
   for (const shape of doc.geometry) {
+    if (shape.type === 'ConstructReference' && constructResolver) {
+      const constructDoc = constructResolver(shape.constructId!);
+      if (constructDoc) {
+        const exploded = explodeConstruct(shape, constructDoc, resolvedParams);
+        for (const childShape of exploded) {
+          const drawer = L1_REGISTRY[childShape.type];
+          if (!drawer) continue;
+          
+          try {
+            if (childShape.visible !== undefined) {
+              const isVisible = evaluateExpression(childShape.visible, {});
+              if (isVisible === false || isVisible === 'false' || isVisible === 0) continue;
+            }
+            
+            const svg = drawer(childShape, {}, scale, canvasHeight);
+            const cid = shape.componentId || `shape_${autoIndex++}`;
+            const ctype = shape.componentType || 'ConstructReference';
+
+            if (!groups[cid]) groups[cid] = { type: ctype, svgNodes: [] };
+            groups[cid].svgNodes.push(svg);
+          } catch (err) {
+            console.error(`Failed to render shape type "${childShape.type}":`, err);
+          }
+        }
+      } else {
+        console.warn(`ConstructReference failed to resolve constructId: ${shape.constructId}`);
+      }
+      continue;
+    }
+
     const drawer = L1_REGISTRY[shape.type];
     if (!drawer) {
       console.warn(`Unknown shape type encountered: ${shape.type}`);
@@ -173,12 +327,12 @@ function getOriginIndicator(canvasHeight = 18, scale = 1): string {
   `;
 }
 
-export function renderDetail(doc: DetailDocument, sandboxWidth: number = 24, sandboxHeight: number = 18): string {
+export function renderDetail(doc: DetailDocument, sandboxWidth: number = 24, sandboxHeight: number = 18, constructResolver?: (id: string) => ConstructDocument | undefined): string {
   const scale = resolveScaleMultiplier(doc.scale);
   const width = sandboxWidth;
   const height = sandboxHeight;
 
-  const geometries = compileGeometryGroups(doc, scale, {}, sandboxHeight);
+  const geometries = compileGeometryGroups(doc, scale, {}, sandboxHeight, true, constructResolver);
   const originIndicator = getOriginIndicator(sandboxHeight, scale);
 
   return `
@@ -227,7 +381,8 @@ export function renderSheet(
   titleBlockDoc?: TitleBlockDocument,
   tbOffsetX = 0,
   tbOffsetY = 0,
-  paperSize = 'ARCH D'
+  paperSize = 'ARCH D',
+  constructResolver?: (id: string) => ConstructDocument | undefined
 ): string {
   const { width, height } = getPaperDimensions(paperSize);
   let sheetContent = '';
@@ -236,7 +391,7 @@ export function renderSheet(
   if (titleBlockDoc) {
     // Title block is rendered at 1:1 scale
     const tbScale = resolveScaleMultiplier('1:1');
-    const tbSvg = compileGeometryGroups(titleBlockDoc, tbScale, titleBlockData, height, false);
+    const tbSvg = compileGeometryGroups(titleBlockDoc, tbScale, titleBlockData, height, false, constructResolver);
     
     // translating by (x, -y) is correct in SVG coordinate space (since +Y is down in SVG, and we want to move it UP).
     sheetContent += `\n<!-- Title Block -->\n<g id="title-block-layer" transform="translate(${tbOffsetX}, ${-tbOffsetY})">${tbSvg}</g>`;
@@ -246,7 +401,7 @@ export function renderSheet(
   if (sheet.geometry && sheet.geometry.length > 0) {
     const geomScale = resolveScaleMultiplier('1:1');
     const dummyDoc: DetailDocument = { type: 'CAD::Detail', version: '1.0', scale: '1:1', geometry: sheet.geometry };
-    const geomSvg = compileGeometryGroups(dummyDoc, geomScale, titleBlockData, height, false);
+    const geomSvg = compileGeometryGroups(dummyDoc, geomScale, titleBlockData, height, false, constructResolver);
     sheetContent += `\n<!-- Sheet Geometry -->\n<g id="sheet-geometry-layer">${geomSvg}</g>`;
   }
 
@@ -259,7 +414,7 @@ export function renderSheet(
     if (detailDoc) {
       const vpScaleMultiplier = resolveScaleMultiplier(vp.scale);
       const vpCanvasHeight = 18;
-      const vpSvg = compileGeometryGroups(detailDoc, vpScaleMultiplier, titleBlockData, vpCanvasHeight, false);
+      const vpSvg = compileGeometryGroups(detailDoc, vpScaleMultiplier, titleBlockData, vpCanvasHeight, false, constructResolver);
       const vpX = Number(vp.x);
       const vpY = Number(vp.y);
       const vpSvgY = height - vpY - (vpCanvasHeight * vpScaleMultiplier);

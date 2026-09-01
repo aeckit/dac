@@ -30,13 +30,34 @@ export interface GeometryPrimitive {
   componentId?: string;
   componentType?: string;
   visible?: any;
+  // Construct Reference properties
+  constructId?: string;
+  rotation?: number;
+  parameterOverrides?: Record<string, any>;
+}
+
+export interface ParameterOption {
+  label: string;
+  value: any;
+  variables?: Record<string, number | string | boolean>;
+}
+
+export interface ParameterDefinition {
+  type: string;
+  default: any;
+  value?: any;
+  componentId?: string;
+  min?: number;
+  max?: number;
+  label?: string;
+  options?: ParameterOption[];
 }
 
 export interface DetailDocument {
   type: 'CAD::Detail';
   version: string;
   scale: string;
-  parameters?: Record<string, { type: string; default: any; value?: any; componentId?: string; min?: number; max?: number; label?: string }>;
+  parameters?: Record<string, ParameterDefinition>;
   geometry: GeometryPrimitive[];
 }
 
@@ -63,7 +84,14 @@ export interface Viewport {
 export interface TitleBlockDocument {
   type: 'CAD::TitleBlock';
   version: string;
-  parameters?: Record<string, { type: string; default: any; value?: any; componentId?: string; min?: number; max?: number; label?: string }>;
+  parameters?: Record<string, ParameterDefinition>;
+  geometry: GeometryPrimitive[];
+}
+
+export interface ConstructDocument {
+  type: 'CAD::Construct';
+  version: string;
+  parameters?: Record<string, ParameterDefinition>;
   geometry: GeometryPrimitive[];
 }
 
@@ -88,4 +116,4 @@ export interface ProjectDocument {
   sheets: (string | SheetConfiguration)[];
 }
 
-export type VisualizerDocument = DetailDocument | ProjectDocument | SheetConfiguration | TitleBlockDocument;
+export type VisualizerDocument = DetailDocument | ProjectDocument | SheetConfiguration | TitleBlockDocument | ConstructDocument;

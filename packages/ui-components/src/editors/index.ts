@@ -8,6 +8,7 @@ import { ImageEditor } from './ImageEditor';
 
 import { DocumentEditor } from './DocumentEditor';
 import { ViewportEditor } from './ViewportEditor';
+import { ConstructReferenceEditor } from './ConstructReferenceEditor';
 
 export {
   RectangleEditor,
@@ -17,7 +18,8 @@ export {
   ParametricEditor,
   ImageEditor,
   DocumentEditor,
-  ViewportEditor
+  ViewportEditor,
+  ConstructReferenceEditor
 };
 
 export const getEditorForShape = (type: string): PropertyEditor => {
@@ -30,6 +32,8 @@ export const getEditorForShape = (type: string): PropertyEditor => {
       return TextEditor;
     case 'CAD::Annotation::Image':
       return ImageEditor;
+    case 'ConstructReference':
+      return ConstructReferenceEditor;
     default:
       return DefaultEditor;
   }

@@ -64,11 +64,16 @@ function drawRectangle(shape: GeometryPrimitive, params: Record<string, number |
 
   const strokeColor = shape.color || '#f8fafc';
   const strokeWidth = ((shape.strokeWidth || 2) / 72) / scale;
+  
+  const rot = evaluateExpression(shape.rotation || 0, params);
+  const transform = rot ? ` transform="rotate(${-rot}, ${x}, ${canvasHeight - rawY})"` : '';
 
   return `
-    <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
-    <rect x="${x}" y="${y}" width="${w}" height="${h}" ${fillStr} stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round" />
-    ${extraGraphics}
+    <g${transform}>
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" ${fillStr} stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round" />
+      ${extraGraphics}
+    </g>
   `;
 }
 
@@ -141,8 +146,12 @@ function drawText(shape: GeometryPrimitive, params: Record<string, number | bool
   const color = shape.color || '#f1f5f9';
 
   const lines = String(text).split(/\\n|\n/);
+  
+  const rot = evaluateExpression(shape.rotation || 0, params);
+  const transform = rot ? ` transform="rotate(${-rot}, ${x}, ${y})"` : '';
+
   if (lines.length <= 1) {
-    return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto">${text}</text>`;
+    return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto"${transform}>${text}</text>`;
   }
 
   const tspans = lines.map((line, index) => {
@@ -150,7 +159,7 @@ function drawText(shape: GeometryPrimitive, params: Record<string, number | bool
     return `<tspan x="${x}" dy="${dy}em">${line}</tspan>`;
   }).join('');
   
-  return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto">${tspans}</text>`;
+  return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto"${transform}>${tspans}</text>`;
 }
 
 // Annotation: Leader (Cartesian +Y = UP)
@@ -220,7 +229,10 @@ function drawImage(shape: GeometryPrimitive, params: Record<string, number | boo
     `;
   }
   
-  return imageContent;
+  const rot = evaluateExpression(shape.rotation || 0, params);
+  const transform = rot ? ` transform="rotate(${-rot}, ${x}, ${canvasHeight - rawY})"` : '';
+  
+  return `<g${transform}>${imageContent}</g>`;
 }
 
 export const L1_REGISTRY: Record<string, ShapeDrawer> = {

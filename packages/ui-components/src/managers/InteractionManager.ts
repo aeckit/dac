@@ -1,11 +1,57 @@
 import { VisualizerUI } from '../index';
-import { resolveScaleMultiplier } from '@aeckit/core-solver';
+import { resolveScaleMultiplier, explodeConstruct } from '@aeckit/core-solver';
 
 export class InteractionManager {
   public setupListeners() {
     this.ui.btnDeleteOverlay.addEventListener('click', (e) => {
       e.stopPropagation();
       this.ui.interactionManager.deleteSelectedComponent();
+    });
+
+    window.addEventListener('explode-construct', (e: any) => {
+      if (!e.detail || !e.detail.componentId) return;
+      const cid = e.detail.componentId;
+      const doc = this.ui.findDocumentForComponent(cid);
+      if (!doc || !doc.geometry || !Array.isArray(doc.geometry)) return;
+
+      const idx = doc.geometry.findIndex((s: any, index: number) => {
+        const shapeId = s.componentId || 'shape_' + index;
+        return shapeId === cid;
+      });
+
+      if (idx !== -1) {
+        const shape = doc.geometry[idx];
+        if (shape.type === 'ConstructReference' && this.ui.options.constructResolver && shape.constructId) {
+          const constructDoc = this.ui.options.constructResolver(shape.constructId);
+          if (constructDoc) {
+            const globalParams: Record<string, number | boolean> = {};
+            if (doc.parameters) {
+              for (const [key, param] of Object.entries(doc.parameters)) {
+                globalParams[key] = param.value !== undefined ? param.value : param.default;
+                if (param.options) {
+                  const val = globalParams[key];
+                  const selectedOpt = param.options.find((opt: any) => opt.value === val);
+                  if (selectedOpt && selectedOpt.variables) {
+                    for (const [vKey, vVal] of Object.entries(selectedOpt.variables)) {
+                      globalParams[`${key}.${vKey}`] = vVal as any;
+                    }
+                  }
+                }
+              }
+            }
+            const explodedShapes = explodeConstruct(shape, constructDoc, globalParams);
+            doc.geometry.splice(idx, 1, ...explodedShapes);
+            this.ui.selectedComponentIds.clear();
+            
+            // Select the newly exploded shapes
+            explodedShapes.forEach(s => {
+              if (s.componentId) this.ui.selectedComponentIds.add(s.componentId);
+            });
+            this.ui.primaryComponentType = 'ConstructExploded';
+            this.ui.updateAndNotify();
+          }
+        }
+      }
     });
 
     this.ui.btnMoveOverlay.addEventListener('mousedown', (e) => {
