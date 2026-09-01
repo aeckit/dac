@@ -5,7 +5,20 @@ export const ParametricEditor = {
     return componentParams.map(([key, param]) => {
       const resolvedVal = param.value !== undefined ? param.value : param.default;
 
-      if (param.type === 'Number') {
+      if (param.options && Array.isArray(param.options)) {
+        const selectOptions = param.options.map((opt: any) => 
+          `<option value="${opt.value}" ${opt.value === resolvedVal ? 'selected' : ''}>${opt.label}</option>`
+        ).join('');
+
+        return `
+          <div class="form-group" data-param-key="${key}">
+            <label class="control-label">${param.label || key}</label>
+            <select class="param-select prop-input" style="width:100%; padding: 4px; background: #1e293b; color: #f1f5f9; border: 1px solid #334155; border-radius: 4px; margin-top: 4px; font-size: 11px;">
+              ${selectOptions}
+            </select>
+          </div>
+        `;
+      } else if (param.type === 'Number') {
         const minVal = param.min !== undefined ? param.min : -100;
         const maxVal = param.max !== undefined ? param.max : 100;
 
@@ -44,7 +57,22 @@ export const ParametricEditor = {
       const groupEl = container.querySelector(`[data-param-key="${key}"]`) as HTMLElement;
       if (!groupEl) return;
 
-      if (param.type === 'Number') {
+      if (param.options && Array.isArray(param.options)) {
+        const select = groupEl.querySelector('.param-select') as HTMLSelectElement;
+        if (select) {
+          select.addEventListener('change', () => {
+            const val = select.value;
+            const originalOpt = param.options!.find((o: any) => String(o.value) === val);
+            const finalVal = originalOpt ? originalOpt.value : val;
+
+            const latestDoc = getLatestDoc();
+            if (latestDoc && latestDoc.parameters && latestDoc.parameters[key]) {
+              latestDoc.parameters[key].value = finalVal;
+              updateAndNotify();
+            }
+          });
+        }
+      } else if (param.type === 'Number') {
         const slider = groupEl.querySelector('.param-slider') as HTMLInputElement;
         const numInput = groupEl.querySelector('.param-num-input') as HTMLInputElement;
 

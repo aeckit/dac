@@ -15,6 +15,19 @@ export class PropertiesManager {
   public renderPropertyEditor() {
     if (!this.ui.propertiesCardContainer) return;
 
+    const applyHtml = (htmlContent: string) => {
+      this.ui.propertiesCardContainer.innerHTML = htmlContent;
+      const filenameInput = this.ui.propertiesCardContainer.querySelector('.doc-filename-input') as HTMLInputElement;
+      if (filenameInput && this.ui.options.onFileRename) {
+        filenameInput.addEventListener('change', () => {
+          const newName = filenameInput.value.trim();
+          if (newName && newName !== this.ui.options.activeFilename) {
+            this.ui.options.onFileRename!(newName);
+          }
+        });
+      }
+    };
+
     let scheduleHtml = '';
     if (this.ui.doc.type === 'CAD::SheetConfiguration') {
       const sheet = this.ui.getActiveSheet();
@@ -53,7 +66,24 @@ export class PropertiesManager {
       tbDoc = typeof ds.defaultTitleBlockRef === 'string' ? this.ui.titleBlockMap.get(ds.defaultTitleBlockRef) : ds.defaultTitleBlockRef;
     }
 
+    let filenameHtml = '';
+    if (this.ui.options.activeFilename && this.ui.options.onFileRename) {
+      filenameHtml = `
+        <div class="card" style="margin-bottom: 12px;">
+          <div class="properties-editor-body">
+            <div class="form-group" style="margin-bottom: 0;">
+              <div class="control-label-row">
+                <label class="control-label">File Name</label>
+                <input type="text" class="precise-input doc-filename-input" value="${this.ui.options.activeFilename}" />
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     let html = `
+      ${filenameHtml}
       <div class="card">
         <div class="properties-editor-body">
           ${DocumentEditor.renderHTML(this.ui.doc, this.ui.getActiveSheet(), tbDoc)}
@@ -62,8 +92,24 @@ export class PropertiesManager {
     `;
 
     if (this.ui.selectedComponentIds.size === 0) {
+      let constructParamsHtml = '';
+      if (this.ui.doc.type === 'CAD::Construct' && this.ui.doc.parameters) {
+        const allParams = Object.entries(this.ui.doc.parameters);
+        if (allParams.length > 0) {
+          constructParamsHtml = `
+            <div class="card" style="margin-top: 12px;">
+              <h3 style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8;">Construct Parameters (Preview)</h3>
+              <div class="properties-editor-body">
+                ${ParametricEditor.renderHTML(allParams)}
+              </div>
+            </div>
+          `;
+        }
+      }
+
       html += scheduleHtml;
-      this.ui.propertiesCardContainer.innerHTML = html;
+      html += constructParamsHtml;
+      applyHtml(html);
       DocumentEditor.bindListeners({
         container: this.ui.propertiesCardContainer,
         getLatestDoc: () => {
@@ -99,6 +145,18 @@ export class PropertiesManager {
           });
         });
       }
+      
+      if (this.ui.doc.type === 'CAD::Construct' && this.ui.doc.parameters) {
+        ParametricEditor.bindListeners({
+          container: this.ui.propertiesCardContainer,
+          componentParams: Object.entries(this.ui.doc.parameters),
+          getLatestDoc: () => {
+            this.ui.lastUpdateTime = Date.now();
+            return this.ui.doc;
+          },
+          updateAndNotify: () => this.ui.updateAndNotify()
+        });
+      }
       return;
     }
 
@@ -111,7 +169,7 @@ export class PropertiesManager {
           </div>
         </div>
       `;
-      this.ui.propertiesCardContainer.innerHTML = html;
+      applyHtml(html);
       
       DocumentEditor.bindListeners({
         container: this.ui.propertiesCardContainer,
@@ -145,7 +203,7 @@ export class PropertiesManager {
           </div>
         </div>
       `;
-      this.ui.propertiesCardContainer.innerHTML = html;
+      applyHtml(html);
 
       DocumentEditor.bindListeners({
         container: this.ui.propertiesCardContainer,
@@ -219,7 +277,7 @@ export class PropertiesManager {
           </div>
         </div>
       `;
-      this.ui.propertiesCardContainer.innerHTML = html;
+      applyHtml(html);
       DocumentEditor.bindListeners({
         container: this.ui.propertiesCardContainer,
         getLatestDoc: () => {
@@ -257,7 +315,7 @@ export class PropertiesManager {
         </div>
       </div>
     `;
-    this.ui.propertiesCardContainer.innerHTML = html;
+    applyHtml(html);
 
     DocumentEditor.bindListeners({
       container: this.ui.propertiesCardContainer,
