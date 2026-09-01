@@ -1,20 +1,6 @@
 import { DetailDocument } from '@aeckit/core-solver';
 
 export function getVisualizerShellTemplate(doc: any, globalSettingsHtml: string = ''): string {
-  const scaleSelectOptions = doc.type === 'CAD::Detail' ? `
-    <div style="margin-bottom: 12px; padding: 12px; background-color: #1e293b; border-radius: 6px; border: 1px solid #334155;">
-      <div style="font-size: 11px; font-weight: bold; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase;">Detail Settings</div>
-      <div class="control-label-row">
-        <label>Drawing Scale</label>
-        <select id="scale-select" class="precise-input" style="width: 120px;">
-          <option value="1/2=1-0" ${((doc as DetailDocument).scale || '').includes('1/2') ? 'selected' : ''}>1/2" = 1'-0" (1:24)</option>
-          <option value="1=1-0" ${((doc as DetailDocument).scale || '').includes('1=') || ((doc as DetailDocument).scale || '').includes('1"') ? 'selected' : ''}>1" = 1'-0" (1:12)</option>
-          <option value="3=1-0" ${((doc as DetailDocument).scale || '').includes('3=') || ((doc as DetailDocument).scale || '').includes('3"') ? 'selected' : ''}>3" = 1'-0" (1:4)</option>
-          <option value="1:1" ${((doc as DetailDocument).scale || '').includes('1:1') ? 'selected' : ''}>1:1 (Full Size)</option>
-        </select>
-      </div>
-    </div>
-  ` : '';
 
   return `
     <div class="panel left-panel" id="left-sidebar">
@@ -24,7 +10,6 @@ export function getVisualizerShellTemplate(doc: any, globalSettingsHtml: string 
       
       <div id="sheet-dropdown-container"></div>
       
-      ${scaleSelectOptions}
       ${globalSettingsHtml}
 
       <!-- Component-specific dynamic properties form -->

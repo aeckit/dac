@@ -142,23 +142,8 @@ export class VisualizerUI {
   private initLayout() {
     this.container.className = 'visualizer-container';
 
-    // Scale settings are only relevant if it's a DetailDocument (since sheets are always 1:1 paper)
-    const globalSettingsHtml = (this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock') ? `
-      <div class="card" id="global-settings-card">
-        <h3>Global Settings</h3>
-        <div class="form-group row-align">
-          <label for="scale-select" class="control-label">Drawing Scale</label>
-          <select id="scale-select" class="precise-input" style="width: 120px;">
-            <option value="1/2=1-0" ${((this.doc as DetailDocument).scale || '').includes('1/2') ? 'selected' : ''}>1/2" = 1'-0" (1:24)</option>
-            <option value="1=1-0" ${((this.doc as DetailDocument).scale || '').includes('1=') || ((this.doc as DetailDocument).scale || '').includes('1"') ? 'selected' : ''}>1" = 1'-0" (1:12)</option>
-            <option value="3=1-0" ${((this.doc as DetailDocument).scale || '').includes('3=') || ((this.doc as DetailDocument).scale || '').includes('3"') ? 'selected' : ''}>3" = 1'-0" (1:4)</option>
-            <option value="1:1" ${((this.doc as DetailDocument).scale || '').includes('1:1') ? 'selected' : ''}>1:1 (Full Size)</option>
-          </select>
-        </div>
-      </div>
-    ` : '';
-
-    this.container.innerHTML = getVisualizerShellTemplate(this.doc, globalSettingsHtml);
+    // Scale settings are now managed in DocumentEditor.ts via PropertiesManager.
+    this.container.innerHTML = getVisualizerShellTemplate(this.doc, '');
 
     this.leftPanel = this.container.querySelector('#left-sidebar') as HTMLElement;
     this.rightPanel = this.container.querySelector('#right-canvas') as HTMLElement;
@@ -182,14 +167,7 @@ export class VisualizerUI {
     });
 
     if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
-      const scaleSelect = this.leftPanel.querySelector('#scale-select') as HTMLSelectElement;
-      if (scaleSelect) {
-        scaleSelect.addEventListener('change', () => {
-          this.lastUpdateTime = Date.now();
-          (this.doc as DetailDocument).scale = scaleSelect.value;
-          this.updateAndNotify();
-        });
-      }
+    // Scale listener removed since it is now handled by DocumentEditor.
     }
 
     const resizeObserver = new ResizeObserver(entries => {

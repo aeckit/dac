@@ -92,23 +92,7 @@ export class PropertiesManager {
     `;
 
     if (this.ui.selectedComponentIds.size === 0) {
-      let constructParamsHtml = '';
-      if (this.ui.doc.type === 'CAD::Construct' && this.ui.doc.parameters) {
-        const allParams = Object.entries(this.ui.doc.parameters);
-        if (allParams.length > 0) {
-          constructParamsHtml = `
-            <div class="card" style="margin-top: 12px;">
-              <h3 style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8;">Construct Parameters (Preview)</h3>
-              <div class="properties-editor-body">
-                ${ParametricEditor.renderHTML(allParams)}
-              </div>
-            </div>
-          `;
-        }
-      }
-
       html += scheduleHtml;
-      html += constructParamsHtml;
       applyHtml(html);
       DocumentEditor.bindListeners({
         container: this.ui.propertiesCardContainer,
@@ -146,17 +130,6 @@ export class PropertiesManager {
         });
       }
       
-      if (this.ui.doc.type === 'CAD::Construct' && this.ui.doc.parameters) {
-        ParametricEditor.bindListeners({
-          container: this.ui.propertiesCardContainer,
-          componentParams: Object.entries(this.ui.doc.parameters),
-          getLatestDoc: () => {
-            this.ui.lastUpdateTime = Date.now();
-            return this.ui.doc;
-          },
-          updateAndNotify: () => this.ui.updateAndNotify()
-        });
-      }
       return;
     }
 

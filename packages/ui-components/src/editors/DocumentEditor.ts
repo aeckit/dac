@@ -1,5 +1,6 @@
 import { PropertyEditor, ParametricEditorContext } from './types';
 import { DetailDocument, SheetConfiguration, ProjectDocument } from '@aeckit/core-solver';
+import { ParametricEditor } from './ParametricEditor';
 
 export interface DocumentEditorContext {
   container: HTMLElement;
@@ -10,12 +11,19 @@ export interface DocumentEditorContext {
 
 export const DocumentEditor = {
   renderHTML(doc: any, sheet?: any, tbDoc?: any): string {
+    let html = '';
+    
     if (doc.type === 'CAD::Detail') {
-      return `
+      html += `
         <div class="form-group" data-doc-prop="scale">
           <div class="control-label-row">
             <label class="control-label">Scale</label>
-            <input type="text" class="precise-input doc-scale-input" value="${doc.scale}" />
+            <select class="precise-input doc-scale-input">
+              <option value="1/2=1-0" ${doc.scale === '1/2=1-0' ? 'selected' : ''}>1/2" = 1'-0" (1:24)</option>
+              <option value="1=1-0" ${doc.scale === '1=1-0' ? 'selected' : ''}>1" = 1'-0" (1:12)</option>
+              <option value="3=1-0" ${doc.scale === '3=1-0' ? 'selected' : ''}>3" = 1'-0" (1:4)</option>
+              <option value="1:1" ${doc.scale === '1:1' ? 'selected' : ''}>1:1 (Full Size)</option>
+            </select>
           </div>
         </div>
       `;
@@ -25,7 +33,6 @@ export const DocumentEditor = {
       const isSheet = doc.type === 'CAD::SheetConfiguration';
       const dset = doc.type === 'CAD::Project' ? doc : null;
       
-      let html = '';
       if (dset) {
         html += `
           <div class="form-group" data-doc-prop="project">
@@ -127,10 +134,21 @@ export const DocumentEditor = {
           </div>
         `;
       }
-      return html;
     }
 
-    return '';
+    if (doc.parameters) {
+      const allParams = Object.entries(doc.parameters);
+      if (allParams.length > 0) {
+        html += `
+          <div class="sidebar-section-title" style="margin-top: 16px; margin-bottom: 8px;">PARAMETERS</div>
+          <div class="properties-editor-body" style="padding: 0;">
+            ${ParametricEditor.renderHTML(allParams)}
+          </div>
+        `;
+      }
+    }
+
+    return html;
   },
 
   bindListeners(context: DocumentEditorContext): void {
@@ -159,7 +177,7 @@ export const DocumentEditor = {
     };
 
     // Detail Listeners
-    const scaleInput = container.querySelector('.doc-scale-input') as HTMLInputElement;
+    const scaleInput = container.querySelector('.doc-scale-input') as HTMLSelectElement;
     if (scaleInput) {
       scaleInput.addEventListener('change', () => {
         updateDoc((doc) => { if (doc.type === 'CAD::Detail') doc.scale = scaleInput.value; });
@@ -244,6 +262,16 @@ export const DocumentEditor = {
       titleBlockInput.addEventListener('change', handler);
       tbXInput.addEventListener('change', handler);
       tbYInput.addEventListener('change', handler);
+    }
+    
+    const doc = getLatestDoc();
+    if (doc && doc.parameters) {
+      ParametricEditor.bindListeners({
+        container: container,
+        componentParams: Object.entries(doc.parameters),
+        getLatestDoc: getLatestDoc,
+        updateAndNotify: updateAndNotify
+      });
     }
   }
 };
