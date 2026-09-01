@@ -1,5 +1,7 @@
 import { PropertyEditorContext, PropertyEditor } from './types';
 
+const getHex = (c: any) => (typeof c === 'string' && /^#[0-9A-Fa-f]{6}$/.test(c)) ? c : '#000000';
+
 export const RectangleEditor: PropertyEditor = {
   renderHTML(shape: any, index: number): string {
     return `
@@ -25,7 +27,10 @@ export const RectangleEditor: PropertyEditor = {
         
         <div class="control-label-row">
           <label class="control-label">Fill</label>
-          <input type="text" class="precise-input shape-fill-input" value="${shape.fill || ''}" placeholder="e.g. #ff0000 or none" />
+          <div class="precise-input-wrapper" style="display: flex; gap: 4px; align-items: center;">
+            <input type="color" class="color-picker-input" value="${getHex(shape.fill)}" style="width: 24px; height: 24px; padding: 0; border: 1px solid #475569; border-radius: 3px; cursor: pointer; flex-shrink: 0; background: none;" />
+            <input type="text" class="precise-input shape-fill-input" value="${shape.fill || ''}" placeholder="e.g. #ff0000 or none" style="flex: 1; min-width: 0;" />
+          </div>
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Hatch</label>
@@ -40,7 +45,10 @@ export const RectangleEditor: PropertyEditor = {
         
         <div class="control-label-row">
           <label class="control-label">Stroke Color</label>
-          <input type="text" class="precise-input shape-color-input" value="${shape.color || ''}" placeholder="#f8fafc" />
+          <div class="precise-input-wrapper" style="display: flex; gap: 4px; align-items: center;">
+            <input type="color" class="color-picker-input" value="${getHex(shape.color)}" style="width: 24px; height: 24px; padding: 0; border: 1px solid #475569; border-radius: 3px; cursor: pointer; flex-shrink: 0; background: none;" />
+            <input type="text" class="precise-input shape-color-input" value="${shape.color || ''}" placeholder="#f8fafc" style="flex: 1; min-width: 0;" />
+          </div>
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Stroke Width</label>
@@ -59,7 +67,7 @@ export const RectangleEditor: PropertyEditor = {
     const groupEl = container.querySelector(`[data-shape-index="${shapeIndex}"]`) as HTMLElement;
     if (!groupEl) return;
 
-    const bindStringInput = (selector: string, propName: string) => {
+    const bindStringInput = (selector: string, propName: string, isColor = false) => {
       const input = groupEl.querySelector(selector) as HTMLInputElement | HTMLSelectElement;
       if (input) {
         input.addEventListener('change', () => {
@@ -80,6 +88,21 @@ export const RectangleEditor: PropertyEditor = {
             updateAndNotify();
           }
         });
+        if (isColor) {
+          const colorPicker = input.previousElementSibling as HTMLInputElement;
+          if (colorPicker && colorPicker.classList.contains('color-picker-input')) {
+            input.addEventListener('input', () => {
+              const val = input.value;
+              if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                colorPicker.value = val;
+              }
+            });
+            colorPicker.addEventListener('change', () => {
+              input.value = colorPicker.value;
+              input.dispatchEvent(new Event('change'));
+            });
+          }
+        }
       }
     };
 
@@ -103,9 +126,9 @@ export const RectangleEditor: PropertyEditor = {
     bindStringInput('.shape-y-input', 'y');
     bindStringInput('.shape-width-input', 'width');
     bindStringInput('.shape-height-input', 'height');
-    bindStringInput('.shape-fill-input', 'fill');
+    bindStringInput('.shape-fill-input', 'fill', true);
     bindStringInput('.shape-hatch-input', 'hatch');
-    bindStringInput('.shape-color-input', 'color');
+    bindStringInput('.shape-color-input', 'color', true);
     bindNumberInput('.shape-strokewidth-input', 'strokeWidth');
     bindStringInput('.shape-dash-input', 'strokeDasharray');
   }

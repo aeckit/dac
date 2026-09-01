@@ -1,5 +1,7 @@
 import { PropertyEditorContext, PropertyEditor } from './types';
 
+const getHex = (c: any) => (typeof c === 'string' && /^#[0-9A-Fa-f]{6}$/.test(c)) ? c : '#000000';
+
 export const TextEditor: PropertyEditor = {
   renderHTML(shape: any, index: number): string {
     return `
@@ -22,9 +24,12 @@ export const TextEditor: PropertyEditor = {
           <label class="control-label">Font Size (pt)</label>
           <input type="number" class="precise-input shape-fontsize-input" min="4" max="144" step="1" value="${shape.fontSize || 11}" />
         </div>
-        <div class="control-label-row" style="margin-top: 8px;">
+        <div class="control-label-row">
           <label class="control-label">Text Color</label>
-          <input type="text" class="precise-input shape-color-input" value="${shape.color || ''}" placeholder="#f8fafc" />
+          <div class="precise-input-wrapper" style="display: flex; gap: 4px; align-items: center;">
+            <input type="color" class="color-picker-input" value="${getHex(shape.color)}" style="width: 24px; height: 24px; padding: 0; border: 1px solid #475569; border-radius: 3px; cursor: pointer; flex-shrink: 0; background: none;" />
+            <input type="text" class="precise-input shape-color-input" value="${shape.color || ''}" placeholder="#f1f5f9" style="flex: 1; min-width: 0;" />
+          </div>
         </div>
       </div>
     `;
@@ -35,7 +40,7 @@ export const TextEditor: PropertyEditor = {
     const groupEl = container.querySelector(`[data-shape-index="${shapeIndex}"]`) as HTMLElement;
     if (!groupEl) return;
 
-    const bindStringInput = (selector: string, propName: string) => {
+    const bindStringInput = (selector: string, propName: string, isColor = false) => {
       const input = groupEl.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
       if (input) {
         input.addEventListener('change', () => {
@@ -55,6 +60,21 @@ export const TextEditor: PropertyEditor = {
             updateAndNotify();
           }
         });
+        if (isColor) {
+          const colorPicker = input.previousElementSibling as HTMLInputElement;
+          if (colorPicker && colorPicker.classList.contains('color-picker-input')) {
+            input.addEventListener('input', () => {
+              const val = input.value;
+              if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                colorPicker.value = val;
+              }
+            });
+            colorPicker.addEventListener('change', () => {
+              input.value = colorPicker.value;
+              input.dispatchEvent(new Event('change'));
+            });
+          }
+        }
       }
     };
 
@@ -77,7 +97,7 @@ export const TextEditor: PropertyEditor = {
     bindStringInput('.shape-x-input', 'x');
     bindStringInput('.shape-y-input', 'y');
     bindStringInput('.shape-text-input', 'text');
-    bindStringInput('.shape-color-input', 'color');
+    bindStringInput('.shape-color-input', 'color', true);
     bindNumberInput('.shape-fontsize-input', 'fontSize');
   }
 };

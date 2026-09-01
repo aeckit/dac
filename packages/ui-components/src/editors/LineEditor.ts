@@ -1,5 +1,7 @@
 import { PropertyEditorContext, PropertyEditor } from './types';
 
+const getHex = (c: any) => (typeof c === 'string' && /^#[0-9A-Fa-f]{6}$/.test(c)) ? c : '#000000';
+
 export const LineEditor: PropertyEditor = {
   renderHTML(shape: any, index: number): string {
     return `
@@ -25,7 +27,10 @@ export const LineEditor: PropertyEditor = {
         
         <div class="control-label-row">
           <label class="control-label">Stroke Color</label>
-          <input type="text" class="precise-input shape-color-input" value="${shape.color || ''}" placeholder="#f8fafc" />
+          <div class="precise-input-wrapper" style="display: flex; gap: 4px; align-items: center;">
+            <input type="color" class="color-picker-input" value="${getHex(shape.color)}" style="width: 24px; height: 24px; padding: 0; border: 1px solid #475569; border-radius: 3px; cursor: pointer; flex-shrink: 0; background: none;" />
+            <input type="text" class="precise-input shape-color-input" value="${shape.color || ''}" placeholder="#f8fafc" style="flex: 1; min-width: 0;" />
+          </div>
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
           <label class="control-label">Stroke Width</label>
@@ -44,7 +49,7 @@ export const LineEditor: PropertyEditor = {
     const groupEl = container.querySelector(`[data-shape-index="${shapeIndex}"]`) as HTMLElement;
     if (!groupEl) return;
 
-    const bindStringInput = (selector: string, propName: string) => {
+    const bindStringInput = (selector: string, propName: string, isColor = false) => {
       const input = groupEl.querySelector(selector) as HTMLInputElement;
       if (input) {
         input.addEventListener('change', () => {
@@ -64,6 +69,21 @@ export const LineEditor: PropertyEditor = {
             updateAndNotify();
           }
         });
+        if (isColor) {
+          const colorPicker = input.previousElementSibling as HTMLInputElement;
+          if (colorPicker && colorPicker.classList.contains('color-picker-input')) {
+            input.addEventListener('input', () => {
+              const val = input.value;
+              if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                colorPicker.value = val;
+              }
+            });
+            colorPicker.addEventListener('change', () => {
+              input.value = colorPicker.value;
+              input.dispatchEvent(new Event('change'));
+            });
+          }
+        }
       }
     };
 
@@ -87,7 +107,7 @@ export const LineEditor: PropertyEditor = {
     bindStringInput('.shape-y1-input', 'y1');
     bindStringInput('.shape-x2-input', 'x2');
     bindStringInput('.shape-y2-input', 'y2');
-    bindStringInput('.shape-color-input', 'color');
+    bindStringInput('.shape-color-input', 'color', true);
     bindNumberInput('.shape-strokewidth-input', 'strokeWidth');
     bindStringInput('.shape-dash-input', 'strokeDasharray');
   }

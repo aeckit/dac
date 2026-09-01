@@ -6,7 +6,7 @@ import { DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from './editors';
 import { Viewport } from '@aeckit/core-solver';
 import { ParametricEditorContext, PropertyEditorContext } from './editors/types';
-export type VisualizerDocument = DetailDocument | ProjectDocument | SheetConfiguration | TitleBlockDocument;
+export type VisualizerDocument = DetailDocument | ProjectDocument | SheetConfiguration | TitleBlockDocument | any; // using any for ConstructDocument as a quick workaround if it's not exported from core-solver index.
 
 export interface VisualizerUIOptions {
   showLeftToggle?: boolean;  // default: true
@@ -15,6 +15,9 @@ export interface VisualizerUIOptions {
   sheetsMap?: Map<string, SheetConfiguration>;
   editorFactory?: (container: HTMLElement, initialValue: string, onChange: (value: string) => void) => any;
   onSelectionChange?: (selectedIds: string[], primaryType: string | null) => void;
+  constructResolver?: (id: string) => any;
+  activeFilename?: string;
+  onFileRename?: (newName: string) => void;
 }
 
 export class VisualizerUI {
@@ -209,6 +212,8 @@ export class VisualizerUI {
           <div id="svg-viewport-wrapper" style="transform-origin: 0 0; min-width: 100%; min-height: 100%;"></div>
           <div id="canvas-edit-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 10;">
             <style>
+              .interactive-component.pointer-cursor { cursor: pointer; transition: filter 0.1s ease, opacity 0.1s ease; }
+              .interactive-component.pointer-cursor:hover { opacity: 0.8; filter: drop-shadow(0px 0px 4px rgba(56, 189, 248, 0.6)); }
               .edit-grabber {
                 display: none; position: absolute; pointer-events: auto;
                 width: 8px; height: 8px; background: #3b82f6; border: 1px solid #ffffff;
@@ -519,8 +524,8 @@ export class VisualizerUI {
   }
 
   public findDocumentForComponent(docId: string): DetailDocument | null {
-    if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
-      return this.doc as DetailDocument;
+    if (this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock' || this.doc.type === 'CAD::Construct') {
+      return this.doc as any;
     }
     let sheet: SheetConfiguration | null = null;
     if (this.doc.type === 'CAD::Project') {
@@ -632,9 +637,9 @@ export class VisualizerUI {
         const effectiveX = sheet.titleBlockOffsetX !== undefined ? sheet.titleBlockOffsetX : fallbackX;
         const effectiveY = sheet.titleBlockOffsetY !== undefined ? sheet.titleBlockOffsetY : fallbackY;
 
-        svg = renderSheet(sheet, titleBlockData, this.viewportsMap, titleBlockDoc as any, effectiveX, effectiveY, fallbackPaperSize);
+        svg = renderSheet(sheet, titleBlockData, this.viewportsMap, titleBlockDoc as any, effectiveX, effectiveY, fallbackPaperSize, this.options.constructResolver);
       } else {
-        svg = renderDetail(this.doc as DetailDocument, this.sandboxWidth, this.sandboxHeight);
+        svg = renderDetail(this.doc as DetailDocument, this.sandboxWidth, this.sandboxHeight, this.options.constructResolver);
       }
 
       this.svgWrapper.innerHTML = svg;
