@@ -27,9 +27,12 @@ export const RectangleEditor: PropertyEditor = {
         
         <div class="control-label-row">
           <label class="control-label">Fill</label>
-          <div class="precise-input-wrapper" style="display: flex; gap: 4px; align-items: center;">
-            <input type="color" class="color-picker-input" value="${getHex(shape.fill)}" style="width: 24px; height: 24px; padding: 0; border: 1px solid #475569; border-radius: 3px; cursor: pointer; flex-shrink: 0; background: none;" />
-            <input type="text" class="precise-input shape-fill-input" value="${shape.fill || ''}" placeholder="e.g. #ff0000 or none" style="flex: 1; min-width: 0;" />
+          <div class="precise-input color-input-wrapper" style="display: flex; gap: 6px; align-items: center; padding: 2px 4px;">
+            <div class="color-swatch-container" style="position: relative; width: 16px; height: 16px; border-radius: 2px; border: 1px solid #475569; overflow: hidden; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2);">
+              <div class="color-swatch-bg" style="position: absolute; inset: 0; background-color: ${getHex(shape.fill)}; pointer-events: none;"></div>
+              <input type="color" class="color-picker-input" value="${getHex(shape.fill)}" style="position: absolute; opacity: 0; cursor: pointer; width: 200%; height: 200%; left: -50%; top: -50%;" />
+            </div>
+            <input type="text" class="shape-fill-input" value="${shape.fill || ''}" placeholder="e.g. #ff0000 or none" style="flex: 1; min-width: 0; background: transparent; border: none; color: inherit; font-family: inherit; font-size: inherit; outline: none; padding: 0;" />
           </div>
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
@@ -45,9 +48,12 @@ export const RectangleEditor: PropertyEditor = {
         
         <div class="control-label-row">
           <label class="control-label">Stroke Color</label>
-          <div class="precise-input-wrapper" style="display: flex; gap: 4px; align-items: center;">
-            <input type="color" class="color-picker-input" value="${getHex(shape.color)}" style="width: 24px; height: 24px; padding: 0; border: 1px solid #475569; border-radius: 3px; cursor: pointer; flex-shrink: 0; background: none;" />
-            <input type="text" class="precise-input shape-color-input" value="${shape.color || ''}" placeholder="#f8fafc" style="flex: 1; min-width: 0;" />
+          <div class="precise-input color-input-wrapper" style="display: flex; gap: 6px; align-items: center; padding: 2px 4px;">
+            <div class="color-swatch-container" style="position: relative; width: 16px; height: 16px; border-radius: 2px; border: 1px solid #475569; overflow: hidden; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2);">
+              <div class="color-swatch-bg" style="position: absolute; inset: 0; background-color: ${getHex(shape.color)}; pointer-events: none;"></div>
+              <input type="color" class="color-picker-input" value="${getHex(shape.color)}" style="position: absolute; opacity: 0; cursor: pointer; width: 200%; height: 200%; left: -50%; top: -50%;" />
+            </div>
+            <input type="text" class="shape-color-input" value="${shape.color || ''}" placeholder="#f8fafc" style="flex: 1; min-width: 0; background: transparent; border: none; color: inherit; font-family: inherit; font-size: inherit; outline: none; padding: 0;" />
           </div>
         </div>
         <div class="control-label-row" style="margin-top: 8px;">
@@ -89,16 +95,22 @@ export const RectangleEditor: PropertyEditor = {
           }
         });
         if (isColor) {
-          const colorPicker = input.previousElementSibling as HTMLInputElement;
-          if (colorPicker && colorPicker.classList.contains('color-picker-input')) {
+          const wrapper = input.closest('.color-input-wrapper');
+          const colorPicker = wrapper?.querySelector('.color-picker-input') as HTMLInputElement;
+          const swatchBg = wrapper?.querySelector('.color-swatch-bg') as HTMLElement;
+          if (colorPicker) {
             input.addEventListener('input', () => {
               const val = input.value;
               if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
                 colorPicker.value = val;
+                if (swatchBg) swatchBg.style.backgroundColor = val;
               }
             });
-            colorPicker.addEventListener('change', () => {
+            colorPicker.addEventListener('input', () => {
               input.value = colorPicker.value;
+              if (swatchBg) swatchBg.style.backgroundColor = colorPicker.value;
+            });
+            colorPicker.addEventListener('change', () => {
               input.dispatchEvent(new Event('change'));
             });
           }
