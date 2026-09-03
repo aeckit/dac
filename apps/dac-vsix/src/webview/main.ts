@@ -11,6 +11,7 @@ try {
 
   if (rootElement) {
     let uiInstance: VisualizerUI | null = null;
+    let currentConstructsMap: Record<string, any> = {};
 
     window.addEventListener('message', (event) => {
       try {
@@ -19,11 +20,46 @@ try {
           const config = message.config;
           const viewportsMap = message.viewportsMap ? new Map(Object.entries(message.viewportsMap)) : new Map();
           const titleBlockMap = message.titleBlockMap ? new Map(Object.entries(message.titleBlockMap)) : new Map();
+          currentConstructsMap = message.constructsMap ? message.constructsMap : {};
 
           if (!uiInstance) {
             uiInstance = new VisualizerUI(rootElement, config, (newConfig) => {
               vscode.postMessage({ type: 'updateConfig', config: newConfig });
-            }, viewportsMap, titleBlockMap);
+            }, viewportsMap, titleBlockMap, {
+              constructResolver: (id: string) => currentConstructsMap[id]
+            });
+            
+            setTimeout(() => {
+              const container = document.querySelector('.visualizer-container');
+              const leftPanel = document.querySelector('.left-panel') as HTMLElement;
+              if (container && leftPanel) {
+                const resizer = document.createElement('div');
+                resizer.className = 'vscode-pane-resizer';
+                container.insertBefore(resizer, leftPanel.nextSibling);
+                
+                let isResizing = false;
+                resizer.addEventListener('mousedown', (e) => {
+                  e.preventDefault();
+                  isResizing = true;
+                  resizer.classList.add('resizing');
+                  document.body.style.cursor = 'col-resize';
+                });
+                document.addEventListener('mousemove', (e) => {
+                  if (!isResizing) return;
+                  const newWidth = document.body.clientWidth - e.clientX;
+                  const clamped = Math.max(200, Math.min(newWidth, document.body.clientWidth - 200));
+                  leftPanel.style.width = `${clamped}px`;
+                  leftPanel.style.minWidth = `${clamped}px`;
+                });
+                document.addEventListener('mouseup', () => {
+                  if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('resizing');
+                    document.body.style.cursor = '';
+                  }
+                });
+              }
+            }, 0);
           } else {
             uiInstance.updateConfig(config, viewportsMap, titleBlockMap);
           }

@@ -12,6 +12,7 @@ body {
 /* Master container split layout */
 .visualizer-container {
   display: flex;
+  flex-direction: row-reverse;
   width: 100vw;
   height: 100vh;
 }
@@ -27,7 +28,7 @@ body {
 .left-panel {
   width: 300px;
   min-width: 300px;
-  border-right: 1px solid var(--vscode-panel-border, #3a3d41);
+  border-left: 1px solid var(--vscode-panel-border, #3a3d41);
   background-color: var(--vscode-sideBar-background, #252526);
   padding: 16px;
   overflow-y: auto;
@@ -39,7 +40,18 @@ body {
   min-width: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
-  border-right: none !important;
+  border-left: none !important;
+}
+
+.vscode-pane-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background-color: transparent;
+  transition: background-color 0.1s ease;
+  z-index: 10;
+}
+.vscode-pane-resizer:hover, .vscode-pane-resizer.resizing {
+  background-color: var(--vscode-focusBorder, #007acc);
 }
 
 #btn-toggle-right-pane {
@@ -177,9 +189,20 @@ body {
 
 .control-label-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.control-label-row > .precise-input,
+.control-label-row > .precise-input-wrapper,
+.control-label-row > select {
+  flex: 0 0 50% !important;
+  max-width: 50% !important;
+  width: 50% !important;
+  margin-left: auto;
+  box-sizing: border-box;
 }
 
 .control-label {

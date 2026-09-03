@@ -11,6 +11,29 @@ export function activate(context: vscode.ExtensionContext) {
   let lastWebviewDoc: DetailDocument | null = null;
   let isWebviewUpdating = false;
 
+  function resolveDacPath(refPath: string, currentFileDir: string): string | null {
+    if (path.isAbsolute(refPath)) return fs.existsSync(refPath) ? refPath : null;
+
+    let candidate = path.join(currentFileDir, refPath);
+    if (fs.existsSync(candidate)) return candidate;
+
+    let dir = currentFileDir;
+    while (dir && dir !== path.parse(dir).root) {
+      dir = path.dirname(dir);
+      candidate = path.join(dir, refPath);
+      if (fs.existsSync(candidate)) return candidate;
+    }
+
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders) {
+      for (const folder of workspaceFolders) {
+        candidate = path.join(folder.uri.fsPath, refPath);
+        if (fs.existsSync(candidate)) return candidate;
+      }
+    }
+    return null;
+  }
+
   function resolveLocalImages(doc: any, baseDir: string) {
     if (!doc || !doc.geometry || !Array.isArray(doc.geometry)) return;
     for (const geom of doc.geometry) {
@@ -18,8 +41,8 @@ export function activate(context: vscode.ExtensionContext) {
         const href: string = geom.href;
         if (!href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('data:')) {
           try {
-            const imgPath = path.isAbsolute(href) ? href : path.resolve(baseDir, href);
-            if (fs.existsSync(imgPath)) {
+            const imgPath = resolveDacPath(href, baseDir);
+            if (imgPath) {
               const ext = path.extname(imgPath).toLowerCase().replace('.', '') || 'jpeg';
               const mime = ext === 'jpg' ? 'jpeg' : ext === 'svg' ? 'svg+xml' : ext;
               const base64 = fs.readFileSync(imgPath, 'base64');
@@ -33,14 +56,37 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
+  function resolveConstructs(geomDoc: any, baseDir: string, constructsMap: Record<string, any>) {
+    if (!geomDoc || !geomDoc.geometry || !Array.isArray(geomDoc.geometry)) return;
+    for (const shape of geomDoc.geometry) {
+      if (shape.type === 'ConstructReference' && shape.constructId) {
+        if (!constructsMap[shape.constructId]) {
+          try {
+            const cPath = resolveDacPath(shape.constructId, baseDir);
+            if (cPath) {
+              const content = fs.readFileSync(cPath, 'utf8');
+              const cDoc = JSON.parse(content);
+              constructsMap[shape.constructId] = cDoc;
+              resolveLocalImages(cDoc, path.dirname(cPath));
+              resolveConstructs(cDoc, path.dirname(cPath), constructsMap);
+            }
+          } catch (e) {
+            console.error('Failed to load construct:', shape.constructId, e);
+          }
+        }
+      }
+    }
+  }
+
   // Helper to parse the JSON drawing document and load dependencies if it's a Project
-  async function parseAndLoadDocument(document: vscode.TextDocument): Promise<{ doc: any, viewportsMap?: Record<string, any>, titleBlockMap?: Record<string, any> } | null> {
+  async function parseAndLoadDocument(document: vscode.TextDocument): Promise<{ doc: any, viewportsMap?: Record<string, any>, titleBlockMap?: Record<string, any>, constructsMap?: Record<string, any> } | null> {
     const text = document.getText();
     try {
       const doc = JSON.parse(text);
       if (!doc || typeof doc !== 'object') return null;
       
       const baseDir = path.dirname(document.fileName);
+      const constructsMap: Record<string, any> = {};
 
       if (doc.type === 'CAD::Project' || doc.type === 'CAD::SheetConfiguration') {
         let ds = doc as ProjectDocument;
@@ -65,11 +111,15 @@ export function activate(context: vscode.ExtensionContext) {
           
           if (typeof sheet === 'string') {
             try {
-              const sheetPath = path.join(baseDir, sheet);
-              sheetBaseDir = path.dirname(sheetPath);
-              const sheetContent = fs.readFileSync(sheetPath, 'utf8');
-              sheet = JSON.parse(sheetContent) as SheetDocument;
-              ds.sheets[i] = sheet; // Inline it for the webview
+              const sheetPath = resolveDacPath(sheet, baseDir);
+              if (sheetPath) {
+                sheetBaseDir = path.dirname(sheetPath);
+                const sheetContent = fs.readFileSync(sheetPath, 'utf8');
+                sheet = JSON.parse(sheetContent) as SheetDocument;
+                ds.sheets[i] = sheet; // Inline it for the webview
+              } else {
+                console.error('Failed to locate sheet:', sheet);
+              }
             } catch (e) {
               console.error('Failed to load sheet:', sheet);
               continue;
@@ -82,20 +132,24 @@ export function activate(context: vscode.ExtensionContext) {
 
             if (sheet.titleBlockOverride && typeof sheet.titleBlockOverride === "string") {
               try {
-                const tbPath = path.join(sheetBaseDir, sheet.titleBlockOverride);
-                const tbContent = fs.readFileSync(tbPath, "utf8");
-                titleBlockMap[sheet.titleBlockOverride] = JSON.parse(tbContent);
-                resolveLocalImages(titleBlockMap[sheet.titleBlockOverride], sheetBaseDir);
+                const tbPath = resolveDacPath(sheet.titleBlockOverride, sheetBaseDir);
+                if (tbPath) {
+                  const tbContent = fs.readFileSync(tbPath, "utf8");
+                  titleBlockMap[sheet.titleBlockOverride] = JSON.parse(tbContent);
+                  resolveLocalImages(titleBlockMap[sheet.titleBlockOverride], path.dirname(tbPath));
+                }
               } catch (e) {
                 console.error("Failed to load title block:", sheet.titleBlockOverride);
               }
             }
             if (ds.defaultTitleBlockRef && typeof ds.defaultTitleBlockRef === "string") {
               try {
-                const tbPath = path.join(baseDir, ds.defaultTitleBlockRef);
-                const tbContent = fs.readFileSync(tbPath, "utf8");
-                titleBlockMap[ds.defaultTitleBlockRef] = JSON.parse(tbContent);
-                resolveLocalImages(titleBlockMap[ds.defaultTitleBlockRef], baseDir);
+                const tbPath = resolveDacPath(ds.defaultTitleBlockRef, baseDir);
+                if (tbPath) {
+                  const tbContent = fs.readFileSync(tbPath, "utf8");
+                  titleBlockMap[ds.defaultTitleBlockRef] = JSON.parse(tbContent);
+                  resolveLocalImages(titleBlockMap[ds.defaultTitleBlockRef], path.dirname(tbPath));
+                }
               } catch (e) {
                 console.error("Failed to load default title block:", ds.defaultTitleBlockRef);
               }
@@ -106,22 +160,37 @@ export function activate(context: vscode.ExtensionContext) {
               for (const vp of sheet.viewports) {
                 if (typeof vp.detail === 'string' && !viewportsMap[vp.detail]) {
                   try {
-                    const vpPath = path.join(sheetBaseDir, vp.detail);
-                    const vpContent = fs.readFileSync(vpPath, 'utf8');
-                    viewportsMap[vp.detail] = JSON.parse(vpContent);
-                    resolveLocalImages(viewportsMap[vp.detail], sheetBaseDir);
+                    const vpPath = resolveDacPath(vp.detail, sheetBaseDir);
+                    if (vpPath) {
+                      const vpContent = fs.readFileSync(vpPath, 'utf8');
+                      viewportsMap[vp.detail] = JSON.parse(vpContent);
+                      resolveLocalImages(viewportsMap[vp.detail], path.dirname(vpPath));
+                    } else {
+                      console.error('Failed to locate viewport detail:', vp.detail);
+                    }
                   } catch (e) {
                     console.error('Failed to load viewport detail:', vp.detail);
                   }
+                }
+                
+                if (typeof vp.detail === 'string' && viewportsMap[vp.detail]) {
+                  resolveConstructs(viewportsMap[vp.detail], sheetBaseDir, constructsMap);
                 }
               }
             }
           }
         }
-        return { doc: ds, viewportsMap, titleBlockMap };
+        
+        // Also resolve constructs for the titleblocks
+        for (const tbKey of Object.keys(titleBlockMap)) {
+           resolveConstructs(titleBlockMap[tbKey], baseDir, constructsMap); 
+        }
+
+        return { doc: ds, viewportsMap, titleBlockMap, constructsMap };
       } else if (doc.type === 'CAD::Detail' || doc.type === 'CAD::Construct' || doc.type === 'CAD::TitleBlock' || doc.geometry) {
         resolveLocalImages(doc, baseDir);
-        return { doc };
+        resolveConstructs(doc, baseDir, constructsMap);
+        return { doc, constructsMap };
       }
       return null;
     } catch (err) {
@@ -161,7 +230,7 @@ export function activate(context: vscode.ExtensionContext) {
       const panel = vscode.window.createWebviewPanel(
         'structuralDetailVisualizer',
         `DAC Preview: ${path.basename(document.fileName)}`,
-        vscode.ViewColumn.Beside,
+        vscode.ViewColumn.Active,
         {
           enableScripts: true,
           retainContextWhenHidden: true,
@@ -179,7 +248,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (message.type === 'ready') {
           const data = await parseAndLoadDocument(document!);
           if (data) {
-            panel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap });
+            panel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap, constructsMap: data.constructsMap });
           } else {
             panel.webview.postMessage({ type: 'error', message: 'Failed to parse document or unrecognized DAC format.' });
           }
@@ -231,7 +300,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (data) {
         // Prevent refresh cycles if changes originated from webview itself
         if (JSON.stringify(data.doc) !== JSON.stringify(lastWebviewDoc)) {
-          activePanel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap });
+          activePanel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap, constructsMap: data.constructsMap });
         }
       }
     }
@@ -246,7 +315,7 @@ export function activate(context: vscode.ExtensionContext) {
       const data = await parseAndLoadDocument(event.document);
       if (data) {
         if (JSON.stringify(data.doc) !== JSON.stringify(lastWebviewDoc)) {
-          activePanel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap });
+          activePanel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap, constructsMap: data.constructsMap });
         }
       }
     }
