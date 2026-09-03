@@ -119,7 +119,7 @@ export function activate(context: vscode.ExtensionContext) {
           }
         }
         return { doc: ds, viewportsMap, titleBlockMap };
-      } else if (doc.parameters && doc.geometry) {
+      } else if (doc.type === 'CAD::Detail' || doc.type === 'CAD::Construct' || doc.type === 'CAD::TitleBlock' || doc.geometry) {
         resolveLocalImages(doc, baseDir);
         return { doc };
       }
@@ -180,6 +180,8 @@ export function activate(context: vscode.ExtensionContext) {
           const data = await parseAndLoadDocument(document!);
           if (data) {
             panel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap });
+          } else {
+            panel.webview.postMessage({ type: 'error', message: 'Failed to parse document or unrecognized DAC format.' });
           }
         } else if (message.type === 'updateConfig') {
           const updatedDoc = message.config as DetailDocument;

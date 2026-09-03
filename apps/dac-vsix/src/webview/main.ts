@@ -27,6 +27,8 @@ try {
           } else {
             uiInstance.updateConfig(config, viewportsMap, titleBlockMap);
           }
+        } else if (message.type === 'error') {
+          rootElement.innerHTML = `<div style="color:red; padding: 20px; font-family: monospace;"><h3>Document Error</h3><pre>${message.message}</pre></div>`;
         }
       } catch (err) {
         rootElement.innerHTML = `<div style="color:red; padding: 20px; font-family: monospace;"><h3>Webview Message Error</h3><pre>${err instanceof Error ? err.stack : String(err)}</pre></div>`;
