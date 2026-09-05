@@ -9,6 +9,7 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@aeckit/core-solver": "^1.0.0"
+    "@aeckit/core-solver": "^1.0.0",
+    "@aeckit/dac-engine": "^1.0.0"
   }
 }

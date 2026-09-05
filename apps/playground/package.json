@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@aeckit/core-solver": "*",
+    "@aeckit/dac-engine": "^1.0.0",
     "@aeckit/ui-components": "*",
     "lz-string": "^1.5.0",
     "monaco-editor": "^0.45.0"

@@ -304,21 +304,24 @@ export function renderSheet(
 
   // Render Viewports
   sheetContent += '\n<!-- Viewports -->\n';
+  let autoIndex = 0;
   for (const vp of sheet.viewports) {
     const detailId = typeof vp.detail === 'string' ? vp.detail : 'inline-detail';
     const detailDoc = typeof vp.detail === 'string' ? viewportsMap.get(vp.detail) : vp.detail;
+    const vpId = vp.componentId || 'vp_' + autoIndex++;
 
     if (detailDoc) {
       const vpScaleMultiplier = resolveScaleMultiplier(vp.scale);
       const vpCanvasHeight = 18;
       const vpSvg = compileGeometryGroups(detailDoc, vpScaleMultiplier, titleBlockData, vpCanvasHeight, false, constructResolver);
+      
       const vpX = Number(vp.x);
       const vpY = Number(vp.y);
       const vpSvgY = height - vpY - (vpCanvasHeight * vpScaleMultiplier);
-      const cidAttr = vp.componentId ? ` data-component-id="${vp.componentId}" data-component-type="CAD::Viewport"` : '';
+      const cidAttr = ` data-component-id="${vpId}" data-component-type="CAD::Viewport"`;
       
       // Use a unique random suffix to force browser cache invalidation for the clipPath on every render
-      const clipId = `clip-img-${vp.componentId || 'auto'}-${Math.random().toString(36).substring(2, 9)}`;
+      const clipId = `clip-img-${vpId}-${Math.random().toString(36).substring(2, 9)}`;
       const hasDimensions = vp.width !== undefined && vp.height !== undefined;
       const clipDef = hasDimensions ? `<clipPath id="${clipId}"><rect x="0" y="${vpCanvasHeight - vp.height! / vpScaleMultiplier}" width="${vp.width! / vpScaleMultiplier}" height="${vp.height! / vpScaleMultiplier}" /></clipPath>` : '';
       const clipAttr = hasDimensions ? ` clip-path="url(#${clipId})"` : '';
@@ -394,7 +397,7 @@ export function renderSheet(
 
       sheetContent += `
         ${hasDimensions ? `<defs>${clipDef}</defs>` : ''}
-        <g${cidAttr} class="${vp.componentId ? 'interactive-component pointer-cursor ' : ''}" data-viewport-id="viewport-${detailId}" transform="translate(${vpX}, ${vpSvgY}) scale(${vpScaleMultiplier})">
+        <g${cidAttr} class="interactive-component pointer-cursor" data-viewport-id="viewport-${detailId}" transform="translate(${vpX}, ${vpSvgY}) scale(${vpScaleMultiplier})">
           <g${clipAttr}>
             <g transform="translate(${-cropX}, ${cropY})">
               ${vpSvg}

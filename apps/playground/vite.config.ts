@@ -24,10 +24,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@aeckit/core-solver': path.resolve(__dirname, '../../packages/core-solver/src/index.ts'),
-      '@aeckit/ui-components': path.resolve(__dirname, '../../packages/ui-components/src/index.ts')
+      '@aeckit/ui-components': path.resolve(__dirname, '../../packages/ui-components/src/index.ts'),
+      '@aeckit/dac-engine': path.resolve(__dirname, '../../packages/dac-engine/src/index.ts')
     }
   },
   optimizeDeps: {
-    exclude: ['@aeckit/core-solver', '@aeckit/ui-components']
+    exclude: ['@aeckit/core-solver', '@aeckit/ui-components', '@aeckit/dac-engine']
   }
 });

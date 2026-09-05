@@ -73,13 +73,7 @@ function updateVisualizer() {
   if (activeDoc.type === 'CAD::Project') {
     vizDoc = {
       ...activeDoc,
-      sheets: (activeDoc as ProjectDocument).sheets.map(s => {
-        if (typeof s === 'string') {
-          // Resolve string paths like "sheets/S-101.json"
-          return (files[s] || files[s.replace('sheets/', '')]) as SheetConfiguration;
-        }
-        return s as SheetConfiguration;
-      }).filter(Boolean)
+      sheets: (activeDoc as ProjectDocument).sheets // Keep it as an array of strings
     } as ProjectDocument;
   } else {
     vizDoc = activeDoc as VisualizerDocument;
@@ -207,10 +201,10 @@ function initFileManager() {
       if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
     },
     onInsertDetail: (filename: string) => {
-      if (uiInstance && uiInstance.getActiveSheet()) {
+      if (uiInstance && uiInstance.getActiveSheet() && !uiInstance.isProject()) {
         uiInstance.insertViewport(filename);
       } else {
-        showToast('Open a Sheet or Drawing Set first to insert this detail.');
+        showToast('Open a Sheet view first to insert this detail.');
       }
     },
     onNewProject: () => {

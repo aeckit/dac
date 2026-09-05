@@ -2,6 +2,7 @@ import { PropertiesManager } from './managers/PropertiesManager';
 import { CanvasManager } from './managers/CanvasManager';
 import { InteractionManager } from './managers/InteractionManager';
 import { getVisualizerShellTemplate } from './templates';
+import { DacEngine } from '@aeckit/dac-engine';
 
 import { DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, renderDetail, renderSheet, resolveScaleMultiplier } from '@aeckit/core-solver';
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from './editors';
@@ -28,6 +29,7 @@ export class VisualizerUI {
   public titleBlockMap: Map<string, TitleBlockDocument | DetailDocument>;
   public onChange: (doc: VisualizerDocument, viewportsMap?: Map<string, DetailDocument>, titleBlockMap?: Map<string, TitleBlockDocument | DetailDocument>) => void;
   public options: VisualizerUIOptions;
+  public engine: DacEngine;
 
   // Drawing Set state
   public activeSheetIndex = 0;
@@ -80,6 +82,22 @@ export class VisualizerUI {
     this.onChange = onChange;
     this.options = options || {};
 
+    this.engine = new DacEngine();
+    this.engine.setDocument(this.doc, this.viewportsMap, true);
+    this.engine.addEventListener('document_changed', (e: any) => {
+      this.doc = e.detail.document;
+      if (e.detail.nestedDocs) {
+        this.viewportsMap = e.detail.nestedDocs;
+      }
+      if (e.detail.isTransient) {
+        this.renderSVG();
+        this.canvasManager.updateZoomPan();
+      } else {
+        this.updateAndNotify();
+        this.canvasManager.updateZoomPan();
+      }
+    });
+
     this.propertiesManager = new PropertiesManager(this);
     this.canvasManager = new CanvasManager(this);
     this.interactionManager = new InteractionManager(this);
@@ -120,6 +138,7 @@ export class VisualizerUI {
   }
 
   public insertViewport(detailName: string) {
+    if (this.isProject()) return; // Block inserting viewports in Project view mode
     const activeSheet = this.getActiveSheet();
     if (activeSheet) {
       if (!activeSheet.viewports) activeSheet.viewports = [];
@@ -194,96 +213,61 @@ export class VisualizerUI {
 
     const btnAddRect = this.rightPanel.querySelector('#btn-add-rect') as HTMLButtonElement;
     btnAddRect?.addEventListener('click', () => {
-      const isProject = this.isProject();
-      if (!isProject && (this.doc.type !== 'CAD::Detail' && this.doc.type !== 'CAD::TitleBlock')) return;
-      const targetDoc = (isProject ? this.getActiveSheet() : this.doc) as any;
-      if (!targetDoc) return;
-      if (!targetDoc.geometry) targetDoc.geometry = [];
-      const id = 'rect_' + Date.now().toString(36);
-      const offset = targetDoc.geometry.length * 0.5;
-      targetDoc.geometry.push({ type: 'CAD::Shape::Rectangle', componentId: id, componentType: 'Rectangle', x: offset, y: offset, width: 12, height: 12, fill: 'gray' });
-      this.selectedComponentIds.clear();
-      this.selectedComponentIds.add(id);
-      this.primaryComponentType = 'CAD::Shape::Rectangle';
-      this.updateAndNotify();
+      try {
+        const shape = this.engine.addRectangle();
+        this.selectedComponentIds.clear();
+        this.selectedComponentIds.add(shape.componentId);
+        this.primaryComponentType = 'CAD::Shape::Rectangle';
+      } catch (e) {
+        console.warn(e);
+      }
     });
 
     const btnAddLine = this.rightPanel.querySelector('#btn-add-line') as HTMLButtonElement;
     btnAddLine?.addEventListener('click', () => {
-      const isProject = this.isProject();
-      if (!isProject && (this.doc.type !== 'CAD::Detail' && this.doc.type !== 'CAD::TitleBlock')) return;
-      const targetDoc = (isProject ? this.getActiveSheet() : this.doc) as any;
-      if (!targetDoc) return;
-      if (!targetDoc.geometry) targetDoc.geometry = [];
-      const id = 'line_' + Date.now().toString(36);
-      const offset = targetDoc.geometry.length * 0.5;
-      targetDoc.geometry.push({ type: 'CAD::Shape::Line', componentId: id, componentType: 'Line', x1: offset, y1: offset, x2: 12 + offset, y2: 12 + offset, strokeWidth: 2 });
-      this.selectedComponentIds.clear();
-      this.selectedComponentIds.add(id);
-      this.primaryComponentType = 'CAD::Shape::Line';
-      this.updateAndNotify();
+      try {
+        const shape = this.engine.addLine();
+        this.selectedComponentIds.clear();
+        this.selectedComponentIds.add(shape.componentId);
+        this.primaryComponentType = 'CAD::Shape::Line';
+      } catch (e) {
+        console.warn(e);
+      }
     });
 
     const btnAddText = this.rightPanel.querySelector('#btn-add-text') as HTMLButtonElement;
     btnAddText?.addEventListener('click', () => {
-      const isProject = this.isProject();
-      if (!isProject && (this.doc.type !== 'CAD::Detail' && this.doc.type !== 'CAD::TitleBlock')) return;
-      const targetDoc = (isProject ? this.getActiveSheet() : this.doc) as any;
-      if (!targetDoc) return;
-      if (!targetDoc.geometry) targetDoc.geometry = [];
-      const id = 'text_' + Date.now().toString(36);
-      const offset = targetDoc.geometry.length * 0.5;
-      targetDoc.geometry.push({ type: 'CAD::Annotation::Text', componentId: id, componentType: 'Text', x: offset, y: offset, text: 'New Text', fontSize: 4 });
-      this.selectedComponentIds.clear();
-      this.selectedComponentIds.add(id);
-      this.primaryComponentType = 'CAD::Annotation::Text';
-      this.updateAndNotify();
+      try {
+        const shape = this.engine.addText();
+        this.selectedComponentIds.clear();
+        this.selectedComponentIds.add(shape.componentId);
+        this.primaryComponentType = 'CAD::Annotation::Text';
+      } catch (e) {
+        console.warn(e);
+      }
     });
 
     const btnAddImage = this.rightPanel.querySelector('#btn-add-image') as HTMLButtonElement;
     btnAddImage?.addEventListener('click', () => {
-      const isProject = this.isProject();
-      if (!isProject && (this.doc.type !== 'CAD::Detail' && this.doc.type !== 'CAD::TitleBlock')) return;
-      const targetDoc = (isProject ? this.getActiveSheet() : this.doc) as any;
-      if (!targetDoc) return;
-      if (!targetDoc.geometry) targetDoc.geometry = [];
-      
-      const id = 'image_' + Date.now().toString(36);
-      const offset = targetDoc.geometry.length * 0.5;
-      
-      targetDoc.geometry.push({
-        type: 'CAD::Annotation::Image',
-        componentId: id,
-        componentType: 'Image',
-        href: '',
-        x: 0,
-        y: 0,
-        width: 12,
-        height: 9,
-        cropX: 0,
-        cropY: 0,
-        imgWidth: 12,
-        imgHeight: 9,
-        lockAspectRatio: true
-      });
-      this.selectedComponentIds.clear();
-      this.selectedComponentIds.add(id);
-      this.primaryComponentType = 'CAD::Annotation::Image';
-      this.updateAndNotify();
+      try {
+        const shape = this.engine.addImage();
+        this.selectedComponentIds.clear();
+        this.selectedComponentIds.add(shape.componentId);
+        this.primaryComponentType = 'CAD::Annotation::Image';
+      } catch (e) {
+        console.warn(e);
+      }
     });
 
     const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
     btnAddViewport?.addEventListener('click', () => {
-      const activeSheet = this.getActiveSheet();
-      if (activeSheet) {
-        if (!activeSheet.viewports) activeSheet.viewports = [];
-        const id = 'viewport_' + Date.now().toString(36);
-        const offset = 2 + (activeSheet.viewports.length * 2);
-        activeSheet.viewports.push({ detail: '', x: offset, y: offset, scale: '1:1', width: 6, height: 6, componentId: id });
+      try {
+        const shape = this.engine.addViewport();
         this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(id);
+        this.selectedComponentIds.add(shape.componentId);
         this.primaryComponentType = 'CAD::Viewport';
-        this.updateAndNotify();
+      } catch (e) {
+        console.warn(e);
       }
     });
 
@@ -348,6 +332,10 @@ export class VisualizerUI {
     const selectEl = this.sheetDropdownContainer.querySelector('#sheet-select') as HTMLSelectElement;
     selectEl.addEventListener('change', () => {
       this.activeSheetIndex = parseInt(selectEl.value, 10);
+      if (this.doc.type === 'CAD::Project') {
+        const ds = this.doc as ProjectDocument;
+        this.engine.setActiveSheetId(ds.sheets[this.activeSheetIndex] as string);
+      }
       this.selectedComponentIds.clear(); // Clear selection when switching sheets
       this.primaryComponentType = null;
       if (this.options.onSelectionChange) this.options.onSelectionChange([], null);
@@ -600,6 +588,18 @@ export class VisualizerUI {
     if (this.options) {
       if (sheetsMap) this.options.sheetsMap = sheetsMap;
       if (parentProject !== undefined) this.options.parentProject = parentProject || undefined;
+    }
+    
+    // Combine all nested docs for the engine
+    const allNested = new Map<string, any>();
+    if (this.viewportsMap) this.viewportsMap.forEach((v, k) => allNested.set(k, v));
+    if (this.options?.sheetsMap) this.options.sheetsMap.forEach((v, k) => allNested.set(k, v));
+    if (this.titleBlockMap) this.titleBlockMap.forEach((v, k) => allNested.set(k, v));
+    
+    this.engine.setDocument(this.doc, allNested, true);
+    if (this.doc.type === 'CAD::Project') {
+      const ds = this.doc as ProjectDocument;
+      this.engine.setActiveSheetId(ds.sheets[this.activeSheetIndex] as string);
     }
 
     // Maintain selection state

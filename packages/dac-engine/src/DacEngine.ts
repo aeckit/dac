@@ -1,17 +1,26 @@
 import { VisualizerDocument, RectangleOptions, LineOptions, TextOptions, ImageOptions, ViewportOptions } from './types';
 
 export class DacEngine extends EventTarget {
-  private document: VisualizerDocument | null = null;
+  private document: any = null;
+  private nestedDocs: Map<string, any> = new Map();
   private activeSheetId: string | null = null;
 
   constructor() {
     super();
   }
 
-  public setDocument(doc: VisualizerDocument) {
+  public setDocument(doc: VisualizerDocument, nestedDocs?: Map<string, any>, suppressEvent: boolean = false) {
     // Deep clone to ensure the engine owns its state
     this.document = JSON.parse(JSON.stringify(doc));
-    this.notifyChanged();
+    if (nestedDocs) {
+      this.nestedDocs = new Map();
+      nestedDocs.forEach((val, key) => {
+        this.nestedDocs.set(key, JSON.parse(JSON.stringify(val)));
+      });
+    }
+    if (!suppressEvent) {
+      this.notifyChanged();
+    }
   }
 
   public getDocument(): VisualizerDocument | null {
@@ -29,9 +38,12 @@ export class DacEngine extends EventTarget {
   private getTargetDocument(): any {
     if (!this.document) throw new Error("No document loaded");
     
-    if (this.document.type === 'Project') {
+    if (this.document.type === 'CAD::Project') {
       if (!this.activeSheetId) throw new Error("No active sheet selected in project");
-      const sheet = this.document.sheets?.find((s: any) => s.id === this.activeSheetId);
+      
+      const sheetRef = this.document.sheets?.[this.activeSheetId] || this.document.sheets?.find((s: any) => s.id === this.activeSheetId) || this.activeSheetId;
+      const sheet = this.nestedDocs.get(sheetRef as string) || (typeof sheetRef === 'object' ? sheetRef : null);
+      
       if (!sheet) throw new Error("Active sheet not found");
       return sheet;
     }
@@ -109,43 +121,124 @@ export class DacEngine extends EventTarget {
   }
 
   public addViewport(options?: ViewportOptions): any {
+    const targetDoc = this.getTargetDocument();
+    
+    // Enforce domain rule: viewports can only exist on sheets.
+    // If it's not a sheet (e.g. it's a CAD::Detail view or the raw project), reject it.
+    if (targetDoc.type !== 'CAD::SheetConfiguration' && targetDoc.type !== 'SheetConfiguration') {
+      throw new Error(`Viewports can only be added to Sheets. Current target is ${targetDoc.type}`);
+    }
+
+    if (!targetDoc.viewports) {
+      targetDoc.viewports = [];
+    }
+    const defaultOffset = 2 + (targetDoc.viewports.length * 2);
+
     const shape = {
       type: 'CAD::Viewport',
-      componentId: this.generateId('vp'),
+      componentId: this.generateId('viewport'),
       componentType: 'Viewport',
-      width: 20,
-      height: 15,
+      detail: '',
+      x: defaultOffset,
+      y: defaultOffset,
+      scale: '1:1',
+      width: 6,
+      height: 6,
       ...options
     };
-    return this.addShapeToTarget(shape);
+    
+    targetDoc.viewports.push(shape);
+    this.notifyChanged();
+    return shape;
   }
 
-  public updateComponent(id: string, properties: Partial<any>): void {
+  public updateComponent(id: string, properties: Partial<any>, isTransient: boolean = false): void {
     const targetDoc = this.getTargetDocument();
-    if (!targetDoc.geometry) return;
     
-    const shapeIndex = targetDoc.geometry.findIndex((g: any) => g.componentId === id);
-    if (shapeIndex === -1) throw new Error(`Component ${id} not found`);
+    if (targetDoc.geometry) {
+      let autoIndex = 0;
+      const shapeIndex = targetDoc.geometry.findIndex((g: any) => {
+        const sid = g.componentId || 'shape_' + autoIndex++;
+        return sid === id;
+      });
+      if (shapeIndex !== -1) {
+        targetDoc.geometry[shapeIndex] = { ...targetDoc.geometry[shapeIndex], ...properties };
+        this.notifyChanged(isTransient);
+        return;
+      }
+    }
+    
+    if (targetDoc.viewports) {
+      let autoIndex = 0;
+      const vpIndex = targetDoc.viewports.findIndex((v: any) => {
+        const sid = v.componentId || 'vp_' + autoIndex++;
+        return sid === id;
+      });
+      if (vpIndex !== -1) {
+        targetDoc.viewports[vpIndex] = { ...targetDoc.viewports[vpIndex], ...properties };
+        this.notifyChanged(isTransient);
+        return;
+      }
+    }
 
-    targetDoc.geometry[shapeIndex] = {
-      ...targetDoc.geometry[shapeIndex],
-      ...properties
-    };
+    // Search nested docs
+    for (const [key, nestedDoc] of this.nestedDocs.entries()) {
+      if (nestedDoc.geometry) {
+        let autoIndex = 0;
+        const shapeIndex = nestedDoc.geometry.findIndex((g: any) => {
+          const sid = g.componentId || 'shape_' + autoIndex++;
+          return sid === id;
+        });
+        if (shapeIndex !== -1) {
+           nestedDoc.geometry[shapeIndex] = { ...nestedDoc.geometry[shapeIndex], ...properties };
+           this.notifyChanged(isTransient);
+           return;
+        }
+      }
+    }
 
-    this.notifyChanged();
+    throw new Error(`Component ${id} not found`);
   }
 
   public deleteComponent(id: string): void {
     const targetDoc = this.getTargetDocument();
-    if (!targetDoc.geometry) return;
+    
+    if (targetDoc.geometry) {
+      let autoIndex = 0;
+      targetDoc.geometry = targetDoc.geometry.filter((g: any) => {
+        const sid = g.componentId || 'shape_' + autoIndex++;
+        return sid !== id;
+      });
+    }
+    if (targetDoc.viewports) {
+      let autoIndex = 0;
+      targetDoc.viewports = targetDoc.viewports.filter((v: any) => {
+        const sid = v.componentId || 'vp_' + autoIndex++;
+        return sid !== id;
+      });
+    }
 
-    targetDoc.geometry = targetDoc.geometry.filter((g: any) => g.componentId !== id);
+    // Search nested docs
+    for (const [key, nestedDoc] of this.nestedDocs.entries()) {
+      if (nestedDoc.geometry) {
+        let autoIndex = 0;
+        nestedDoc.geometry = nestedDoc.geometry.filter((g: any) => {
+          const sid = g.componentId || 'shape_' + autoIndex++;
+          return sid !== id;
+        });
+      }
+    }
+    
     this.notifyChanged();
   }
 
-  private notifyChanged() {
+  private notifyChanged(isTransient: boolean = false) {
     this.dispatchEvent(new CustomEvent('document_changed', { 
-      detail: { document: this.document } 
+      detail: { 
+        document: this.document, 
+        nestedDocs: this.nestedDocs.size > 0 ? this.nestedDocs : undefined,
+        isTransient 
+      } 
     }));
   }
 }

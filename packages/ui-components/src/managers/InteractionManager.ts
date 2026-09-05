@@ -108,12 +108,15 @@ export class InteractionManager {
       const onMouseMove = (moveEvt: MouseEvent) => {
         this.ui.isDragging = true;
         
-        const ptStart = rootSvg.createSVGPoint();
+        const currentRootSvg = this.ui.svgWrapper?.querySelector('svg');
+        if (!currentRootSvg) return;
+
+        const ptStart = currentRootSvg.createSVGPoint();
         ptStart.x = startMouseX;
         ptStart.y = startMouseY;
         const svgStart = ptStart.matrixTransform(inverse);
 
-        const ptCurrent = rootSvg.createSVGPoint();
+        const ptCurrent = currentRootSvg.createSVGPoint();
         ptCurrent.x = moveEvt.clientX;
         ptCurrent.y = moveEvt.clientY;
         const svgCurrent = ptCurrent.matrixTransform(inverse);
@@ -121,25 +124,62 @@ export class InteractionManager {
         const svgDx = svgCurrent.x - svgStart.x;
         const svgDy = svgCurrent.y - svgStart.y;
 
-        initialStates.forEach(state => {
+        initialStates.forEach((state, cid) => {
           if (state.isLine) {
-            (state.comp as any).x1 = Math.round((state.x1 + svgDx) * 1000) / 1000;
-            (state.comp as any).y1 = Math.round((state.y1 - svgDy) * 1000) / 1000;
-            (state.comp as any).x2 = Math.round((state.x2 + svgDx) * 1000) / 1000;
-            (state.comp as any).y2 = Math.round((state.y2 - svgDy) * 1000) / 1000;
+            this.ui.engine.updateComponent(cid, {
+              x1: Math.round((state.x1 + svgDx) * 1000) / 1000,
+              y1: Math.round((state.y1 - svgDy) * 1000) / 1000,
+              x2: Math.round((state.x2 + svgDx) * 1000) / 1000,
+              y2: Math.round((state.y2 - svgDy) * 1000) / 1000
+            }, true);
           } else {
-            state.comp.x = Math.round((state.x + svgDx) * 1000) / 1000;
-            state.comp.y = Math.round((state.y - svgDy) * 1000) / 1000;
+            this.ui.engine.updateComponent(cid, {
+              x: Math.round((state.x + svgDx) * 1000) / 1000,
+              y: Math.round((state.y - svgDy) * 1000) / 1000
+            }, true);
+          }
+        });
+      };
+
+      const onMouseUp = (upEvt: MouseEvent) => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        
+        const currentRootSvg = this.ui.svgWrapper?.querySelector('svg');
+        if (!currentRootSvg) {
+          setTimeout(() => { this.ui.isDragging = false; }, 0);
+          return;
+        }
+
+        const ptStart = currentRootSvg.createSVGPoint();
+        ptStart.x = startMouseX;
+        ptStart.y = startMouseY;
+        const svgStart = ptStart.matrixTransform(inverse);
+
+        const ptCurrent = currentRootSvg.createSVGPoint();
+        ptCurrent.x = upEvt.clientX;
+        ptCurrent.y = upEvt.clientY;
+        const svgCurrent = ptCurrent.matrixTransform(inverse);
+
+        const svgDx = svgCurrent.x - svgStart.x;
+        const svgDy = svgCurrent.y - svgStart.y;
+        
+        initialStates.forEach((state, cid) => {
+          if (state.isLine) {
+            this.ui.engine.updateComponent(cid, {
+              x1: Math.round((state.x1 + svgDx) * 1000) / 1000,
+              y1: Math.round((state.y1 - svgDy) * 1000) / 1000,
+              x2: Math.round((state.x2 + svgDx) * 1000) / 1000,
+              y2: Math.round((state.y2 - svgDy) * 1000) / 1000
+            }, false); // Committed!
+          } else {
+            this.ui.engine.updateComponent(cid, {
+              x: Math.round((state.x + svgDx) * 1000) / 1000,
+              y: Math.round((state.y - svgDy) * 1000) / 1000
+            }, false); // Committed!
           }
         });
 
-        this.ui.render();
-      };
-
-      const onMouseUp = () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-        this.ui.updateAndNotify();
         setTimeout(() => { this.ui.isDragging = false; }, 0);
       };
 
@@ -212,6 +252,8 @@ export class InteractionManager {
         const startCompX2 = Number((comp as any).x2) || 0;
         const startCompY2 = Number((comp as any).y2) || 0;
 
+        let finalProps: any = null;
+
         const onMouseMove = (moveEvt: MouseEvent) => {
           this.ui.isDragging = true;
           const rootSvg = this.ui.svgWrapper?.querySelector('svg');
@@ -238,17 +280,21 @@ export class InteractionManager {
           const svgDx = svgCurrent.x - svgStart.x;
           // SVG Dy is positive when dragging DOWN on the screen
           const svgDy = svgCurrent.y - svgStart.y;
-          
+
           if (dir === 'line-start') {
-             (comp as any).x1 = Math.round((startCompX1 + svgDx) * 1000) / 1000;
-             (comp as any).y1 = Math.round((startCompY1 - svgDy) * 1000) / 1000;
-             this.ui.render();
+             finalProps = {
+               x1: Math.round((startCompX1 + svgDx) * 1000) / 1000,
+               y1: Math.round((startCompY1 - svgDy) * 1000) / 1000
+             };
+             this.ui.engine.updateComponent(comp.componentId, finalProps, true);
              return;
           }
           if (dir === 'line-end') {
-             (comp as any).x2 = Math.round((startCompX2 + svgDx) * 1000) / 1000;
-             (comp as any).y2 = Math.round((startCompY2 - svgDy) * 1000) / 1000;
-             this.ui.render();
+             finalProps = {
+               x2: Math.round((startCompX2 + svgDx) * 1000) / 1000,
+               y2: Math.round((startCompY2 - svgDy) * 1000) / 1000
+             };
+             this.ui.engine.updateComponent(comp.componentId, finalProps, true);
              return;
           }
 
@@ -336,39 +382,43 @@ export class InteractionManager {
              newH = minSize;
           }
 
-          comp.x = Math.round(newX * 1000) / 1000;
-          comp.y = Math.round(newY * 1000) / 1000;
-          comp.width = Math.round(newW * 1000) / 1000;
-          comp.height = Math.round(newH * 1000) / 1000;
+          finalProps = {
+            x: Math.round(newX * 1000) / 1000,
+            y: Math.round(newY * 1000) / 1000,
+            width: Math.round(newW * 1000) / 1000,
+            height: Math.round(newH * 1000) / 1000
+          };
           
           const isImage = this.ui.primaryComponentType === 'CAD::Annotation::Image' || this.ui.primaryComponentType === 'Image';
           
           if (this.ui.primaryComponentType === 'CAD::Viewport') {
             const cropDx = (newX - startCompX) / vpScale;
             const cropDy = (newY - startCompY) / vpScale;
-            (comp as any).cropX = Math.round((startCropX + cropDx) * 1000) / 1000;
-            (comp as any).cropY = Math.round((startCropY + cropDy) * 1000) / 1000;
+            finalProps.cropX = Math.round((startCropX + cropDx) * 1000) / 1000;
+            finalProps.cropY = Math.round((startCropY + cropDy) * 1000) / 1000;
           } else if (isImage && this.ui.croppingComponentId === comp.componentId) {
             const cropDx = (newX - startCompX);
             const cropDy = (newY - startCompY);
-            (comp as any).cropX = Math.round((startCropX + cropDx) * 1000) / 1000;
-            (comp as any).cropY = Math.round((startCropY + cropDy) * 1000) / 1000;
+            finalProps.cropX = Math.round((startCropX + cropDx) * 1000) / 1000;
+            finalProps.cropY = Math.round((startCropY + cropDy) * 1000) / 1000;
           } else if (isImage) {
             const scaleX = newW / startCompW;
             const scaleY = newH / startCompH;
-            (comp as any).cropX = Math.round(startCropX * scaleX * 1000) / 1000;
-            (comp as any).cropY = Math.round(startCropY * scaleY * 1000) / 1000;
-            (comp as any).imgWidth = Math.round(startImgW * scaleX * 1000) / 1000;
-            (comp as any).imgHeight = Math.round(startImgH * scaleY * 1000) / 1000;
+            finalProps.cropX = Math.round(startCropX * scaleX * 1000) / 1000;
+            finalProps.cropY = Math.round(startCropY * scaleY * 1000) / 1000;
+            finalProps.imgWidth = Math.round(startImgW * scaleX * 1000) / 1000;
+            finalProps.imgHeight = Math.round(startImgH * scaleY * 1000) / 1000;
           }
 
-          this.ui.render();
+          this.ui.engine.updateComponent(comp.componentId, finalProps, true);
         };
 
         const onMouseUp = () => {
           window.removeEventListener('mousemove', onMouseMove);
           window.removeEventListener('mouseup', onMouseUp);
-          this.ui.updateAndNotify();
+          if (finalProps) {
+            this.ui.engine.updateComponent(comp.componentId, finalProps, false);
+          }
           setTimeout(() => { this.ui.isDragging = false; }, 0);
         };
 
@@ -412,9 +462,7 @@ export class InteractionManager {
 
       // 2. SELECTION (Left Click)
       if (e.button === 0) {
-        if (this.ui.doc.type === 'CAD::Project') {
-          return;
-        }
+
 
         const startMouseX = e.clientX;
         const startMouseY = e.clientY;
@@ -513,12 +561,17 @@ export class InteractionManager {
                 
                 if (isSelected) {
                   const cid = group.getAttribute('data-component-id');
+                  const cType = group.getAttribute('data-component-type');
                   if (cid) {
-                    if (upEvt.shiftKey || upEvt.metaKey) {
-                      if (newSelection.has(cid)) newSelection.delete(cid);
-                      else newSelection.add(cid);
+                    if (this.ui.isProject() && cType === 'CAD::Viewport') {
+                      // Block viewport selection in Project view
                     } else {
-                      newSelection.add(cid);
+                      if (upEvt.shiftKey || upEvt.metaKey) {
+                        if (newSelection.has(cid)) newSelection.delete(cid);
+                        else newSelection.add(cid);
+                      } else {
+                        newSelection.add(cid);
+                      }
                     }
                   }
                 }
@@ -537,15 +590,22 @@ export class InteractionManager {
             
             if (interactiveGroup) {
               const cid = interactiveGroup.getAttribute('data-component-id');
+              const cType = interactiveGroup.getAttribute('data-component-type');
               if (cid) {
-                if (upEvt.shiftKey || upEvt.metaKey) {
-                  if (this.ui.selectedComponentIds.has(cid)) this.ui.selectedComponentIds.delete(cid);
-                  else this.ui.selectedComponentIds.add(cid);
-                } else {
+                if (this.ui.isProject() && cType === 'CAD::Viewport') {
+                  // Block viewport selection in Project view
                   this.ui.selectedComponentIds.clear();
-                  this.ui.selectedComponentIds.add(cid);
+                  this.ui.primaryComponentType = null;
+                } else {
+                  if (upEvt.shiftKey || upEvt.metaKey) {
+                    if (this.ui.selectedComponentIds.has(cid)) this.ui.selectedComponentIds.delete(cid);
+                    else this.ui.selectedComponentIds.add(cid);
+                  } else {
+                    this.ui.selectedComponentIds.clear();
+                    this.ui.selectedComponentIds.add(cid);
+                  }
+                  this.ui.updatePrimaryComponentType();
                 }
-                this.ui.updatePrimaryComponentType();
               }
               if (this.ui.options.onSelectionChange) this.ui.options.onSelectionChange(this.ui.getSelectedComponentIds(), this.ui.primaryComponentType);
               this.ui.render();
@@ -797,42 +857,16 @@ export class InteractionManager {
   public deleteSelectedComponent() {
     if (this.ui.selectedComponentIds.size === 0) return;
     
-    let hasDeleted = false;
-
     this.ui.selectedComponentIds.forEach(cid => {
-      let deleted = false;
-      
-      const activeSheet = this.ui.getActiveSheet();
-      if (activeSheet && activeSheet.viewports) {
-        const idx = activeSheet.viewports.findIndex(v => v.componentId === cid);
-        if (idx > -1) {
-          activeSheet.viewports.splice(idx, 1);
-          deleted = true;
-        }
+      try {
+        this.ui.engine.deleteComponent(cid);
+      } catch (e) {
+        console.warn('Failed to delete component:', e);
       }
-
-      if (!deleted) {
-        const doc = this.ui.findDocumentForComponent(cid);
-        if (doc && doc.geometry) {
-          let autoIndex = 0;
-          const idx = doc.geometry.findIndex(shape => {
-            const sid = shape.componentId || 'shape_' + autoIndex++;
-            return sid === cid;
-          });
-          if (idx > -1) {
-            doc.geometry.splice(idx, 1);
-            deleted = true;
-          }
-        }
-      }
-      
-      if (deleted) hasDeleted = true;
     });
 
-    if (hasDeleted) {
-      this.ui.selectedComponentIds.clear();
-      this.ui.primaryComponentType = null;
-      this.ui.updateAndNotify();
-    }
+    this.ui.selectedComponentIds.clear();
+    this.ui.primaryComponentType = null;
+    this.ui.updateAndNotify();
   }
 }
