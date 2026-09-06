@@ -1,6 +1,8 @@
 import { PropertiesManager } from './managers/PropertiesManager';
 import { CanvasManager } from './managers/CanvasManager';
 import { InteractionManager } from './managers/InteractionManager';
+import { LayoutManager } from './managers/LayoutManager';
+import { RenderManager } from './managers/RenderManager';
 import { getVisualizerShellTemplate } from './templates';
 import { DacEngine } from '@aeckit/dac-engine';
 
@@ -66,6 +68,8 @@ export class VisualizerUI {
   public propertiesManager!: PropertiesManager;
   public canvasManager!: CanvasManager;
   public interactionManager!: InteractionManager;
+  public layoutManager!: LayoutManager;
+  public renderManager!: RenderManager;
 
   constructor(
     container: HTMLElement,
@@ -101,7 +105,9 @@ export class VisualizerUI {
     this.propertiesManager = new PropertiesManager(this);
     this.canvasManager = new CanvasManager(this);
     this.interactionManager = new InteractionManager(this);
-    this.initLayout();
+    this.layoutManager = new LayoutManager(this);
+    this.renderManager = new RenderManager(this);
+    this.layoutManager.initLayout();
     this.render();
     this.canvasManager.setupListeners();
     this.interactionManager.setupListeners();
@@ -156,150 +162,6 @@ export class VisualizerUI {
       });
       this.updateAndNotify();
     }
-  }
-
-  private initLayout() {
-    this.container.className = 'visualizer-container';
-
-    // Scale settings are now managed in DocumentEditor.ts via PropertiesManager.
-    this.container.innerHTML = getVisualizerShellTemplate(this.doc, '');
-
-    this.leftPanel = this.container.querySelector('#left-sidebar') as HTMLElement;
-    this.rightPanel = this.container.querySelector('#right-canvas') as HTMLElement;
-    this.propertiesCardContainer = this.container.querySelector('#properties-card-container') as HTMLElement;
-    this.sheetDropdownContainer = this.container.querySelector('#sheet-dropdown-container') as HTMLElement;
-    this.svgViewport = this.container.querySelector('#svg-viewport-container') as HTMLElement;
-    this.svgWrapper = this.container.querySelector('#svg-viewport-wrapper') as HTMLElement;
-    this.editOverlay = this.container.querySelector('#canvas-edit-overlay') as HTMLElement;
-    this.btnMoveOverlay = this.container.querySelector('#edit-overlay-btn-move') as HTMLElement;
-    this.btnCropOverlay = this.container.querySelector('#edit-overlay-btn-crop') as HTMLElement;
-    this.btnDeleteOverlay = this.container.querySelector('#edit-overlay-btn-delete') as HTMLElement;
-    this.btnOpenOverlay = this.container.querySelector('#edit-overlay-btn-open') as HTMLElement;
-    
-    this.grabbers = {};
-    const grabberEls = this.container.querySelectorAll('.edit-grabber');
-    grabberEls.forEach(el => {
-      const dir = el.getAttribute('data-dir');
-      if (dir) {
-        this.grabbers[dir] = el as HTMLElement;
-      }
-    });
-
-    if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
-    // Scale listener removed since it is now handled by DocumentEditor.
-    }
-
-    const resizeObserver = new ResizeObserver(entries => {
-      for (let entry of entries) {
-        if (entry.target === this.svgViewport) {
-          const widthInches = entry.contentRect.width / 96;
-          const heightInches = entry.contentRect.height / 96;
-          if (Math.abs(widthInches - this.sandboxWidth) > 0.1 || Math.abs(heightInches - this.sandboxHeight) > 0.1) {
-            this.sandboxWidth = widthInches;
-            this.sandboxHeight = heightInches;
-            if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
-              this.renderSVG();
-            }
-          }
-        }
-      }
-    });
-    resizeObserver.observe(this.svgViewport);
-
-    const resetBtn = this.rightPanel.querySelector('#reset-view-btn') as HTMLButtonElement;
-    resetBtn.addEventListener('click', () => {
-      this.canvasManager.resetView();
-    });
-
-    const btnAddRect = this.rightPanel.querySelector('#btn-add-rect') as HTMLButtonElement;
-    btnAddRect?.addEventListener('click', () => {
-      try {
-        const shape = this.engine.addRectangle();
-        this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(shape.componentId);
-        this.primaryComponentType = 'CAD::Shape::Rectangle';
-      } catch (e) {
-        console.warn(e);
-      }
-    });
-
-    const btnAddLine = this.rightPanel.querySelector('#btn-add-line') as HTMLButtonElement;
-    btnAddLine?.addEventListener('click', () => {
-      try {
-        const shape = this.engine.addLine();
-        this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(shape.componentId);
-        this.primaryComponentType = 'CAD::Shape::Line';
-      } catch (e) {
-        console.warn(e);
-      }
-    });
-
-    const btnAddText = this.rightPanel.querySelector('#btn-add-text') as HTMLButtonElement;
-    btnAddText?.addEventListener('click', () => {
-      try {
-        const shape = this.engine.addText();
-        this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(shape.componentId);
-        this.primaryComponentType = 'CAD::Annotation::Text';
-      } catch (e) {
-        console.warn(e);
-      }
-    });
-
-    const btnAddImage = this.rightPanel.querySelector('#btn-add-image') as HTMLButtonElement;
-    btnAddImage?.addEventListener('click', () => {
-      try {
-        const shape = this.engine.addImage();
-        this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(shape.componentId);
-        this.primaryComponentType = 'CAD::Annotation::Image';
-      } catch (e) {
-        console.warn(e);
-      }
-    });
-
-    const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
-    btnAddViewport?.addEventListener('click', () => {
-      try {
-        const shape = this.engine.addViewport();
-        this.selectedComponentIds.clear();
-        this.selectedComponentIds.add(shape.componentId);
-        this.primaryComponentType = 'CAD::Viewport';
-      } catch (e) {
-        console.warn(e);
-      }
-    });
-
-    const btnToggleLeft = this.rightPanel.querySelector('#btn-toggle-left-pane') as HTMLButtonElement;
-    if (btnToggleLeft) {
-      if (this.options.showLeftToggle === false) {
-        btnToggleLeft.style.display = 'none';
-      } else {
-        btnToggleLeft.addEventListener('click', () => {
-          window.dispatchEvent(new CustomEvent('dac-toggle-left-pane'));
-        });
-      }
-    }
-
-    const btnToggleRight = this.rightPanel.querySelector('#btn-toggle-right-pane') as HTMLButtonElement;
-    if (btnToggleRight) {
-      if (this.options.showRightToggle === false) {
-        btnToggleRight.style.display = 'none';
-      } else {
-        btnToggleRight.addEventListener('click', () => {
-          window.dispatchEvent(new CustomEvent('dac-toggle-right-pane'));
-        });
-      }
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (this.selectedComponentIds.size > 0) {
-          this.selectComponent(null);
-        }
-      }
-    });
   }
 
   private renderSheetDropdown() {
@@ -421,159 +283,8 @@ export class VisualizerUI {
 
   
   
-  private renderSVG() {
-    try {
-      let svg = '';
-      if (this.isProject() || this.doc.type === 'CAD::SheetConfiguration') {
-        let sheet: SheetConfiguration | null = null;
-        let titleBlockData: Record<string, any> = {};
-        let fallbackTb = '';
-        let fallbackX = 0;
-        let fallbackY = 0;
-        let fallbackPaperSize = 'ARCH D';
-
-        if (this.doc.type === 'CAD::Project') {
-          const ds = this.doc as ProjectDocument;
-          sheet = this.resolveSheet(ds.sheets[this.activeSheetIndex]);
-          titleBlockData = {};
-          fallbackTb = (ds.defaultTitleBlockRef as string) || '';
-          fallbackX = ds.titleBlockOffsetX || 0;
-          fallbackY = ds.titleBlockOffsetY || 0;
-          fallbackPaperSize = ds.defaultPaperSize || 'ARCH D';
-          if (ds.projectName) {
-            titleBlockData['ProjectName'] = ds.projectName;
-            titleBlockData['projectName'] = ds.projectName;
-          }
-          if (ds.parameters) {
-            Object.assign(titleBlockData, ds.parameters);
-          }
-        } else {
-          sheet = this.doc as SheetConfiguration;
-          if (this.options.parentProject) {
-            fallbackTb = (this.options.parentProject.defaultTitleBlockRef as string) || '';
-            fallbackX = this.options.parentProject.titleBlockOffsetX || 0;
-            fallbackY = this.options.parentProject.titleBlockOffsetY || 0;
-            fallbackPaperSize = this.options.parentProject.defaultPaperSize || 'ARCH D';
-            if (this.options.parentProject.projectName) {
-              titleBlockData['ProjectName'] = this.options.parentProject.projectName;
-              titleBlockData['projectName'] = this.options.parentProject.projectName;
-            }
-            if (this.options.parentProject.parameters) {
-              Object.assign(titleBlockData, this.options.parentProject.parameters);
-            }
-          }
-        }
-
-        if (!sheet) {
-          return '';
-        }
-
-        if (!sheet) {
-          this.svgWrapper.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" style="background-color: #0f172a;"><text x="50%" y="50%" fill="#94a3b8" text-anchor="middle">No sheets found in Drawing Set</text></svg>`;
-          this.interactionManager.updateOverlayPositions();
-          return;
-        }
-
-        if (sheet.sheetName) {
-          titleBlockData['SheetName'] = sheet.sheetName;
-          titleBlockData['sheetName'] = sheet.sheetName;
-        }
-        if (sheet.sheetNumber) {
-          titleBlockData['SheetNumber'] = sheet.sheetNumber;
-          titleBlockData['sheetNumber'] = sheet.sheetNumber;
-        }
-
-        let titleBlockDoc: TitleBlockDocument | DetailDocument | undefined = undefined;
-        const resolvedTb = fallbackTb;
-        
-        if (resolvedTb) {
-          titleBlockDoc = this.titleBlockMap.get(resolvedTb);
-        }
-        
-        const effectiveX = sheet.titleBlockOffsetX !== undefined ? sheet.titleBlockOffsetX : fallbackX;
-        const effectiveY = sheet.titleBlockOffsetY !== undefined ? sheet.titleBlockOffsetY : fallbackY;
-
-        svg = renderSheet(sheet, titleBlockData, this.viewportsMap, titleBlockDoc as any, effectiveX, effectiveY, fallbackPaperSize, this.options.constructResolver);
-      } else {
-        svg = renderDetail(this.doc as DetailDocument, this.sandboxWidth, this.sandboxHeight, this.options.constructResolver);
-      }
-
-      this.svgWrapper.innerHTML = svg;
-
-      // Handle image fallbacks
-      const images = this.svgWrapper.querySelectorAll('image[data-fallback-id]');
-      images.forEach(img => {
-        const fallbackId = img.getAttribute('data-fallback-id');
-        const fallbackEl = this.svgWrapper.querySelector(`#${fallbackId}`);
-        if (fallbackEl) {
-          const href = img.getAttribute('href');
-          if (!href) return;
-          
-          const handleLoad = () => fallbackEl.setAttribute('display', 'none');
-          const handleError = () => fallbackEl.setAttribute('display', 'block');
-          
-          img.addEventListener('load', handleLoad);
-          img.addEventListener('error', handleError);
-          
-          const htmlImg = new Image();
-          htmlImg.onload = handleLoad;
-          htmlImg.onerror = handleError;
-          htmlImg.src = href;
-        }
-      });
-
-      if (this.selectedComponentIds.size > 0) {
-        this.selectedComponentIds.forEach(cid => {
-          const selectedGroup = this.svgWrapper.querySelector(`[data-component-id="${cid}"]`) as SVGElement | null;
-          if (selectedGroup) {
-            selectedGroup.classList.add('selected-highlight');
-          }
-        });
-      }
-
-      const isDetail = (this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock');
-      const btnAddRect = this.rightPanel.querySelector('#btn-add-rect') as HTMLButtonElement;
-      const btnAddLine = this.rightPanel.querySelector('#btn-add-line') as HTMLButtonElement;
-      const btnAddText = this.rightPanel.querySelector('#btn-add-text') as HTMLButtonElement;
-      const btnAddImage = this.rightPanel.querySelector('#btn-add-image') as HTMLButtonElement;
-      const btnAddViewport = this.rightPanel.querySelector('#btn-add-viewport') as HTMLButtonElement;
-      const headerDivider = this.rightPanel.querySelector('#canvas-header-divider') as HTMLElement;
-
-      if (this.isProject() || this.doc.type === 'CAD::SheetConfiguration') {
-        if (btnAddRect) { btnAddRect.disabled = true; btnAddRect.style.opacity = '0.3'; btnAddRect.style.cursor = 'not-allowed'; }
-        if (btnAddLine) { btnAddLine.disabled = true; btnAddLine.style.opacity = '0.3'; btnAddLine.style.cursor = 'not-allowed'; }
-        if (btnAddText) { btnAddText.disabled = true; btnAddText.style.opacity = '0.3'; btnAddText.style.cursor = 'not-allowed'; }
-        if (btnAddImage) { btnAddImage.disabled = true; btnAddImage.style.opacity = '0.3'; btnAddImage.style.cursor = 'not-allowed'; }
-        if (btnAddViewport) { btnAddViewport.disabled = false; btnAddViewport.style.opacity = '1'; btnAddViewport.style.cursor = 'pointer'; }
-      } else {
-        if (btnAddRect) { btnAddRect.disabled = false; btnAddRect.style.opacity = '1'; btnAddRect.style.cursor = 'pointer'; }
-        if (btnAddLine) { btnAddLine.disabled = false; btnAddLine.style.opacity = '1'; btnAddLine.style.cursor = 'pointer'; }
-        if (btnAddText) { btnAddText.disabled = false; btnAddText.style.opacity = '1'; btnAddText.style.cursor = 'pointer'; }
-        if (btnAddImage) { btnAddImage.disabled = false; btnAddImage.style.opacity = '1'; btnAddImage.style.cursor = 'pointer'; }
-        if (btnAddViewport) { btnAddViewport.disabled = true; btnAddViewport.style.opacity = '0.3'; btnAddViewport.style.cursor = 'not-allowed'; }
-      }
-      if (headerDivider) headerDivider.style.display = isDetail ? 'block' : 'none';
-
-      const viewTypeBadge = this.rightPanel.querySelector('#canvas-view-type-badge') as HTMLElement;
-      if (viewTypeBadge) {
-        if (this.doc.type === 'CAD::Project') {
-          viewTypeBadge.textContent = 'SET VIEW';
-        } else if (this.doc.type === 'CAD::SheetConfiguration') {
-          viewTypeBadge.textContent = 'SHEET VIEW';
-        } else if ((this.doc.type === 'CAD::Detail' || this.doc.type === 'CAD::TitleBlock')) {
-          viewTypeBadge.textContent = 'DETAIL VIEW';
-        } else {
-          viewTypeBadge.textContent = (this.doc as any).type || 'UNKNOWN';
-        }
-      }
-    } catch (err) {
-      this.svgWrapper.innerHTML = `
-        <div class="render-error">
-          <p>Render Compile Error:</p>
-          <pre>${err instanceof Error ? err.message : String(err)}</pre>
-        </div>
-      `;
-    }
+  public renderSVG() {
+    this.renderManager.renderSVG();
   }
 
   public updateAndNotify() {
