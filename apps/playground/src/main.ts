@@ -267,19 +267,22 @@ function initFileManager() {
       if (toggleJson?.checked) toggleJson.dispatchEvent(new Event('change'));
     },
     onInsertConstruct: (filename: string) => {
-      if (uiInstance && uiInstance.doc.geometry && Array.isArray(uiInstance.doc.geometry)) {
-        const ref = {
-          type: 'ConstructReference',
-          constructId: filename,
-          x: 0,
-          y: 0,
-          rotation: 0,
-          parameterOverrides: {}
-        };
-        uiInstance.doc.geometry.push(ref as any);
-        uiInstance.updateAndNotify();
+      if (uiInstance) {
+        try {
+          const ref = {
+            type: 'ConstructReference',
+            constructId: filename,
+            x: 0,
+            y: 0,
+            rotation: 0,
+            parameterOverrides: {}
+          };
+          uiInstance.engine.addShapeToTarget(ref);
+        } catch (e) {
+          showToast('Open a Detail or Construct first to insert this construct.');
+        }
       } else {
-        showToast('Open a Detail or Construct first to insert this construct.');
+        showToast('Visualizer not loaded.');
       }
     }
   });
