@@ -6,7 +6,8 @@ export interface DocumentEditorContext {
   container: HTMLElement;
   getLatestDoc: () => any | null;
   getActiveSheet?: () => SheetConfiguration | null;
-  updateAndNotify: () => void;
+  updateAndNotify?: () => void;
+  engine?: any;
 }
 
 export const DocumentEditor = {
@@ -152,27 +153,35 @@ export const DocumentEditor = {
   },
 
   bindListeners(context: DocumentEditorContext): void {
-    const { container, getLatestDoc, getActiveSheet, updateAndNotify } = context;
+    const { container, getLatestDoc, getActiveSheet, updateAndNotify, engine } = context;
 
     // Helper to safely get and update the document
     const updateDoc = (updater: (doc: any) => void) => {
-      const doc = getLatestDoc();
-      if (doc) {
-        updater(doc);
-        updateAndNotify();
+      if (engine) {
+        engine.mutateDocument(updater);
+      } else {
+        const doc = getLatestDoc();
+        if (doc) {
+          updater(doc);
+          if (updateAndNotify) if (updateAndNotify) updateAndNotify();
+        }
       }
     };
     
     // Helper to safely get and update the active sheet
     const updateSheet = (updater: (sheet: SheetConfiguration) => void) => {
-      if (getActiveSheet) {
-        const sheet = getActiveSheet();
-        if (sheet) {
-          updater(sheet);
-          updateAndNotify();
-        }
+      if (engine) {
+        engine.mutateActiveSheet(updater);
       } else {
-        updateDoc((doc) => { if (doc.type === 'CAD::SheetConfiguration') updater(doc); });
+        if (getActiveSheet) {
+          const sheet = getActiveSheet();
+          if (sheet) {
+            updater(sheet);
+            if (updateAndNotify) if (updateAndNotify) updateAndNotify();
+          }
+        } else {
+          updateDoc((doc) => { if (doc.type === 'CAD::SheetConfiguration') updater(doc); });
+        }
       }
     };
 

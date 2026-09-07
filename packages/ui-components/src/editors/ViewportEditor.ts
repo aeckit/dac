@@ -82,7 +82,7 @@ export const ViewportEditor = {
   },
 
   bindListeners(context: PropertyEditorContext): void {
-    const { container, shapeIndex, getLatestShape, updateAndNotify } = context;
+    const { container, shapeIndex, getLatestShape, updateAndNotify, engine } = context;
     const groupEl = container.querySelector(`[data-vp-index="${shapeIndex}"]`) as HTMLElement;
     if (!groupEl) return;
 
@@ -103,13 +103,23 @@ export const ViewportEditor = {
 
     const updateProp = (prop: keyof Viewport, value: any) => {
       const vp = getLatestShape() as unknown as Viewport;
-      if (vp) {
-        if (value === '' || Number.isNaN(value) || value === null) {
+      if (!vp) return;
+      
+      let finalValue = value;
+      if (value === '' || Number.isNaN(value) || value === null) {
+        finalValue = undefined; // DacEngine handles undefined by keeping or removing. Wait, updateComponent uses object spread { ...old, ...properties }, so undefined will overwrite with undefined, effectively deleting it.
+      }
+
+      if (engine && (vp as any).componentId) {
+        // If it's a synthetic ID, updateComponent can handle it
+        engine.updateComponent((vp as any).componentId, { [prop]: finalValue });
+      } else {
+        if (finalValue === undefined) {
           delete (vp as any)[prop];
         } else {
-          (vp as any)[prop] = value;
+          (vp as any)[prop] = finalValue;
         }
-        updateAndNotify();
+        if (updateAndNotify) updateAndNotify();
       }
     };
 

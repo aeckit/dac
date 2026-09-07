@@ -51,11 +51,27 @@ export const ParametricEditor = {
   },
 
   bindListeners(context: ParametricEditorContext): void {
-    const { container, componentParams, getLatestDoc, updateAndNotify } = context;
+    const { container, componentParams, getLatestDoc, updateAndNotify, engine } = context;
 
     componentParams.forEach(([key, param]) => {
       const groupEl = container.querySelector(`[data-param-key="${key}"]`) as HTMLElement;
       if (!groupEl) return;
+
+      const updateVal = (val: any) => {
+        if (engine) {
+          engine.mutateDocument((doc: any) => {
+            if (doc && doc.parameters && doc.parameters[key]) {
+              doc.parameters[key].value = val;
+            }
+          });
+        } else {
+          const latestDoc = getLatestDoc();
+          if (latestDoc && latestDoc.parameters && latestDoc.parameters[key]) {
+            latestDoc.parameters[key].value = val;
+            if (updateAndNotify) updateAndNotify();
+          }
+        }
+      };
 
       if (param.options && Array.isArray(param.options)) {
         const select = groupEl.querySelector('.param-select') as HTMLSelectElement;
@@ -64,25 +80,12 @@ export const ParametricEditor = {
             const val = select.value;
             const originalOpt = param.options!.find((o: any) => String(o.value) === val);
             const finalVal = originalOpt ? originalOpt.value : val;
-
-            const latestDoc = getLatestDoc();
-            if (latestDoc && latestDoc.parameters && latestDoc.parameters[key]) {
-              latestDoc.parameters[key].value = finalVal;
-              updateAndNotify();
-            }
+            updateVal(finalVal);
           });
         }
       } else if (param.type === 'Number') {
         const slider = groupEl.querySelector('.param-slider') as HTMLInputElement;
         const numInput = groupEl.querySelector('.param-num-input') as HTMLInputElement;
-
-        const updateVal = (val: number) => {
-          const latestDoc = getLatestDoc();
-          if (latestDoc && latestDoc.parameters && latestDoc.parameters[key]) {
-            latestDoc.parameters[key].value = val;
-            updateAndNotify();
-          }
-        };
 
         slider.addEventListener('input', () => {
           const val = parseFloat(slider.value);
@@ -103,11 +106,7 @@ export const ParametricEditor = {
       } else {
         const toggle = groupEl.querySelector('.param-toggle') as HTMLInputElement;
         toggle.addEventListener('change', () => {
-          const latestDoc = getLatestDoc();
-          if (latestDoc && latestDoc.parameters && latestDoc.parameters[key]) {
-            latestDoc.parameters[key].value = toggle.checked;
-            updateAndNotify();
-          }
+          updateVal(toggle.checked);
         });
       }
     });

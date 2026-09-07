@@ -104,7 +104,7 @@ export const ImageEditor: PropertyEditor = {
               currentShape[propName] = val;
             }
             
-            updateAndNotify();
+            if (updateAndNotify) updateAndNotify();
           }
         });
       }
@@ -117,7 +117,7 @@ export const ImageEditor: PropertyEditor = {
           const currentShape = getLatestShape();
           if (currentShape) {
             currentShape[propName] = input.checked;
-            updateAndNotify();
+            if (updateAndNotify) updateAndNotify();
           }
         });
       }

@@ -4,14 +4,16 @@ export interface PropertyEditorContext {
   container: HTMLElement;
   shapeIndex: number;
   getLatestShape: () => any;
-  updateAndNotify: () => void;
+  updateAndNotify?: () => void;
+  engine?: any;
 }
 
 export interface ParametricEditorContext {
   container: HTMLElement;
   componentParams: [string, any][];
   getLatestDoc: () => DetailDocument | null;
-  updateAndNotify: () => void;
+  updateAndNotify?: () => void;
+  engine?: any;
 }
 
 export interface PropertyEditor {

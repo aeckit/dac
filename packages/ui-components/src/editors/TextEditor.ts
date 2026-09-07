@@ -60,7 +60,7 @@ export const TextEditor: PropertyEditor = {
             } else {
               currentShape[propName] = val;
             }
-            updateAndNotify();
+            if (updateAndNotify) updateAndNotify();
           }
         });
         if (isColor) {
@@ -96,7 +96,7 @@ export const TextEditor: PropertyEditor = {
             const currentShape = getLatestShape();
             if (currentShape) {
               currentShape[propName] = val;
-              updateAndNotify();
+              if (updateAndNotify) updateAndNotify();
             }
           }
         });

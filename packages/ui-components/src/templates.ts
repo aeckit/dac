@@ -47,7 +47,10 @@ export function getVisualizerShellTemplate(doc: any, globalSettingsHtml: string 
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5V2h3M11 2h3v3M14 11v3h-3M5 14H2v-3"/><rect x="5" y="5" width="6" height="6" rx="0.5"/></svg>
           </button>
         </div>
-        <div style="display: flex; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <button class="reset-btn icon-btn" id="btn-mode-json" title="Toggle JSON View">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6L2 8L4 10M12 6L14 8L12 10M9 3L7 13"/></svg>
+          </button>
           <button class="reset-btn icon-btn" id="btn-toggle-right-pane" title="Toggle Inspector/JSON">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="10" y1="3" x2="10" y2="13"/></svg>
           </button>

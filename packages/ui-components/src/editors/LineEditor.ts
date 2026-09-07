@@ -69,7 +69,7 @@ export const LineEditor: PropertyEditor = {
             } else {
               currentShape[propName] = val;
             }
-            updateAndNotify();
+            if (updateAndNotify) updateAndNotify();
           }
         });
         if (isColor) {
@@ -105,7 +105,7 @@ export const LineEditor: PropertyEditor = {
             const currentShape = getLatestShape();
             if (currentShape) {
               currentShape[propName] = val;
-              updateAndNotify();
+              if (updateAndNotify) updateAndNotify();
             }
           }
         });

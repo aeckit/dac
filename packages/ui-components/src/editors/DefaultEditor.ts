@@ -38,7 +38,7 @@ export const DefaultEditor: PropertyEditor = {
         const currentShape = getLatestShape();
         if (currentShape) {
           currentShape.text = textInput.value;
-          updateAndNotify();
+          if (updateAndNotify) updateAndNotify();
         }
       });
     }
@@ -51,7 +51,7 @@ export const DefaultEditor: PropertyEditor = {
           const currentShape = getLatestShape();
           if (currentShape) {
             currentShape.fontSize = val;
-            updateAndNotify();
+            if (updateAndNotify) updateAndNotify();
           }
         }
       });
@@ -65,7 +65,7 @@ export const DefaultEditor: PropertyEditor = {
           const currentShape = getLatestShape();
           if (currentShape) {
             currentShape.strokeWidth = val;
-            updateAndNotify();
+            if (updateAndNotify) updateAndNotify();
           }
         }
       });

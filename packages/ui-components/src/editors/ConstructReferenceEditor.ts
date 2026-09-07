@@ -76,7 +76,7 @@ export const ConstructReferenceEditor = {
           shape[propPath] = finalVal;
         }
 
-        ctx.updateAndNotify();
+        if (ctx.updateAndNotify) ctx.updateAndNotify();
       });
     });
 

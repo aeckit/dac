@@ -104,7 +104,8 @@ export class PropertiesManager {
           this.ui.lastUpdateTime = Date.now();
           return this.ui.getActiveSheet();
         },
-        updateAndNotify: () => this.ui.updateAndNotify()
+        updateAndNotify: () => this.ui.updateAndNotify(),
+        engine: this.ui.engine
       });
       
       if (scheduleHtml) {
@@ -154,7 +155,8 @@ export class PropertiesManager {
           this.ui.lastUpdateTime = Date.now();
           return this.ui.getActiveSheet();
         },
-        updateAndNotify: () => this.ui.updateAndNotify()
+        updateAndNotify: () => this.ui.updateAndNotify(),
+        engine: this.ui.engine
       });
       return;
     }
@@ -188,7 +190,8 @@ export class PropertiesManager {
           this.ui.lastUpdateTime = Date.now();
           return this.ui.getActiveSheet();
         },
-        updateAndNotify: () => this.ui.updateAndNotify()
+        updateAndNotify: () => this.ui.updateAndNotify(),
+        engine: this.ui.engine
       });
 
       ViewportEditor.bindListeners({
@@ -199,7 +202,8 @@ export class PropertiesManager {
           const sheet = this.ui.getActiveSheet();
           return sheet && sheet.viewports ? sheet.viewports[vpIndex] : null;
         },
-        updateAndNotify: () => this.ui.updateAndNotify()
+        updateAndNotify: () => this.ui.updateAndNotify(),
+        engine: this.ui.engine
       });
       return;
     }
@@ -261,7 +265,8 @@ export class PropertiesManager {
           this.ui.lastUpdateTime = Date.now();
           return this.ui.getActiveSheet();
         },
-        updateAndNotify: () => this.ui.updateAndNotify()
+        updateAndNotify: () => this.ui.updateAndNotify(),
+        engine: this.ui.engine
       });
       return;
     }
@@ -300,7 +305,8 @@ export class PropertiesManager {
         this.ui.lastUpdateTime = Date.now();
         return this.ui.getActiveSheet();
       },
-      updateAndNotify: () => this.ui.updateAndNotify()
+      updateAndNotify: () => this.ui.updateAndNotify(),
+      engine: this.ui.engine
     });
 
     if (isParametricConstruct) {
@@ -311,7 +317,8 @@ export class PropertiesManager {
           this.ui.lastUpdateTime = Date.now();
           return this.ui.findDocumentForComponent(cid) || (this.ui.doc as DetailDocument);
         },
-        updateAndNotify: () => this.ui.updateAndNotify()
+        updateAndNotify: () => this.ui.updateAndNotify(),
+        engine: this.ui.engine
       });
     } else {
       matchingShapes.forEach(({ shape, index }) => {
@@ -324,7 +331,8 @@ export class PropertiesManager {
             const latestDoc = this.ui.findDocumentForComponent(cid) || (this.ui.doc as DetailDocument);
             return latestDoc.geometry && Array.isArray(latestDoc.geometry) ? latestDoc.geometry[index] : null;
           },
-          updateAndNotify: () => this.ui.updateAndNotify()
+          updateAndNotify: () => this.ui.updateAndNotify(),
+        engine: this.ui.engine
         });
       });
     }

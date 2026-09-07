@@ -46,7 +46,14 @@ export class ActionHandler {
               }
             }
             const explodedShapes = explodeConstruct(shape, constructDoc, globalParams);
-            doc.geometry.splice(idx, 1, ...explodedShapes);
+            
+            if (this.ui.engine) {
+              this.ui.engine.replaceComponentWithShapes(cid, explodedShapes);
+            } else {
+              doc.geometry.splice(idx, 1, ...explodedShapes);
+              this.ui.updateAndNotify();
+            }
+            
             this.ui.selectedComponentIds.clear();
             
             // Select the newly exploded shapes
@@ -54,6 +61,8 @@ export class ActionHandler {
               if (s.componentId) this.ui.selectedComponentIds.add(s.componentId);
             });
             this.ui.primaryComponentType = 'ConstructExploded';
+            
+            // If we don't have engine, we manually called updateAndNotify. If we do, the engine emitted document_changed which UI listens to and calls render. But we just updated selectedComponentIds. The render might have already run on document_changed, so we should call updateAndNotify to render the selection.
             this.ui.updateAndNotify();
           }
         }
