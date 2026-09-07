@@ -98,13 +98,17 @@ export const ImageEditor: PropertyEditor = {
               }
             }
 
-            if (val === '') {
-              delete currentShape[propName];
+            if (context.engine) {
+              const newValue = val === '' ? undefined : val;
+              context.engine.updateComponent(currentShape.componentId, { [propName]: newValue });
             } else {
-              currentShape[propName] = val;
+              if (val === '') {
+                delete currentShape[propName];
+              } else {
+                currentShape[propName] = val;
+              }
+              if (updateAndNotify) updateAndNotify();
             }
-            
-            if (updateAndNotify) updateAndNotify();
           }
         });
       }
@@ -116,8 +120,12 @@ export const ImageEditor: PropertyEditor = {
         input.addEventListener('change', () => {
           const currentShape = getLatestShape();
           if (currentShape) {
-            currentShape[propName] = input.checked;
-            if (updateAndNotify) updateAndNotify();
+            if (context.engine) {
+              context.engine.updateComponent(currentShape.componentId, { [propName]: input.checked });
+            } else {
+              currentShape[propName] = input.checked;
+              if (updateAndNotify) updateAndNotify();
+            }
           }
         });
       }

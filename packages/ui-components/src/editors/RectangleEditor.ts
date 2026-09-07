@@ -79,19 +79,23 @@ export const RectangleEditor: PropertyEditor = {
         input.addEventListener('change', () => {
           const currentShape = getLatestShape();
           if (currentShape) {
-            // Numbers typed in text inputs for x/y/width/height should be converted to numbers if they are purely numeric
             let val: any = input.value;
             if (propName === 'x' || propName === 'y' || propName === 'width' || propName === 'height') {
               if (val !== '' && !isNaN(Number(val))) {
                 val = Number(val);
               }
             }
-            if (val === '') {
-              delete currentShape[propName];
+            if (context.engine) {
+              const newValue = val === '' ? undefined : val;
+              context.engine.updateComponent(currentShape.componentId, { [propName]: newValue });
             } else {
-              currentShape[propName] = val;
+              if (val === '') {
+                delete currentShape[propName];
+              } else {
+                currentShape[propName] = val;
+              }
+              if (updateAndNotify) updateAndNotify();
             }
-            if (updateAndNotify) updateAndNotify();
           }
         });
         if (isColor) {
@@ -126,8 +130,12 @@ export const RectangleEditor: PropertyEditor = {
           if (!isNaN(val) && val > 0) {
             const currentShape = getLatestShape();
             if (currentShape) {
-              currentShape[propName] = val;
-              if (updateAndNotify) updateAndNotify();
+              if (context.engine) {
+                context.engine.updateComponent(currentShape.componentId, { [propName]: val });
+              } else {
+                currentShape[propName] = val;
+                if (updateAndNotify) updateAndNotify();
+              }
             }
           }
         });

@@ -235,6 +235,6 @@ export class InteractionManager {
 
     this.ui.selectedComponentIds.clear();
     this.ui.primaryComponentType = null;
-    this.ui.updateAndNotify();
+    this.ui.render();
   }
 }

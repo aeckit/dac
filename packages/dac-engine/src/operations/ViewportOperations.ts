@@ -22,11 +22,12 @@ export class ViewportOperations {
       componentId: this.engine.generateId('viewport'),
       componentType: 'Viewport',
       detail: '',
+      detailNumber: String(targetDoc.viewports.length + 1),
       x: defaultOffset,
       y: defaultOffset,
       scale: '1:1',
-      width: 6,
-      height: 6,
+      width: 10,
+      height: 8,
       ...options
     };
     

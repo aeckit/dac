@@ -145,22 +145,10 @@ export class VisualizerUI {
 
   public insertViewport(detailName: string) {
     if (this.isProject()) return; // Block inserting viewports in Project view mode
-    const activeSheet = this.getActiveSheet();
-    if (activeSheet) {
-      if (!activeSheet.viewports) activeSheet.viewports = [];
-      const id = 'viewport_' + Date.now().toString(36);
-      const detailNumber = String(activeSheet.viewports.length + 1);
-      activeSheet.viewports.push({ 
-        detail: detailName, 
-        x: 2, 
-        y: 2, 
-        width: 10, 
-        height: 8, 
-        scale: '1:1', 
-        detailNumber,
-        componentId: id 
-      });
-      this.updateAndNotify();
+    try {
+      this.engine.addViewport({ detail: detailName });
+    } catch (e) {
+      console.warn('Failed to insert viewport:', e);
     }
   }
 

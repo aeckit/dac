@@ -64,12 +64,17 @@ export const LineEditor: PropertyEditor = {
                 val = Number(val);
               }
             }
-            if (val === '') {
-              delete currentShape[propName];
+            if (context.engine) {
+              const newValue = val === '' ? undefined : val;
+              context.engine.updateComponent(currentShape.componentId, { [propName]: newValue });
             } else {
-              currentShape[propName] = val;
+              if (val === '') {
+                delete currentShape[propName];
+              } else {
+                currentShape[propName] = val;
+              }
+              if (updateAndNotify) updateAndNotify();
             }
-            if (updateAndNotify) updateAndNotify();
           }
         });
         if (isColor) {
@@ -104,8 +109,12 @@ export const LineEditor: PropertyEditor = {
           if (!isNaN(val) && val > 0) {
             const currentShape = getLatestShape();
             if (currentShape) {
-              currentShape[propName] = val;
-              if (updateAndNotify) updateAndNotify();
+              if (context.engine) {
+                context.engine.updateComponent(currentShape.componentId, { [propName]: val });
+              } else {
+                currentShape[propName] = val;
+                if (updateAndNotify) updateAndNotify();
+              }
             }
           }
         });

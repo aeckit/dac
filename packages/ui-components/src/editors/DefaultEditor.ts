@@ -37,8 +37,12 @@ export const DefaultEditor: PropertyEditor = {
       textInput.addEventListener('change', () => {
         const currentShape = getLatestShape();
         if (currentShape) {
-          currentShape.text = textInput.value;
-          if (updateAndNotify) updateAndNotify();
+          if (context.engine) {
+            context.engine.updateComponent(currentShape.componentId, { text: textInput.value });
+          } else {
+            currentShape.text = textInput.value;
+            if (updateAndNotify) updateAndNotify();
+          }
         }
       });
     }
@@ -50,8 +54,12 @@ export const DefaultEditor: PropertyEditor = {
         if (!isNaN(val) && val > 0) {
           const currentShape = getLatestShape();
           if (currentShape) {
-            currentShape.fontSize = val;
-            if (updateAndNotify) updateAndNotify();
+            if (context.engine) {
+              context.engine.updateComponent(currentShape.componentId, { fontSize: val });
+            } else {
+              currentShape.fontSize = val;
+              if (updateAndNotify) updateAndNotify();
+            }
           }
         }
       });
@@ -64,8 +72,12 @@ export const DefaultEditor: PropertyEditor = {
         if (!isNaN(val) && val > 0) {
           const currentShape = getLatestShape();
           if (currentShape) {
-            currentShape.strokeWidth = val;
-            if (updateAndNotify) updateAndNotify();
+            if (context.engine) {
+              context.engine.updateComponent(currentShape.componentId, { strokeWidth: val });
+            } else {
+              currentShape.strokeWidth = val;
+              if (updateAndNotify) updateAndNotify();
+            }
           }
         }
       });
