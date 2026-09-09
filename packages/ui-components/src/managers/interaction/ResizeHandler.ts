@@ -1,5 +1,5 @@
 import { VisualizerUI } from '../../index';
-import { resolveScaleMultiplier } from '@aeckit/core-solver';
+import { resolveScaleMultiplier } from '@dac/json-solver';
 
 export class ResizeHandler {
   private ui: VisualizerUI;

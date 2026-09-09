@@ -1,4 +1,4 @@
-import { DetailDocument } from '@aeckit/core-solver';
+import type { DetailDocument } from '@dac/schema';
 
 export interface PropertyEditorContext {
   container: HTMLElement;

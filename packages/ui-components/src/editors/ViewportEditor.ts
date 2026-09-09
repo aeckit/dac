@@ -1,5 +1,5 @@
 import { PropertyEditorContext } from './types';
-import { Viewport } from '@aeckit/core-solver';
+import type { Viewport } from '@dac/schema';
 
 export const ViewportEditor = {
   renderHTML(viewport: Viewport, index: number): string {

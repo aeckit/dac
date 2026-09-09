@@ -27,3 +27,6 @@ scratch/
 
 # LLM configs and notes
 .gemini/
+
+# Build caches
+.turbo/

@@ -1,5 +1,5 @@
 import { VisualizerUI } from '../index';
-import { DetailDocument, SheetConfiguration, ProjectDocument, TitleBlockDocument } from '@aeckit/core-solver';
+import type { DetailDocument, SheetConfiguration, ProjectDocument, TitleBlockDocument } from '@dac/schema';
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from '../editors';
 
 export class PropertiesManager {

@@ -1,4 +1,4 @@
-import { DetailDocument } from '@aeckit/core-solver';
+import type { DetailDocument } from '@dac/schema';
 
 export function getVisualizerShellTemplate(doc: any, globalSettingsHtml: string = ''): string {
 

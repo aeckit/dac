@@ -4,13 +4,14 @@ import { InteractionManager } from './managers/InteractionManager';
 import { LayoutManager } from './managers/LayoutManager';
 import { RenderManager } from './managers/RenderManager';
 import { getVisualizerShellTemplate } from './templates';
-import { DacEngine } from '@aeckit/dac-engine';
+import { JsonBuilder as DacEngine } from '@dac/json-builder';
 
-import { DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, renderDetail, renderSheet, resolveScaleMultiplier } from '@aeckit/core-solver';
+import type { DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, Viewport, VisualizerDocument } from '@dac/schema';
+export type { VisualizerDocument, DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, Viewport };
+import { resolveScaleMultiplier } from '@dac/json-solver';
+import { renderDetail, renderSheet } from '@dac/renderer-svg';
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from './editors';
-import { Viewport } from '@aeckit/core-solver';
 import { ParametricEditorContext, PropertyEditorContext } from './editors/types';
-export type VisualizerDocument = DetailDocument | ProjectDocument | SheetConfiguration | TitleBlockDocument | any; // using any for ConstructDocument as a quick workaround if it's not exported from core-solver index.
 
 export interface VisualizerUIOptions {
   showLeftToggle?: boolean;  // default: true
@@ -302,10 +303,7 @@ export class VisualizerUI {
     }
 
     // Maintain selection state
-    this.renderSVG();
-    if (Date.now() - this.lastUpdateTime > 500) {
-      this.propertiesManager.renderPropertyEditor(); // Re-render props since we don't have updatePropertyValues hooked up fully for DrawingSets yet
-    }
+    this.render();
   }
 
   public selectComponent(componentId: string | null, componentType: string | null = null) {

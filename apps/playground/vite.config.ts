@@ -23,12 +23,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@aeckit/core-solver': path.resolve(__dirname, '../../packages/core-solver/src/index.ts'),
-      '@aeckit/ui-components': path.resolve(__dirname, '../../packages/ui-components/src/index.ts'),
-      '@aeckit/dac-engine': path.resolve(__dirname, '../../packages/dac-engine/src/index.ts')
+      '@dac/schema': path.resolve(__dirname, '../../packages/schema/src/index.ts'),
+      '@dac/json-builder': path.resolve(__dirname, '../../packages/json-builder/src/index.ts'),
+      '@dac/json-solver': path.resolve(__dirname, '../../packages/json-solver/src/index.ts'),
+      '@dac/renderer-svg': path.resolve(__dirname, '../../packages/renderer-svg/src/index.ts'),
+      '@aeckit/ui-components': path.resolve(__dirname, '../../packages/ui-components/src/index.ts')
     }
   },
   optimizeDeps: {
-    exclude: ['@aeckit/core-solver', '@aeckit/ui-components', '@aeckit/dac-engine']
+    exclude: ['@dac/schema', '@dac/json-builder', '@dac/json-solver', '@dac/renderer-svg', '@aeckit/ui-components']
   }
 });

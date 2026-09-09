@@ -1,0 +1,733 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Playground Baseline Snapshot Regression Tests > renders DEMO-1.json sheet with referenced viewports consistently 1`] = `
+"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 24" width="100%" height="100%">
+      
+    <defs>
+      <pattern id="concrete-hatch" width="60" height="60" patternUnits="userSpaceOnUse">
+        <circle cx="10" cy="15" r="1" fill="#475569"/>
+        <circle cx="45" cy="20" r="1.5" fill="#475569"/>
+        <circle cx="20" cy="45" r="1" fill="#475569"/>
+        <circle cx="50" cy="50" r="1" fill="#475569"/>
+        <path d="M 5,35 L 12,32 L 8,40 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+        <path d="M 35,10 L 42,15 L 33,18 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+        <path d="M 40,40 L 48,35 L 45,45 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+      </pattern>
+      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" class="dimension-arrow" fill="#06b6d4" />
+      </marker>
+      <marker id="origin-arrow-x" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#f43f5e" />
+      </marker>
+      <marker id="origin-arrow-y" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#38bdf8" />
+      </marker>
+      <filter id="hover-text-bg" x="-2%" y="-5%" width="104%" height="110%">
+        <feFlood flood-color="rgba(148, 163, 184, 0.2)" result="bg" />
+        <feMerge>
+          <feMergeNode in="bg" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  
+      <rect width="36" height="24" class="blueprint-bg" />
+      <g id="sheet-content">
+        
+<!-- Title Block -->
+<g id="title-block-layer" transform="translate(0, 0)">
+      <g data-component-id="shape_0" data-component-type="Rectangle" class="">
+        
+    <g>
+      <rect x="0.25" y="0.25" width="35.5" height="23.5" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="0.25" y="0.25" width="35.5" height="23.5" fill="none" stroke="#1e293b" stroke-width="0.05555555555555555" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="shape_1" data-component-type="Rectangle" class="">
+        
+    <g>
+      <rect x="31" y="0.25" width="4.75" height="23.5" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="31" y="0.25" width="4.75" height="23.5" fill="none" stroke="#334155" stroke-width="0.027777777777777776" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="shape_2" data-component-type="Text" class="">
+        <text x="31.5" y="1" font-size="0.2222222222222222" fill="#64748b" class="cad-text" dominant-baseline="auto">PROJECT:</text>
+      </g>
+    
+
+      <g data-component-id="shape_3" data-component-type="Text" class="">
+        <text x="31.5" y="1.5" font-size="0.3333333333333333" fill="#e2e8f0" class="cad-text" dominant-baseline="auto">{parameters.projectName}</text>
+      </g>
+    
+
+      <g data-component-id="shape_4" data-component-type="Text" class="">
+        <text x="31.5" y="4" font-size="0.2222222222222222" fill="#64748b" class="cad-text" dominant-baseline="auto">ADDRESS:</text>
+      </g>
+    
+
+      <g data-component-id="shape_5" data-component-type="Text" class="">
+        <text x="31.5" y="2.5" font-size="0.19444444444444445" fill="#64748b" class="cad-text" dominant-baseline="auto">N/A</text>
+      </g>
+    
+
+      <g data-component-id="shape_6" data-component-type="Line" class="">
+        <line x1="31" y1="23.75" x2="31" y2="0.25" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+<line x1="31" y1="23.75" x2="31" y2="0.25" stroke="#334155" stroke-width="0.027777777777777776"  stroke-linecap="round" />
+      </g>
+    
+
+      <g data-component-id="shape_7" data-component-type="Text" class="">
+        <text x="31.5" y="20.5" font-size="0.2222222222222222" fill="#64748b" class="cad-text" dominant-baseline="auto">SHEET NUMBER:</text>
+      </g>
+    
+
+      <g data-component-id="shape_8" data-component-type="Text" class="">
+        <text x="32" y="21" font-size="0.6666666666666666" fill="#38bdf8" class="cad-text" dominant-baseline="auto">{parameters.sheetNumber}</text>
+      </g>
+    </g>
+<!-- Viewports -->
+
+      <defs><clipPath id="clip-img-STATIC"><rect x="0" y="-1.5" width="22.5" height="19.5" /></clipPath></defs>
+      <g data-component-id="vp_welcome" data-component-type="CAD::Viewport" class="interactive-component pointer-cursor" data-viewport-id="viewport-welcome-detail.json" transform="translate(1, 2) scale(0.6666666666666666)">
+        <g clip-path="url(#clip-img-STATIC)">
+          <g transform="translate(0, 0)">
+            
+      <g data-component-id="shape_0" data-component-type="Text" class="">
+        <text x="1" y="2" font-size="1" fill="#f1f5f9" class="cad-text" dominant-baseline="auto">Welcome to AECKit Playground!</text>
+      </g>
+    
+
+      <g data-component-id="shape_1" data-component-type="Text" class="">
+        <text x="1" y="4" font-size="0.4166666666666667" fill="#cbd5e1" class="cad-text" dominant-baseline="auto"><tspan x="1" dy="0em">This playground lets you explore the AECKit CAD</tspan><tspan x="1" dy="1.2em">framework directly in your browser.</tspan><tspan x="1" dy="1.2em"></tspan><tspan x="1" dy="1.2em">1. Use the left sidebar to manage Projects, Sheets, and Details.</tspan><tspan x="1" dy="1.2em">2. Projects contain Sheets. Sheets contain Viewports.</tspan><tspan x="1" dy="1.2em">3. Viewports render Details at a specific scale.</tspan></text>
+      </g>
+    
+
+      <g data-component-id="border" data-component-type="Rectangle" class="">
+        
+    <g>
+      <rect x="0" y="0" width="20" height="18" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="0" y="0" width="20" height="18" fill="none" stroke="#3b82f6" stroke-width="0.041666666666666664" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+          </g>
+        </g>
+        <circle cx="0.375" cy="18.5625" r="0.375" fill="none" stroke="#f1f5f9" stroke-width="0.03125" />
+<text x="0.375" y="18.5625" font-size="0.375" fill="#f1f5f9" font-family="monospace" text-anchor="middle" dominant-baseline="central">1</text>
+<line x1="0.75" y1="18.5625" x2="22.5" y2="18.5625" stroke="#f1f5f9" stroke-width="0.03125" />
+<text x="0.9" y="18.4125" font-size="0.30000000000000004" fill="#f1f5f9" font-family="monospace" font-weight="bold" dominant-baseline="alphabetic">WELCOME DETAIL</text>
+<text x="0.9" y="18.7125" font-size="0.1875" fill="#94a3b8" font-family="monospace" dominant-baseline="hanging">0.6666666666666666</text>
+
+        <rect x="0" y="-1.5" width="22.5" height="19.5" fill="transparent" stroke="#475569" stroke-width="0.020833333333333332" stroke-dasharray="0.1, 0.1" pointer-events="all" />
+      </g>
+    
+      <defs><clipPath id="clip-img-STATIC"><rect x="0" y="-1.5" width="19.5" height="19.5" /></clipPath></defs>
+      <g data-component-id="vp_json" data-component-type="CAD::Viewport" class="interactive-component pointer-cursor" data-viewport-id="viewport-json-editor-guide.json" transform="translate(17, 2) scale(0.6666666666666666)">
+        <g clip-path="url(#clip-img-STATIC)">
+          <g transform="translate(0, 0)">
+            
+      <g data-component-id="shape_0" data-component-type="Text" class="">
+        <text x="1" y="2" font-size="0.75" fill="#38bdf8" class="cad-text" dominant-baseline="auto">JSON Mode & Editing</text>
+      </g>
+    
+
+      <g data-component-id="shape_1" data-component-type="Text" class="">
+        <text x="1" y="4" font-size="0.3333333333333333" fill="#94a3b8" class="cad-text" dominant-baseline="auto"><tspan x="1" dy="0em">Click on any element in the canvas to select it.</tspan><tspan x="1" dy="1.2em"></tspan><tspan x="1" dy="1.2em">Then, open the Properties pane on the right and</tspan><tspan x="1" dy="1.2em">click the 'JSON' toggle to view its raw data.</tspan><tspan x="1" dy="1.2em"></tspan><tspan x="1" dy="1.2em">You can edit the JSON directly (e.g., change the</tspan><tspan x="1" dy="1.2em">'color' or 'width' property) and watch the canvas</tspan><tspan x="1" dy="1.2em">update in real-time!</tspan></text>
+      </g>
+    
+
+      <g data-component-id="border" data-component-type="Rectangle" class="">
+        
+    <g>
+      <rect x="0" y="0" width="18" height="18" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="0" y="0" width="18" height="18" fill="none" stroke="#38bdf8" stroke-width="0.041666666666666664" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="demo-circle" data-component-type="Circle" class="">
+        <circle cx="9" cy="14" r="3" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+<circle cx="9" cy="14" r="3" fill="#881337" stroke="#f43f5e" stroke-width="0.041666666666666664" />
+      </g>
+    
+          </g>
+        </g>
+        <circle cx="0.375" cy="18.5625" r="0.375" fill="none" stroke="#f1f5f9" stroke-width="0.03125" />
+<text x="0.375" y="18.5625" font-size="0.375" fill="#f1f5f9" font-family="monospace" text-anchor="middle" dominant-baseline="central">2</text>
+<line x1="0.75" y1="18.5625" x2="19.5" y2="18.5625" stroke="#f1f5f9" stroke-width="0.03125" />
+<text x="0.9" y="18.4125" font-size="0.30000000000000004" fill="#f1f5f9" font-family="monospace" font-weight="bold" dominant-baseline="alphabetic">JSON EDITOR GUIDE</text>
+<text x="0.9" y="18.7125" font-size="0.1875" fill="#94a3b8" font-family="monospace" dominant-baseline="hanging">0.6666666666666666</text>
+
+        <rect x="0" y="-1.5" width="19.5" height="19.5" fill="transparent" stroke="#475569" stroke-width="0.020833333333333332" stroke-dasharray="0.1, 0.1" pointer-events="all" />
+      </g>
+    
+      <defs><clipPath id="clip-img-STATIC"><rect x="0" y="6" width="22.5" height="12" /></clipPath></defs>
+      <g data-component-id="vp_components" data-component-type="CAD::Viewport" class="interactive-component pointer-cursor" data-viewport-id="viewport-components-demo.json" transform="translate(1, 11) scale(0.6666666666666666)">
+        <g clip-path="url(#clip-img-STATIC)">
+          <g transform="translate(0, 0)">
+            
+      <g data-component-id="shape_0" data-component-type="Text" class="">
+        <text x="1" y="10" font-size="0.5" fill="#a78bfa" class="cad-text" dominant-baseline="auto">Components & Tools</text>
+      </g>
+    
+
+      <g data-component-id="shape_1" data-component-type="Text" class="">
+        <text x="1" y="11" font-size="0.2916666666666667" fill="#94a3b8" class="cad-text" dominant-baseline="auto"><tspan x="1" dy="0em">Use the bottom toolbar to add Viewports to sheets.</tspan><tspan x="1" dy="1.2em"></tspan><tspan x="1" dy="1.2em">When editing a detail, you can add lines,</tspan><tspan x="1" dy="1.2em">rectangles, and text elements.</tspan><tspan x="1" dy="1.2em"></tspan><tspan x="1" dy="1.2em">Try clicking on the shapes below to edit</tspan><tspan x="1" dy="1.2em">their properties.</tspan></text>
+      </g>
+    
+
+      <g data-component-id="border" data-component-type="Rectangle" class="">
+        
+    <g>
+      <rect x="0" y="8" width="12" height="10" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="0" y="8" width="12" height="10" fill="none" stroke="#a78bfa" stroke-width="0.041666666666666664" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="demo-rect" data-component-type="Rectangle" class="">
+        
+    <g>
+      <rect x="1" y="15" width="4" height="2" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="1" y="15" width="4" height="2" fill="#14532d" stroke="#22c55e" stroke-width="0.041666666666666664" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="demo-line" data-component-type="Line" class="">
+        <line x1="6" y1="17" x2="10" y2="15" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+<line x1="6" y1="17" x2="10" y2="15" stroke="#eab308" stroke-width="0.08333333333333333"  stroke-linecap="round" />
+      </g>
+    
+          </g>
+        </g>
+        <circle cx="0.375" cy="18.5625" r="0.375" fill="none" stroke="#f1f5f9" stroke-width="0.03125" />
+<text x="0.375" y="18.5625" font-size="0.375" fill="#f1f5f9" font-family="monospace" text-anchor="middle" dominant-baseline="central">3</text>
+<line x1="0.75" y1="18.5625" x2="22.5" y2="18.5625" stroke="#f1f5f9" stroke-width="0.03125" />
+<text x="0.9" y="18.4125" font-size="0.30000000000000004" fill="#f1f5f9" font-family="monospace" font-weight="bold" dominant-baseline="alphabetic">COMPONENTS DEMO</text>
+<text x="0.9" y="18.7125" font-size="0.1875" fill="#94a3b8" font-family="monospace" dominant-baseline="hanging">0.6666666666666666</text>
+
+        <rect x="0" y="6" width="22.5" height="12" fill="transparent" stroke="#475569" stroke-width="0.020833333333333332" stroke-dasharray="0.1, 0.1" pointer-events="all" />
+      </g>
+    
+      </g>
+      
+    <style>
+      .blueprint-bg { fill: #0f172a; }
+      .grid-line { stroke: #1e293b; stroke-width: 0.01; }
+      .cad-outline { stroke: #f8fafc; stroke-width: 0.025; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .cad-hatch { stroke: #475569; }
+      .dimension-line { stroke: #06b6d4; stroke-dasharray: 0.04,0.04; }
+      .cad-text { fill: #f1f5f9; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; }
+      .dim-text { fill: #06b6d4; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; text-anchor: middle; }
+      .pointer-cursor { cursor: pointer; }
+      
+      .interactive-component text {
+        pointer-events: bounding-box;
+        cursor: pointer;
+      }
+
+      .selected-highlight rect:not(.cad-hit-area), 
+      .selected-highlight circle:not(.cad-hit-area),
+      .selected-highlight line:not(.cad-hit-area),
+      .selected-highlight path:not(.cad-hit-area) {
+        stroke: #06b6d4 !important;
+        stroke-width: 0.06 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: stroke 0.2s ease, stroke-width 0.1s ease;
+      }
+      .selected-highlight text {
+        fill: #06b6d4 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: fill 0.2s ease;
+      }
+      .interactive-component:hover rect:not(.cad-hit-area),
+      .interactive-component:hover circle:not(.cad-hit-area),
+      .interactive-component:hover line:not(.cad-hit-area),
+      .interactive-component:hover path:not(.cad-hit-area) {
+        stroke: #38bdf8;
+        stroke-width: 0.05 !important;
+        transition: stroke 0.15s ease, stroke-width 0.15s ease;
+      }
+      
+      .interactive-component:hover text {
+        fill: #38bdf8 !important;
+        filter: url(#hover-text-bg);
+        transition: fill 0.15s ease;
+      }
+    </style>
+  
+    </svg>
+  "
+`;
+
+exports[`Playground Baseline Snapshot Regression Tests > renders components-demo.json consistently 1`] = `
+"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18" width="100%" height="100%" style="overflow: visible;">
+      
+    <defs>
+      <pattern id="concrete-hatch" width="60" height="60" patternUnits="userSpaceOnUse">
+        <circle cx="10" cy="15" r="1" fill="#475569"/>
+        <circle cx="45" cy="20" r="1.5" fill="#475569"/>
+        <circle cx="20" cy="45" r="1" fill="#475569"/>
+        <circle cx="50" cy="50" r="1" fill="#475569"/>
+        <path d="M 5,35 L 12,32 L 8,40 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+        <path d="M 35,10 L 42,15 L 33,18 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+        <path d="M 40,40 L 48,35 L 45,45 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+      </pattern>
+      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" class="dimension-arrow" fill="#06b6d4" />
+      </marker>
+      <marker id="origin-arrow-x" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#f43f5e" />
+      </marker>
+      <marker id="origin-arrow-y" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#38bdf8" />
+      </marker>
+      <filter id="hover-text-bg" x="-2%" y="-5%" width="104%" height="110%">
+        <feFlood flood-color="rgba(148, 163, 184, 0.2)" result="bg" />
+        <feMerge>
+          <feMergeNode in="bg" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  
+      <defs>
+        <pattern id="infinite-grid" width="1" height="1" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="1" y2="0" class="grid-line" />
+          <line x1="0" y1="0" x2="0" y2="1" class="grid-line" />
+        </pattern>
+      </defs>
+      <rect x="-5000" y="-5000" width="10000" height="10000" class="blueprint-bg" />
+      <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#infinite-grid)" />
+      <g class="drawing-extents" transform="translate(1, 1) scale(1)">
+        
+    <!-- CAD Origin (0,0) / UCS Axis Indicator -->
+    <g class="cad-origin-indicator" opacity="0.85" style="pointer-events: none;">
+      <!-- Origin Dot -->
+      <circle cx="0" cy="18" r="0.05555555555555555" fill="#f43f5e" />
+      
+      <!-- X Axis (+X -> Right, Red/Pink) -->
+      <line x1="0" y1="18" x2="1" y2="18" stroke="#f43f5e" stroke-width="0.027777777777777776" marker-end="url(#origin-arrow-x)" />
+      <text x="1.1111111111111112" y="18" font-size="0.1527777777777778" fill="#f43f5e" font-family="monospace" font-weight="bold" dominant-baseline="middle">X</text>
+      
+      <!-- Y Axis (+Y -> Up in Cartesian, -Y in SVG screen space, Cyan/Blue) -->
+      <line x1="0" y1="18" x2="0" y2="17" stroke="#38bdf8" stroke-width="0.027777777777777776" marker-end="url(#origin-arrow-y)" />
+      <text x="0" y="16.805555555555557" font-size="0.1527777777777778" fill="#38bdf8" font-family="monospace" font-weight="bold" text-anchor="middle">Y</text>
+      
+      <!-- (0,0) Coordinate Label -->
+      <text x="-0.1111111111111111" y="18.194444444444443" font-size="0.125" fill="#94a3b8" font-family="monospace" text-anchor="end">(0,0)</text>
+    </g>
+  
+        
+      <g data-component-id="shape_0" data-component-type="Text" class="interactive-component pointer-cursor">
+        <text x="1" y="10" font-size="0.3333333333333333" fill="#a78bfa" class="cad-text" dominant-baseline="auto">Components & Tools</text>
+      </g>
+    
+
+      <g data-component-id="shape_1" data-component-type="Text" class="interactive-component pointer-cursor">
+        <text x="1" y="11" font-size="0.19444444444444445" fill="#94a3b8" class="cad-text" dominant-baseline="auto"><tspan x="1" dy="0em">Use the bottom toolbar to add Viewports to sheets.</tspan><tspan x="1" dy="1.2em"></tspan><tspan x="1" dy="1.2em">When editing a detail, you can add lines,</tspan><tspan x="1" dy="1.2em">rectangles, and text elements.</tspan><tspan x="1" dy="1.2em"></tspan><tspan x="1" dy="1.2em">Try clicking on the shapes below to edit</tspan><tspan x="1" dy="1.2em">their properties.</tspan></text>
+      </g>
+    
+
+      <g data-component-id="border" data-component-type="Rectangle" class="interactive-component pointer-cursor">
+        
+    <g>
+      <rect x="0" y="8" width="12" height="10" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="0" y="8" width="12" height="10" fill="none" stroke="#a78bfa" stroke-width="0.027777777777777776" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="demo-rect" data-component-type="Rectangle" class="interactive-component pointer-cursor">
+        
+    <g>
+      <rect x="1" y="15" width="4" height="2" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="1" y="15" width="4" height="2" fill="#14532d" stroke="#22c55e" stroke-width="0.027777777777777776" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="demo-line" data-component-type="Line" class="interactive-component pointer-cursor">
+        <line x1="6" y1="17" x2="10" y2="15" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+<line x1="6" y1="17" x2="10" y2="15" stroke="#eab308" stroke-width="0.05555555555555555"  stroke-linecap="round" />
+      </g>
+    
+      </g>
+      
+    <style>
+      .blueprint-bg { fill: #0f172a; }
+      .grid-line { stroke: #1e293b; stroke-width: 0.01; }
+      .cad-outline { stroke: #f8fafc; stroke-width: 0.025; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .cad-hatch { stroke: #475569; }
+      .dimension-line { stroke: #06b6d4; stroke-dasharray: 0.04,0.04; }
+      .cad-text { fill: #f1f5f9; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; }
+      .dim-text { fill: #06b6d4; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; text-anchor: middle; }
+      .pointer-cursor { cursor: pointer; }
+      
+      .interactive-component text {
+        pointer-events: bounding-box;
+        cursor: pointer;
+      }
+
+      .selected-highlight rect:not(.cad-hit-area), 
+      .selected-highlight circle:not(.cad-hit-area),
+      .selected-highlight line:not(.cad-hit-area),
+      .selected-highlight path:not(.cad-hit-area) {
+        stroke: #06b6d4 !important;
+        stroke-width: 0.06 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: stroke 0.2s ease, stroke-width 0.1s ease;
+      }
+      .selected-highlight text {
+        fill: #06b6d4 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: fill 0.2s ease;
+      }
+      .interactive-component:hover rect:not(.cad-hit-area),
+      .interactive-component:hover circle:not(.cad-hit-area),
+      .interactive-component:hover line:not(.cad-hit-area),
+      .interactive-component:hover path:not(.cad-hit-area) {
+        stroke: #38bdf8;
+        stroke-width: 0.05 !important;
+        transition: stroke 0.15s ease, stroke-width 0.15s ease;
+      }
+      
+      .interactive-component:hover text {
+        fill: #38bdf8 !important;
+        filter: url(#hover-text-bg);
+        transition: fill 0.15s ease;
+      }
+    </style>
+  
+    </svg>
+  "
+`;
+
+exports[`Playground Baseline Snapshot Regression Tests > renders detail-prototype.json consistently 1`] = `
+"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18" width="100%" height="100%" style="overflow: visible;">
+      
+    <defs>
+      <pattern id="concrete-hatch" width="60" height="60" patternUnits="userSpaceOnUse">
+        <circle cx="10" cy="15" r="1" fill="#475569"/>
+        <circle cx="45" cy="20" r="1.5" fill="#475569"/>
+        <circle cx="20" cy="45" r="1" fill="#475569"/>
+        <circle cx="50" cy="50" r="1" fill="#475569"/>
+        <path d="M 5,35 L 12,32 L 8,40 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+        <path d="M 35,10 L 42,15 L 33,18 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+        <path d="M 40,40 L 48,35 L 45,45 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+      </pattern>
+      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" class="dimension-arrow" fill="#06b6d4" />
+      </marker>
+      <marker id="origin-arrow-x" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#f43f5e" />
+      </marker>
+      <marker id="origin-arrow-y" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#38bdf8" />
+      </marker>
+      <filter id="hover-text-bg" x="-2%" y="-5%" width="104%" height="110%">
+        <feFlood flood-color="rgba(148, 163, 184, 0.2)" result="bg" />
+        <feMerge>
+          <feMergeNode in="bg" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  
+      <defs>
+        <pattern id="infinite-grid" width="1" height="1" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="1" y2="0" class="grid-line" />
+          <line x1="0" y1="0" x2="0" y2="1" class="grid-line" />
+        </pattern>
+      </defs>
+      <rect x="-5000" y="-5000" width="10000" height="10000" class="blueprint-bg" />
+      <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#infinite-grid)" />
+      <g class="drawing-extents" transform="translate(1, 1) scale(0.08333333333333333)">
+        
+    <!-- CAD Origin (0,0) / UCS Axis Indicator -->
+    <g class="cad-origin-indicator" opacity="0.85" style="pointer-events: none;">
+      <!-- Origin Dot -->
+      <circle cx="0" cy="18" r="0.6666666666666666" fill="#f43f5e" />
+      
+      <!-- X Axis (+X -> Right, Red/Pink) -->
+      <line x1="0" y1="18" x2="12" y2="18" stroke="#f43f5e" stroke-width="0.3333333333333333" marker-end="url(#origin-arrow-x)" />
+      <text x="13.333333333333334" y="18" font-size="1.8333333333333335" fill="#f43f5e" font-family="monospace" font-weight="bold" dominant-baseline="middle">X</text>
+      
+      <!-- Y Axis (+Y -> Up in Cartesian, -Y in SVG screen space, Cyan/Blue) -->
+      <line x1="0" y1="18" x2="0" y2="6" stroke="#38bdf8" stroke-width="0.3333333333333333" marker-end="url(#origin-arrow-y)" />
+      <text x="0" y="3.6666666666666665" font-size="1.8333333333333335" fill="#38bdf8" font-family="monospace" font-weight="bold" text-anchor="middle">Y</text>
+      
+      <!-- (0,0) Coordinate Label -->
+      <text x="-1.3333333333333333" y="20.333333333333332" font-size="1.5" fill="#94a3b8" font-family="monospace" text-anchor="end">(0,0)</text>
+    </g>
+  
+        
+      <g data-component-id="foundation_wall_1" data-component-type="CAD::Component::ConcreteWall" class="interactive-component pointer-cursor">
+        
+    <g>
+      <rect x="18" y="-20" width="24" height="16" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="18" y="-20" width="24" height="16" fill="url(#concrete-hatch)" stroke="#f8fafc" stroke-width="0.3333333333333333" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="sill_plate_1" data-component-type="CAD::Component::SillPlate" class="interactive-component pointer-cursor">
+        
+    <g>
+      <rect x="23" y="-4" width="14" height="3.8" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="23" y="-4" width="14" height="3.8" fill="rgba(120, 53, 15, 0.15)" stroke="#f8fafc" stroke-width="0.3333333333333333" stroke-linejoin="round" />
+      
+      <line x1="23" y1="-0.1999999999999993" x2="37" y2="-4" class="cad-hatch" stroke-width="0.25" />
+      <line x1="37" y1="-0.1999999999999993" x2="23" y2="-4" class="cad-hatch" stroke-width="0.25" />
+    
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="anchor_bolt_1" data-component-type="CAD::Component::AnchorBolt" class="interactive-component pointer-cursor">
+        
+    <g>
+      <rect x="28.125" y="-4" width="0.75" height="10" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="28.125" y="-4" width="0.75" height="10" fill="#64748b" stroke="#cbd5e1" stroke-width="0.3333333333333333" stroke-linejoin="round" />
+      
+    </g>
+  
+
+    <g>
+      <rect x="27.5" y="0.25" width="2" height="0.25" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="27.5" y="0.25" width="2" height="0.25" fill="#94a3b8" stroke="#e2e8f0" stroke-width="0.3333333333333333" stroke-linejoin="round" />
+      
+    </g>
+  
+
+    <g>
+      <rect x="27.9" y="0.5" width="1.2" height="0.8" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="27.9" y="0.5" width="1.2" height="0.8" fill="#475569" stroke="#cbd5e1" stroke-width="0.3333333333333333" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+
+      <g data-component-id="anchor_crosshair_1" data-component-type="CAD::Component::ReferenceAnchor" class="interactive-component pointer-cursor">
+        <line x1="29" y1="-4" x2="31" y2="-4" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+<line x1="29" y1="-4" x2="31" y2="-4" stroke="#f43f5e" stroke-width="0.25"  stroke-linecap="round" />
+<line x1="30" y1="-3" x2="30" y2="-5" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+<line x1="30" y1="-3" x2="30" y2="-5" stroke="#f43f5e" stroke-width="0.25"  stroke-linecap="round" />
+<circle cx="30" cy="-4" r="0.3" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+<circle cx="30" cy="-4" r="0.3" fill="none" stroke="#f43f5e" stroke-width="0.25" />
+      </g>
+    
+
+      <g data-component-id="dimension_1" data-component-type="CAD::Annotation::OffsetDimension" class="interactive-component pointer-cursor">
+        
+      </g>
+    
+      </g>
+      
+    <style>
+      .blueprint-bg { fill: #0f172a; }
+      .grid-line { stroke: #1e293b; stroke-width: 0.01; }
+      .cad-outline { stroke: #f8fafc; stroke-width: 0.025; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .cad-hatch { stroke: #475569; }
+      .dimension-line { stroke: #06b6d4; stroke-dasharray: 0.04,0.04; }
+      .cad-text { fill: #f1f5f9; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; }
+      .dim-text { fill: #06b6d4; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; text-anchor: middle; }
+      .pointer-cursor { cursor: pointer; }
+      
+      .interactive-component text {
+        pointer-events: bounding-box;
+        cursor: pointer;
+      }
+
+      .selected-highlight rect:not(.cad-hit-area), 
+      .selected-highlight circle:not(.cad-hit-area),
+      .selected-highlight line:not(.cad-hit-area),
+      .selected-highlight path:not(.cad-hit-area) {
+        stroke: #06b6d4 !important;
+        stroke-width: 0.06 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: stroke 0.2s ease, stroke-width 0.1s ease;
+      }
+      .selected-highlight text {
+        fill: #06b6d4 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: fill 0.2s ease;
+      }
+      .interactive-component:hover rect:not(.cad-hit-area),
+      .interactive-component:hover circle:not(.cad-hit-area),
+      .interactive-component:hover line:not(.cad-hit-area),
+      .interactive-component:hover path:not(.cad-hit-area) {
+        stroke: #38bdf8;
+        stroke-width: 0.05 !important;
+        transition: stroke 0.15s ease, stroke-width 0.15s ease;
+      }
+      
+      .interactive-component:hover text {
+        fill: #38bdf8 !important;
+        filter: url(#hover-text-bg);
+        transition: fill 0.15s ease;
+      }
+    </style>
+  
+    </svg>
+  "
+`;
+
+exports[`Playground Baseline Snapshot Regression Tests > renders welcome-detail.json consistently 1`] = `
+"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18" width="100%" height="100%" style="overflow: visible;">
+      
+    <defs>
+      <pattern id="concrete-hatch" width="60" height="60" patternUnits="userSpaceOnUse">
+        <circle cx="10" cy="15" r="1" fill="#475569"/>
+        <circle cx="45" cy="20" r="1.5" fill="#475569"/>
+        <circle cx="20" cy="45" r="1" fill="#475569"/>
+        <circle cx="50" cy="50" r="1" fill="#475569"/>
+        <path d="M 5,35 L 12,32 L 8,40 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+        <path d="M 35,10 L 42,15 L 33,18 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+        <path d="M 40,40 L 48,35 L 45,45 Z" class="concrete-aggregate" fill="none" stroke="#64748b" stroke-width="1.5" />
+      </pattern>
+      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" class="dimension-arrow" fill="#06b6d4" />
+      </marker>
+      <marker id="origin-arrow-x" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#f43f5e" />
+      </marker>
+      <marker id="origin-arrow-y" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M 0 2 L 10 5 L 0 8 z" fill="#38bdf8" />
+      </marker>
+      <filter id="hover-text-bg" x="-2%" y="-5%" width="104%" height="110%">
+        <feFlood flood-color="rgba(148, 163, 184, 0.2)" result="bg" />
+        <feMerge>
+          <feMergeNode in="bg" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  
+      <defs>
+        <pattern id="infinite-grid" width="1" height="1" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="1" y2="0" class="grid-line" />
+          <line x1="0" y1="0" x2="0" y2="1" class="grid-line" />
+        </pattern>
+      </defs>
+      <rect x="-5000" y="-5000" width="10000" height="10000" class="blueprint-bg" />
+      <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#infinite-grid)" />
+      <g class="drawing-extents" transform="translate(1, 1) scale(1)">
+        
+    <!-- CAD Origin (0,0) / UCS Axis Indicator -->
+    <g class="cad-origin-indicator" opacity="0.85" style="pointer-events: none;">
+      <!-- Origin Dot -->
+      <circle cx="0" cy="18" r="0.05555555555555555" fill="#f43f5e" />
+      
+      <!-- X Axis (+X -> Right, Red/Pink) -->
+      <line x1="0" y1="18" x2="1" y2="18" stroke="#f43f5e" stroke-width="0.027777777777777776" marker-end="url(#origin-arrow-x)" />
+      <text x="1.1111111111111112" y="18" font-size="0.1527777777777778" fill="#f43f5e" font-family="monospace" font-weight="bold" dominant-baseline="middle">X</text>
+      
+      <!-- Y Axis (+Y -> Up in Cartesian, -Y in SVG screen space, Cyan/Blue) -->
+      <line x1="0" y1="18" x2="0" y2="17" stroke="#38bdf8" stroke-width="0.027777777777777776" marker-end="url(#origin-arrow-y)" />
+      <text x="0" y="16.805555555555557" font-size="0.1527777777777778" fill="#38bdf8" font-family="monospace" font-weight="bold" text-anchor="middle">Y</text>
+      
+      <!-- (0,0) Coordinate Label -->
+      <text x="-0.1111111111111111" y="18.194444444444443" font-size="0.125" fill="#94a3b8" font-family="monospace" text-anchor="end">(0,0)</text>
+    </g>
+  
+        
+      <g data-component-id="shape_0" data-component-type="Text" class="interactive-component pointer-cursor">
+        <text x="1" y="2" font-size="0.6666666666666666" fill="#f1f5f9" class="cad-text" dominant-baseline="auto">Welcome to AECKit Playground!</text>
+      </g>
+    
+
+      <g data-component-id="shape_1" data-component-type="Text" class="interactive-component pointer-cursor">
+        <text x="1" y="4" font-size="0.2777777777777778" fill="#cbd5e1" class="cad-text" dominant-baseline="auto"><tspan x="1" dy="0em">This playground lets you explore the AECKit CAD</tspan><tspan x="1" dy="1.2em">framework directly in your browser.</tspan><tspan x="1" dy="1.2em"></tspan><tspan x="1" dy="1.2em">1. Use the left sidebar to manage Projects, Sheets, and Details.</tspan><tspan x="1" dy="1.2em">2. Projects contain Sheets. Sheets contain Viewports.</tspan><tspan x="1" dy="1.2em">3. Viewports render Details at a specific scale.</tspan></text>
+      </g>
+    
+
+      <g data-component-id="border" data-component-type="Rectangle" class="interactive-component pointer-cursor">
+        
+    <g>
+      <rect x="0" y="0" width="20" height="18" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+      <rect x="0" y="0" width="20" height="18" fill="none" stroke="#3b82f6" stroke-width="0.027777777777777776" stroke-linejoin="round" />
+      
+    </g>
+  
+      </g>
+    
+      </g>
+      
+    <style>
+      .blueprint-bg { fill: #0f172a; }
+      .grid-line { stroke: #1e293b; stroke-width: 0.01; }
+      .cad-outline { stroke: #f8fafc; stroke-width: 0.025; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .cad-hatch { stroke: #475569; }
+      .dimension-line { stroke: #06b6d4; stroke-dasharray: 0.04,0.04; }
+      .cad-text { fill: #f1f5f9; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; }
+      .dim-text { fill: #06b6d4; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; text-anchor: middle; }
+      .pointer-cursor { cursor: pointer; }
+      
+      .interactive-component text {
+        pointer-events: bounding-box;
+        cursor: pointer;
+      }
+
+      .selected-highlight rect:not(.cad-hit-area), 
+      .selected-highlight circle:not(.cad-hit-area),
+      .selected-highlight line:not(.cad-hit-area),
+      .selected-highlight path:not(.cad-hit-area) {
+        stroke: #06b6d4 !important;
+        stroke-width: 0.06 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: stroke 0.2s ease, stroke-width 0.1s ease;
+      }
+      .selected-highlight text {
+        fill: #06b6d4 !important;
+        filter: drop-shadow(0 0 0.04 rgba(6, 182, 212, 0.4));
+        transition: fill 0.2s ease;
+      }
+      .interactive-component:hover rect:not(.cad-hit-area),
+      .interactive-component:hover circle:not(.cad-hit-area),
+      .interactive-component:hover line:not(.cad-hit-area),
+      .interactive-component:hover path:not(.cad-hit-area) {
+        stroke: #38bdf8;
+        stroke-width: 0.05 !important;
+        transition: stroke 0.15s ease, stroke-width 0.15s ease;
+      }
+      
+      .interactive-component:hover text {
+        fill: #38bdf8 !important;
+        filter: url(#hover-text-bg);
+        transition: fill 0.15s ease;
+      }
+    </style>
+  
+    </svg>
+  "
+`;

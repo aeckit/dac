@@ -1,7 +1,7 @@
 import * as uiComponents from '@aeckit/ui-components';
 const { VisualizerUI } = uiComponents;
 import type { VisualizerDocument, VisualizerUI as VisualizerUIType } from '@aeckit/ui-components';
-import type { ProjectDocument, SheetConfiguration, DetailDocument, TitleBlockDocument } from '@aeckit/core-solver';
+import type { ProjectDocument, SheetConfiguration, DetailDocument, TitleBlockDocument } from '@dac/schema';
 import { WorkspaceManager } from './Workspace';
 import { JsonEditorManager } from './managers/JsonEditorManager';
 import { FileManagerUI } from './managers/FileManagerUI';

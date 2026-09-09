@@ -9,7 +9,9 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@aeckit/core-solver": "^1.0.0",
-    "@aeckit/dac-engine": "^1.0.0"
+    "@dac/schema": "*",
+    "@dac/json-builder": "*",
+    "@dac/json-solver": "*",
+    "@dac/renderer-svg": "*"
   }
 }

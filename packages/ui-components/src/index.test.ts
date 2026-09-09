@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { VisualizerUI } from './index';
-import { L1_REGISTRY, DetailDocument, ProjectDocument, SheetConfiguration, renderDetail } from '@aeckit/core-solver';
+import { L1_REGISTRY, renderDetail } from '@dac/renderer-svg';
+import type { DetailDocument, ProjectDocument, SheetConfiguration } from '@dac/schema';
 
 describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
   let container: HTMLElement;
@@ -76,7 +77,7 @@ describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
     const lines = container.querySelectorAll('line[stroke-linecap="round"]');
     expect(lines.length).toBeGreaterThan(0);
     expect(lines[lines.length - 1].getAttribute('y1')).toBe('18'); // 18 - 0 = 18
-    expect(lines[lines.length - 1].getAttribute('y2')).toBe('6');  // 18 - 12 = 6
+    expect(lines[lines.length - 1].getAttribute('y2')).toBe('8');  // 18 - 10 = 8
   });
 
   it('Add Text Button (#btn-add-text)', () => {
