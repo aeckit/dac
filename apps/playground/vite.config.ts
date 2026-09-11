@@ -23,14 +23,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@dac/schema': path.resolve(__dirname, '../../packages/schema/src/index.ts'),
-      '@dac/json-builder': path.resolve(__dirname, '../../packages/json-builder/src/index.ts'),
-      '@dac/json-solver': path.resolve(__dirname, '../../packages/json-solver/src/index.ts'),
-      '@dac/renderer-svg': path.resolve(__dirname, '../../packages/renderer-svg/src/index.ts'),
+      '@aeckit/dac-schema': path.resolve(__dirname, '../../packages/schema/src/index.ts'),
+      '@aeckit/dac-json-builder': path.resolve(__dirname, '../../packages/json-builder/src/index.ts'),
+      '@aeckit/dac-json-solver': path.resolve(__dirname, '../../packages/json-solver/src/index.ts'),
+      '@aeckit/dac-renderer-svg': path.resolve(__dirname, '../../packages/renderer-svg/src/index.ts'),
       '@aeckit/ui-components': path.resolve(__dirname, '../../packages/ui-components/src/index.ts')
     }
   },
   optimizeDeps: {
-    exclude: ['@dac/schema', '@dac/json-builder', '@dac/json-solver', '@dac/renderer-svg', '@aeckit/ui-components']
+    exclude: ['@aeckit/dac-schema', '@aeckit/dac-json-builder', '@aeckit/dac-json-solver', '@aeckit/dac-renderer-svg', '@aeckit/ui-components']
   }
 });

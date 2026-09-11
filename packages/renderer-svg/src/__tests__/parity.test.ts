@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import type { DetailDocument } from '@dac/schema';
-import { solveDetailDocument } from '@dac/json-solver';
+import type { DetailDocument } from '@aeckit/dac-schema';
+import { solveDetailDocument } from '@aeckit/dac-json-solver';
 import { renderDetail, renderSolvedDetail } from '../index';
 
-describe('Architectural Parity: (@dac/json-solver + @dac/renderer-svg) vs Legacy core-solver', () => {
+describe('Architectural Parity: (@aeckit/dac-json-solver + @aeckit/dac-renderer-svg) vs Legacy core-solver', () => {
   const demoDir = path.resolve(__dirname, '../../../../apps/playground/src/demo');
 
   function loadJson<T>(filePath: string): T {

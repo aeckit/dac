@@ -9,9 +9,9 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@dac/schema": "*",
-    "@dac/json-builder": "*",
-    "@dac/json-solver": "*",
-    "@dac/renderer-svg": "*"
+    "@aeckit/dac-schema": "*",
+    "@aeckit/dac-json-builder": "*",
+    "@aeckit/dac-json-solver": "*",
+    "@aeckit/dac-renderer-svg": "*"
   }
 }

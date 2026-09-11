@@ -1,5 +1,5 @@
-import type { SolvedGroup, SolvedDetailLayout, SolvedSheetLayout, DetailDocument, SheetConfiguration, TitleBlockDocument, ConstructDocument } from '@dac/json-solver';
-import { solveDetailDocument, solveSheetDocument } from '@dac/json-solver';
+import type { SolvedGroup, SolvedDetailLayout, SolvedSheetLayout, DetailDocument, SheetConfiguration, TitleBlockDocument, ConstructDocument } from '@aeckit/dac-json-solver';
+import { solveDetailDocument, solveSheetDocument } from '@aeckit/dac-json-solver';
 import { L1_REGISTRY } from './drawers';
 import { getDefs } from './defs';
 import { getStyles } from './styles';

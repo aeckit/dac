@@ -1,5 +1,5 @@
 {
-  "name": "@dac/json-solver",
+  "name": "@aeckit/dac-json-solver",
   "version": "0.1.0",
   "description": "Parametric layout, constraint, and geometric solver engine for Drawing-as-Code",
   "type": "module",
@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dac/schema": "*"
+    "@aeckit/dac-schema": "*"
   },
   "devDependencies": {
     "tsup": "^8.0.2",

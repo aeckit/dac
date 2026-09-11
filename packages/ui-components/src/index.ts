@@ -4,12 +4,12 @@ import { InteractionManager } from './managers/InteractionManager';
 import { LayoutManager } from './managers/LayoutManager';
 import { RenderManager } from './managers/RenderManager';
 import { getVisualizerShellTemplate } from './templates';
-import { JsonBuilder as DacEngine } from '@dac/json-builder';
+import { JsonBuilder as DacEngine } from '@aeckit/dac-json-builder';
 
-import type { DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, Viewport, VisualizerDocument } from '@dac/schema';
+import type { DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, Viewport, VisualizerDocument } from '@aeckit/dac-schema';
 export type { VisualizerDocument, DetailDocument, ProjectDocument, SheetConfiguration, TitleBlockDocument, Viewport };
-import { resolveScaleMultiplier } from '@dac/json-solver';
-import { renderDetail, renderSheet } from '@dac/renderer-svg';
+import { resolveScaleMultiplier } from '@aeckit/dac-json-solver';
+import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from './editors';
 import { ParametricEditorContext, PropertyEditorContext } from './editors/types';
 

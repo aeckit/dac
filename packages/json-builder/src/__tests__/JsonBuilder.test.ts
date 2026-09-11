@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { JsonBuilder } from '../JsonBuilder';
-import { DetailDocument, SheetConfiguration } from '@dac/schema';
+import { DetailDocument, SheetConfiguration } from '@aeckit/dac-schema';
 
-describe('@dac/json-builder mutation engine', () => {
+describe('@aeckit/dac-json-builder mutation engine', () => {
   let builder: JsonBuilder;
 
   beforeEach(() => {

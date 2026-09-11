@@ -1,4 +1,4 @@
-import type { SolvedPrimitive } from '@dac/json-solver';
+import type { SolvedPrimitive } from '@aeckit/dac-json-solver';
 
 export type ShapeDrawer = (
   shape: SolvedPrimitive,

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WorkspaceManager } from './Workspace';
-import type { DetailDocument, SheetConfiguration } from '@dac/schema';
+import type { DetailDocument, SheetConfiguration } from '@aeckit/dac-schema';
 
 describe('WorkspaceManager & File Management UI Experience', () => {
   let onChange: () => void;

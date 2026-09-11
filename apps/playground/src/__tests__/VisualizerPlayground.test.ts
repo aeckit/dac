@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import { VisualizerUI } from '@aeckit/ui-components';
-import type { DetailDocument, SheetConfiguration, TitleBlockDocument } from '@dac/schema';
+import type { DetailDocument, SheetConfiguration, TitleBlockDocument } from '@aeckit/dac-schema';
 
 describe('Playground VisualizerUI Integration Tests', () => {
   let container: HTMLElement;

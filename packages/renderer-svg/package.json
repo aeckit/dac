@@ -1,5 +1,5 @@
 {
-  "name": "@dac/renderer-svg",
+  "name": "@aeckit/dac-renderer-svg",
   "version": "0.1.0",
   "description": "Pure framework-agnostic SVG rendering engine for Drawing-as-Code Intermediate Representation",
   "type": "module",
@@ -19,8 +19,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dac/schema": "*",
-    "@dac/json-solver": "*"
+    "@aeckit/dac-schema": "*",
+    "@aeckit/dac-json-solver": "*"
   },
   "devDependencies": {
     "tsup": "^8.0.2",

@@ -1,4 +1,4 @@
-import type { DetailDocument } from '@dac/schema';
+import type { DetailDocument } from '@aeckit/dac-schema';
 
 export interface PropertyEditorContext {
   container: HTMLElement;

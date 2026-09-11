@@ -6,7 +6,7 @@ import {
   DetailDocument
 } from '../index';
 
-describe('@dac/json-solver parametric math and layout engine', () => {
+describe('@aeckit/dac-json-solver parametric math and layout engine', () => {
   it('resolves standard architectural scale strings to multipliers', () => {
     expect(resolveScaleMultiplier('1:1')).toBe(1.0);
     expect(resolveScaleMultiplier('1/4" = 1\'-0"')).toBe(0.25 / 12);

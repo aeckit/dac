@@ -6,7 +6,7 @@ import {
   safeValidateVisualizerDocument
 } from './index';
 
-describe('@dac/schema contract verification', () => {
+describe('@aeckit/dac-schema contract verification', () => {
   it('validates a valid CAD::Detail document', () => {
     const raw = {
       type: 'CAD::Detail',

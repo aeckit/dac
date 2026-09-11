@@ -1,5 +1,5 @@
 import LZString from 'lz-string';
-import type { SheetConfiguration, DetailDocument } from '@dac/schema';
+import type { SheetConfiguration, DetailDocument } from '@aeckit/dac-schema';
 import type { VisualizerDocument } from '@aeckit/ui-components';
 const demoModules = import.meta.glob('./demo/*.json', { eager: true });
 const defaultFiles: Record<string, any> = {};

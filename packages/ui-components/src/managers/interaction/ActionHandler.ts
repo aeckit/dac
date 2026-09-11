@@ -1,5 +1,5 @@
 import { VisualizerUI } from '../../index';
-import { explodeConstruct } from '@dac/json-solver';
+import { explodeConstruct } from '@aeckit/dac-json-solver';
 
 export class ActionHandler {
   private ui: VisualizerUI;

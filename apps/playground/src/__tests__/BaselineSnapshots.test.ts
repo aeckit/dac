@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { renderDetail, renderSheet } from '@dac/renderer-svg';
-import type { DetailDocument, SheetConfiguration, TitleBlockDocument } from '@dac/schema';
+import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
+import type { DetailDocument, SheetConfiguration, TitleBlockDocument } from '@aeckit/dac-schema';
 
 describe('Playground Baseline Snapshot Regression Tests', () => {
   const demoDir = path.resolve(__dirname, '../demo');

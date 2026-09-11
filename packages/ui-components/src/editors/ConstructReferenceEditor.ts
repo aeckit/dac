@@ -1,5 +1,5 @@
 import { PropertyEditorContext } from './types';
-import { explodeConstruct } from '@dac/json-solver';
+import { explodeConstruct } from '@aeckit/dac-json-solver';
 
 export const ConstructReferenceEditor = {
   renderHTML: (shape: any, index: number) => {

@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dac/json-builder": "*",
-    "@dac/schema": "*",
-    "@dac/json-solver": "*",
-    "@dac/renderer-svg": "*",
+    "@aeckit/dac-json-builder": "*",
+    "@aeckit/dac-schema": "*",
+    "@aeckit/dac-json-solver": "*",
+    "@aeckit/dac-renderer-svg": "*",
     "@aeckit/ui-components": "*",
     "lz-string": "^1.5.0",
     "monaco-editor": "^0.45.0"

@@ -8,7 +8,7 @@ import type {
   Viewport,
   VisualizerDocument,
   ParameterDefinition
-} from '@dac/schema';
+} from '@aeckit/dac-schema';
 
 export type {
   GeometryPrimitive,

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { VisualizerUI } from './index';
-import { L1_REGISTRY, renderDetail } from '@dac/renderer-svg';
-import type { DetailDocument, ProjectDocument, SheetConfiguration } from '@dac/schema';
+import { L1_REGISTRY, renderDetail } from '@aeckit/dac-renderer-svg';
+import type { DetailDocument, ProjectDocument, SheetConfiguration } from '@aeckit/dac-schema';
 
 describe('VisualizerUI Toolbar Quick-Add Actions & Sheet View Behavior', () => {
   let container: HTMLElement;

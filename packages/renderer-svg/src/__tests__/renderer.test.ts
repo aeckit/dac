@@ -6,9 +6,9 @@ import {
   drawRectangle,
   drawCircle
 } from '../index';
-import type { SolvedDetailLayout, SolvedGroup } from '@dac/json-solver';
+import type { SolvedDetailLayout, SolvedGroup } from '@aeckit/dac-json-solver';
 
-describe('@dac/renderer-svg pure SVG generation engine', () => {
+describe('@aeckit/dac-renderer-svg pure SVG generation engine', () => {
   it('draws a pure SVG line without expression evaluation', () => {
     const shape = {
       type: 'CAD::Shape::Line',

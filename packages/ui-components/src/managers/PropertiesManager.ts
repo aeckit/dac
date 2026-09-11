@@ -1,5 +1,5 @@
 import { VisualizerUI } from '../index';
-import type { DetailDocument, SheetConfiguration, ProjectDocument, TitleBlockDocument } from '@dac/schema';
+import type { DetailDocument, SheetConfiguration, ProjectDocument, TitleBlockDocument } from '@aeckit/dac-schema';
 import { getEditorForShape, ParametricEditor, DocumentEditor, ViewportEditor } from '../editors';
 
 export class PropertiesManager {

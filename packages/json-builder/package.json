@@ -1,5 +1,5 @@
 {
-  "name": "@dac/json-builder",
+  "name": "@aeckit/dac-json-builder",
   "version": "0.1.0",
   "description": "Programmatic builder and mutation API for Drawing-as-Code documents",
   "type": "module",
@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dac/schema": "*"
+    "@aeckit/dac-schema": "*"
   },
   "devDependencies": {
     "tsup": "^8.0.2",

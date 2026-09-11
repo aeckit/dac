@@ -1,5 +1,5 @@
 import { PropertyEditor, ParametricEditorContext } from './types';
-import type { DetailDocument, SheetConfiguration, ProjectDocument } from '@dac/schema';
+import type { DetailDocument, SheetConfiguration, ProjectDocument } from '@aeckit/dac-schema';
 import { ParametricEditor } from './ParametricEditor';
 
 export interface DocumentEditorContext {

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { DetailDocument, ProjectDocument, SheetConfiguration as SheetDocument } from '@dac/schema';
+import type { DetailDocument, ProjectDocument, SheetConfiguration as SheetDocument } from '@aeckit/dac-schema';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('DAC Visualizer Extension is active!');

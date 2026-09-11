@@ -7,7 +7,7 @@ import type {
   VisualizerDocument,
   GeometryPrimitive,
   Viewport
-} from '@dac/schema';
+} from '@aeckit/dac-schema';
 
 export type {
   DetailDocument,

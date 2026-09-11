@@ -1,6 +1,6 @@
 import { VisualizerUI } from '../index';
-import { renderDetail, renderSheet } from '@dac/renderer-svg';
-import type { ProjectDocument, SheetConfiguration, DetailDocument, TitleBlockDocument } from '@dac/schema';
+import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
+import type { ProjectDocument, SheetConfiguration, DetailDocument, TitleBlockDocument } from '@aeckit/dac-schema';
 
 export class RenderManager {
   private ui: VisualizerUI;
