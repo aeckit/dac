@@ -11,6 +11,9 @@ export default defineConfig({
           if (req.url === '/dac') {
             res.writeHead(301, { Location: '/dac/' });
             res.end();
+          } else if (req.url === '/dac/playground') {
+            res.writeHead(301, { Location: '/dac/playground/' });
+            res.end();
           } else {
             next();
           }
