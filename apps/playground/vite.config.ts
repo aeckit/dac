@@ -19,7 +19,14 @@ export default defineConfig({
     }
   ],
   server: {
-    port: 5173
+    port: 5173,
+    proxy: {
+      '/dac/playground': {
+        target: 'http://localhost:5174',
+        changeOrigin: true,
+        ws: true,
+      }
+    }
   },
   resolve: {
     alias: {

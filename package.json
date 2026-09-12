@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "test": "vitest run",
+    "dev": "npm run dev --workspace=@aeckit/playground & npm run dev --workspace=@aeckit/solid-playground",
     "compile": "npm run compile --workspaces --if-present",
     "watch": "npm run watch --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
