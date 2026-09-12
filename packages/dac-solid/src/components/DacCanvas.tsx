@@ -99,6 +99,8 @@ export function DacCanvas() {
     // 2. SELECTION (Left Click)
     if (e.button === 0) {
       const initialTarget = e.target as SVGElement;
+      if (initialTarget.closest('[data-selection-gizmo]')) return;
+      
       const startMouseX = e.clientX;
       const startMouseY = e.clientY;
       let isSelecting = false;

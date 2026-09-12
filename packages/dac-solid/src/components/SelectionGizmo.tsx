@@ -2,10 +2,54 @@ import { createSignal, onMount, onCleanup, Show } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 
 export function SelectionGizmo() {
-  const { selectionIds, deleteShape } = useDac();
+  const { selectionIds, deleteShape, updateShape, selectedShape, zoom } = useDac();
   const [box, setBox] = createSignal<{ left: number, top: number, right: number, bottom: number } | null>(null);
 
   let reqId: number;
+
+  const handleDrag = (e: PointerEvent, mode: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    
+    // Capture initial state
+    const shape = selectedShape();
+    if (!shape) return;
+    const initial = { x: shape.x, y: shape.y, w: shape.width, h: shape.height };
+
+    const onMove = (moveEvt: PointerEvent) => {
+      const dx = (moveEvt.clientX - startX) / zoom();
+      const dy = (moveEvt.clientY - startY) / zoom();
+
+      if (mode === 'move') {
+        updateShape(shape.componentId, { x: initial.x + dx, y: initial.y + dy }, true);
+      } else {
+        const props: any = {};
+        if (mode.includes('e') && initial.w !== undefined) props.width = Math.max(1, initial.w + dx);
+        if (mode.includes('s') && initial.h !== undefined) props.height = Math.max(1, initial.h + dy);
+        if (mode.includes('w') && initial.w !== undefined) {
+          props.width = Math.max(1, initial.w - dx);
+          props.x = initial.x + (initial.w - props.width);
+        }
+        if (mode.includes('n') && initial.h !== undefined) {
+          props.height = Math.max(1, initial.h - dy);
+          props.y = initial.y + (initial.h - props.height);
+        }
+        updateShape(shape.componentId, props, true);
+      }
+    };
+
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      // Finalize transient state
+      updateShape(shape.componentId, {}, false);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
 
   const updateBounds = () => {
     const ids = selectionIds();
@@ -75,7 +119,7 @@ export function SelectionGizmo() {
   return (
     <Show when={box()}>
       {(b) => (
-        <div style={{ position: 'absolute', "pointer-events": 'none', "z-index": 100, left: 0, top: 0, width: '100%', height: '100%' }}>
+        <div data-selection-gizmo="true" style={{ position: 'absolute', "pointer-events": 'none', "z-index": 100, left: 0, top: 0, width: '100%', height: '100%' }}>
           {/* Action Buttons */}
           <div style={{ position: 'absolute', left: `${b().right - 24}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
             <button 
@@ -90,6 +134,7 @@ export function SelectionGizmo() {
           
           <div style={{ position: 'absolute', left: `${b().right - 52}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
              <button 
+              onPointerDown={(e) => handleDrag(e, 'move')}
               style={{ background: '#3b82f6', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'move', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
@@ -121,18 +166,21 @@ export function SelectionGizmo() {
             else hTop = cy;
 
             return (
-              <div style={{
-                position: 'absolute',
-                left: `${hLeft}px`,
-                top: `${hTop}px`,
-                width: '8px',
-                height: '8px',
-                background: 'white',
-                border: '1px solid #3b82f6',
-                transform: 'translate(-50%, -50%)',
-                "pointer-events": 'auto',
-                cursor: `${dir}-resize`
-              }} />
+              <div 
+                onPointerDown={(e) => handleDrag(e, dir)}
+                style={{
+                  position: 'absolute',
+                  left: `${hLeft}px`,
+                  top: `${hTop}px`,
+                  width: '8px',
+                  height: '8px',
+                  background: 'white',
+                  border: '1px solid #3b82f6',
+                  transform: 'translate(-50%, -50%)',
+                  "pointer-events": 'auto',
+                  cursor: `${dir}-resize`
+                }} 
+              />
             );
           })}
         </div>

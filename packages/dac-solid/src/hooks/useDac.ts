@@ -52,7 +52,11 @@ export function useDac() {
     try {
       const targetDoc = builder().getTargetDocument();
       if (!targetDoc || !targetDoc.geometry) return null;
-      return targetDoc.geometry.find((g: any) => g.id === ids[0]) || null;
+      let autoIndex = 0;
+      return targetDoc.geometry.find((g: any) => {
+        const sid = g.componentId || 'shape_' + autoIndex++;
+        return sid === ids[0];
+      }) || null;
     } catch (e) {
       return null;
     }
