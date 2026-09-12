@@ -39,6 +39,11 @@ export function useDac() {
     builder().updateComponent(id, properties, isTransient);
   };
 
+  const deleteShape = (id: string) => {
+    builder().deleteComponent(id);
+    setSelectionIds((prev: string[]) => prev.filter(i => i !== id));
+  };
+
   const selectedShape = () => {
     const d = doc();
     const ids = selectionIds();
@@ -64,6 +69,7 @@ export function useDac() {
     clearSelection,
     addShape,
     updateShape,
+    deleteShape,
     zoom,
     setZoom,
     activeSheetId,

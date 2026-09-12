@@ -1,6 +1,7 @@
 import { createSignal, createEffect, onMount } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
+import { SelectionGizmo } from './SelectionGizmo';
 
 export function DacCanvas() {
   const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, activeSheetId } = useDac();
@@ -250,6 +251,7 @@ export function DacCanvas() {
   return (
     <div 
       ref={containerRef}
+      data-canvas-container="true"
       style={{ width: '100%', height: '100%', overflow: 'hidden', "background-color": '#0f172a', position: 'relative', cursor: 'crosshair' }}
       onPointerDown={handlePointerDown}
     >
@@ -263,6 +265,7 @@ export function DacCanvas() {
         }}
         innerHTML={svgContent()}
       />
+      <SelectionGizmo />
     </div>
   );
 }

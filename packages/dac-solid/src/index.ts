@@ -1,5 +1,7 @@
 export * from './context/DacContext';
 export * from './hooks/useDac';
-export * from './components/DacCanvas';
-export * from './components/DacInspector';
-export * from './components/DacToolbar';
+export { DacCanvas } from './components/DacCanvas';
+export { DacInspector } from './components/DacInspector';
+export { DacToolbar } from './components/DacToolbar';
+export { SelectionGizmo } from './components/SelectionGizmo';
+export { useDac } from './hooks/useDac';
