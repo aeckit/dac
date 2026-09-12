@@ -22,13 +22,14 @@
     "solid-js": "^1.8.0"
   },
   "dependencies": {
-    "@aeckit/dac-schema": "*",
     "@aeckit/dac-json-builder": "*",
     "@aeckit/dac-json-solver": "*",
     "@aeckit/dac-renderer-svg": "*",
+    "@aeckit/dac-schema": "*",
     "lucide-solid": "^0.378.0"
   },
   "devDependencies": {
+    "esbuild-plugin-solid": "^0.6.0",
     "solid-js": "^1.8.17",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
