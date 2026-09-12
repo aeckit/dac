@@ -18,25 +18,64 @@ export function SelectionGizmo() {
     if (!shape) return;
     const initial = { x: shape.x, y: shape.y, w: shape.width, h: shape.height };
 
+    const container = document.querySelector('[data-canvas-container]') as HTMLElement;
+    const rootSvg = container?.querySelector('svg');
+    const selectedEl = rootSvg?.querySelector(`[data-component-id="${shape.componentId}"]`);
+    const parentEl = (selectedEl?.parentElement as unknown as SVGGraphicsElement) || rootSvg;
+    if (!rootSvg || !parentEl) return;
+
+    const ctm = parentEl.getScreenCTM();
+    if (!ctm) return;
+    const inverse = ctm.inverse();
+
     const onMove = (moveEvt: PointerEvent) => {
-      const dx = (moveEvt.clientX - startX) / zoom();
-      const dy = (moveEvt.clientY - startY) / zoom();
+      const ptStart = rootSvg.createSVGPoint();
+      ptStart.x = startX;
+      ptStart.y = startY;
+      const svgStart = ptStart.matrixTransform(inverse);
+
+      const ptCurrent = rootSvg.createSVGPoint();
+      ptCurrent.x = moveEvt.clientX;
+      ptCurrent.y = moveEvt.clientY;
+      const svgCurrent = ptCurrent.matrixTransform(inverse);
+
+      const dx = svgCurrent.x - svgStart.x;
+      const dy = svgCurrent.y - svgStart.y;
 
       if (mode === 'move') {
-        updateShape(shape.componentId, { x: initial.x + dx, y: initial.y + dy }, true);
+        updateShape(shape.componentId, { x: initial.x + dx, y: initial.y - dy }, true);
       } else {
-        const props: any = {};
-        if (mode.includes('e') && initial.w !== undefined) props.width = Math.max(1, initial.w + dx);
-        if (mode.includes('s') && initial.h !== undefined) props.height = Math.max(1, initial.h + dy);
-        if (mode.includes('w') && initial.w !== undefined) {
-          props.width = Math.max(1, initial.w - dx);
-          props.x = initial.x + (initial.w - props.width);
+        let newX = initial.x;
+        let newY = initial.y;
+        let newW = initial.w;
+        let newH = initial.h;
+
+        if (mode.includes('w')) {
+          newX = initial.x + dx;
+          newW = initial.w - dx;
         }
-        if (mode.includes('n') && initial.h !== undefined) {
-          props.height = Math.max(1, initial.h - dy);
-          props.y = initial.y + (initial.h - props.height);
+        if (mode.includes('e')) {
+          newW = initial.w + dx;
         }
-        updateShape(shape.componentId, props, true);
+        if (mode.includes('n')) {
+          newH = initial.h - dy;
+        }
+        if (mode.includes('s')) {
+          newY = initial.y - dy;
+          newH = initial.h + dy;
+        }
+
+        const minSize = 0.1;
+        if (newW < minSize) {
+          if (mode.includes('w')) newX -= (minSize - newW);
+          newW = minSize;
+        }
+        if (newH < minSize) {
+          if (mode.includes('s')) newY -= (minSize - newH);
+          newH = minSize;
+        }
+
+        updateShape(shape.componentId, { x: newX, y: newY, width: newW, height: newH }, true);
       }
     };
 
