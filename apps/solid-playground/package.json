@@ -1,0 +1,25 @@
+{
+  "name": "@aeckit/solid-playground",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@aeckit/dac-solid": "*",
+    "@aeckit/dac-schema": "*",
+    "@aeckit/dac-json-builder": "*",
+    "solid-js": "^1.8.17",
+    "monaco-editor": "^0.47.0",
+    "lz-string": "^1.5.0",
+    "lucide-solid": "^0.378.0"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0",
+    "vite-plugin-solid": "^2.10.2",
+    "typescript": "^5.4.0"
+  }
+}
