@@ -97,6 +97,7 @@ export function DacCanvas() {
 
     // 2. SELECTION (Left Click)
     if (e.button === 0) {
+      const initialTarget = e.target as SVGElement;
       const startMouseX = e.clientX;
       const startMouseY = e.clientY;
       let isSelecting = false;
@@ -214,8 +215,7 @@ export function DacCanvas() {
           }
         } else {
           // Just a click
-          const target = upEvt.target as SVGElement;
-          const interactiveGroup = target.closest('.interactive-component') as SVGGElement | null;
+          const interactiveGroup = initialTarget.closest('.interactive-component') as SVGGElement | null;
           
           if (interactiveGroup) {
             const cid = interactiveGroup.getAttribute('data-component-id');
