@@ -51,12 +51,17 @@ export function useDac() {
     
     try {
       const targetDoc = builder().getTargetDocument();
-      if (!targetDoc || !targetDoc.geometry) return null;
+      if (!targetDoc) return null;
       let autoIndex = 0;
-      return targetDoc.geometry.find((g: any) => {
+      const findShape = (items: any[]) => items?.find((g: any) => {
         const sid = g.componentId || 'shape_' + autoIndex++;
         return sid === ids[0];
       }) || null;
+
+      if (targetDoc.geometry) return findShape(targetDoc.geometry);
+      if (targetDoc.viewports) return findShape(targetDoc.viewports);
+      if (targetDoc.titleblocks) return findShape(targetDoc.titleblocks);
+      return null;
     } catch (e) {
       return null;
     }

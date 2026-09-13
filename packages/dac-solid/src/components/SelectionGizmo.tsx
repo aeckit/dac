@@ -180,6 +180,26 @@ export function SelectionGizmo() {
             </button>
           </div>
 
+          {selectedShape()?.type === 'CAD::Viewport' && (
+            <div style={{ position: 'absolute', left: `${b().right - 80}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
+              <button 
+                onClick={() => {
+                  const shape = selectedShape();
+                  if (shape && typeof shape.detail === 'string') {
+                    let filename = shape.detail;
+                    if (filename.startsWith('../')) filename = filename.substring(3);
+                    if (filename !== 'inline-detail') {
+                      window.dispatchEvent(new CustomEvent('dac-open-file', { detail: { filename } }));
+                    }
+                  }
+                }}
+                style={{ background: '#10b981', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </button>
+            </div>
+          )}
+
           {/* Bounding Box Border */}
           <div style={{
             position: 'absolute',
