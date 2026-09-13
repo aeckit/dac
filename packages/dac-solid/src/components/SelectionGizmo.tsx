@@ -45,8 +45,19 @@ export function SelectionGizmo() {
       const dx = svgCurrent.x - svgStart.x;
       const dy = svgCurrent.y - svgStart.y;
 
+      const isLineShape = shape.type === 'Line' || shape.type === 'CAD::Shape::Line';
+
       if (mode === 'move') {
-        updateShape(shape.componentId, { x: initial.x + dx, y: initial.y - dy }, true);
+        if (isLineShape) {
+          updateShape(shape.componentId, { 
+            x1: initial.x1 + dx, 
+            y1: initial.y1 - dy,
+            x2: initial.x2 + dx,
+            y2: initial.y2 - dy 
+          }, true);
+        } else {
+          updateShape(shape.componentId, { x: initial.x + dx, y: initial.y - dy }, true);
+        }
       } else if (mode === 'line-start') {
         updateShape(shape.componentId, { x1: initial.x1 + dx, y1: initial.y1 - dy }, true);
       } else if (mode === 'line-end') {
