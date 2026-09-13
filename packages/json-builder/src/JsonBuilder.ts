@@ -75,8 +75,11 @@ export class JsonBuilder extends EventTarget {
     }
     
     const defaultOffset = targetDoc.geometry.length * 0.5;
-    if (shape.x === undefined) shape.x = defaultOffset;
-    if (shape.y === undefined) shape.y = defaultOffset;
+    const isLine = shape.type === 'Line' || shape.type === 'CAD::Shape::Line' || shape.componentType === 'Line';
+    if (!isLine) {
+      if (shape.x === undefined) shape.x = defaultOffset;
+      if (shape.y === undefined) shape.y = defaultOffset;
+    }
     
     targetDoc.geometry.push(shape);
     this.notifyChanged();
