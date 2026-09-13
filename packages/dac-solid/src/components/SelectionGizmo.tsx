@@ -3,7 +3,7 @@ import { useDac } from '../hooks/useDac';
 
 export function SelectionGizmo() {
   const { selectionIds, deleteShape, updateShape, selectedShape, zoom } = useDac();
-  const [box, setBox] = createSignal<{ left: number, top: number, right: number, bottom: number } | null>(null);
+  const [box, setBox] = createSignal<{ left: number, top: number, right: number, bottom: number, isLine?: boolean, p1?: {x: number, y: number}, p2?: {x: number, y: number} } | null>(null);
 
   let reqId: number;
 
@@ -16,7 +16,10 @@ export function SelectionGizmo() {
     // Capture initial state
     const shape = selectedShape();
     if (!shape) return;
-    const initial = { x: shape.x, y: shape.y, w: shape.width, h: shape.height };
+    const initial = { 
+      x: shape.x, y: shape.y, w: shape.width, h: shape.height,
+      x1: shape.x1, y1: shape.y1, x2: shape.x2, y2: shape.y2 
+    };
 
     const container = document.querySelector('[data-canvas-container]') as HTMLElement;
     const rootSvg = container?.querySelector('svg');
@@ -44,6 +47,10 @@ export function SelectionGizmo() {
 
       if (mode === 'move') {
         updateShape(shape.componentId, { x: initial.x + dx, y: initial.y - dy }, true);
+      } else if (mode === 'line-start') {
+        updateShape(shape.componentId, { x1: initial.x1 + dx, y1: initial.y1 - dy }, true);
+      } else if (mode === 'line-end') {
+        updateShape(shape.componentId, { x2: initial.x2 + dx, y2: initial.y2 - dy }, true);
       } else {
         let newX = initial.x;
         let newY = initial.y;
@@ -107,15 +114,35 @@ export function SelectionGizmo() {
 
     const containerRect = container.getBoundingClientRect();
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    let isLine = false;
+    let p1, p2;
 
     ids.forEach(id => {
       const el = rootSvg.querySelector(`[data-component-id="${id}"]`) as SVGGraphicsElement;
       if (!el) return;
       
+      const type = el.getAttribute('data-component-type');
+      const screenCTM = el.getScreenCTM();
+
+      if (ids.length === 1 && (type === 'Line' || type === 'CAD::Shape::Line')) {
+        isLine = true;
+        const lineNode = el.querySelector('line');
+        if (lineNode && screenCTM) {
+          const pt1 = rootSvg.createSVGPoint(); pt1.x = lineNode.x1.baseVal.value; pt1.y = lineNode.y1.baseVal.value;
+          const pt2 = rootSvg.createSVGPoint(); pt2.x = lineNode.x2.baseVal.value; pt2.y = lineNode.y2.baseVal.value;
+          if (typeof pt1.matrixTransform === 'function') {
+            const mPt1 = pt1.matrixTransform(screenCTM);
+            const mPt2 = pt2.matrixTransform(screenCTM);
+            p1 = { x: mPt1.x - containerRect.left, y: mPt1.y - containerRect.top };
+            p2 = { x: mPt2.x - containerRect.left, y: mPt2.y - containerRect.top };
+          }
+        }
+      }
+
       let bbox;
       try { bbox = el.getBBox(); } catch(e) { return; }
       
-      const screenCTM = el.getScreenCTM();
       if (!screenCTM) return;
 
       const tl = rootSvg.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
@@ -138,7 +165,8 @@ export function SelectionGizmo() {
         left: minX - containerRect.left,
         top: minY - containerRect.top,
         right: maxX - containerRect.left,
-        bottom: maxY - containerRect.top
+        bottom: maxY - containerRect.top,
+        isLine, p1, p2
       });
     } else {
       setBox(null);
@@ -201,17 +229,19 @@ export function SelectionGizmo() {
           )}
 
           {/* Bounding Box Border */}
-          <div style={{
-            position: 'absolute',
-            left: `${b().left}px`,
-            top: `${b().top}px`,
-            width: `${b().right - b().left}px`,
-            height: `${b().bottom - b().top}px`,
-            border: '2px solid #3b82f6',
-          }} />
+          {!b().isLine && (
+            <div style={{
+              position: 'absolute',
+              left: `${b().left}px`,
+              top: `${b().top}px`,
+              width: `${b().right - b().left}px`,
+              height: `${b().bottom - b().top}px`,
+              border: '2px solid #3b82f6',
+            }} />
+          )}
 
-          {/* 8 Resize Handles */}
-          {['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
+          {/* 8 Resize Handles or Line Handles */}
+          {!b().isLine ? ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
             let hLeft = 0, hTop = 0;
             const cx = (b().left + b().right) / 2;
             const cy = (b().top + b().bottom) / 2;
@@ -241,7 +271,30 @@ export function SelectionGizmo() {
                 }} 
               />
             );
-          })}
+          }) : (
+            <>
+              {b().p1 && (
+                <div 
+                  onPointerDown={(e) => handleDrag(e, 'line-start')}
+                  style={{
+                    position: 'absolute', left: `${b().p1!.x}px`, top: `${b().p1!.y}px`, width: '8px', height: '8px',
+                    background: 'white', border: '1px solid #3b82f6', transform: 'translate(-50%, -50%)',
+                    "pointer-events": 'auto', cursor: 'pointer'
+                  }} 
+                />
+              )}
+              {b().p2 && (
+                <div 
+                  onPointerDown={(e) => handleDrag(e, 'line-end')}
+                  style={{
+                    position: 'absolute', left: `${b().p2!.x}px`, top: `${b().p2!.y}px`, width: '8px', height: '8px',
+                    background: 'white', border: '1px solid #3b82f6', transform: 'translate(-50%, -50%)',
+                    "pointer-events": 'auto', cursor: 'pointer'
+                  }} 
+                />
+              )}
+            </>
+          )}
         </div>
       )}
     </Show>

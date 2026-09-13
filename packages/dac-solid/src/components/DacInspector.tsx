@@ -1,4 +1,4 @@
-import { Show } from 'solid-js';
+import { Show, For } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 
 export function DacInspector() {
@@ -24,47 +24,38 @@ export function DacInspector() {
             <p><strong>Type:</strong> {shape().type}</p>
             <p><strong>ID:</strong> {shape().componentId}</p>
             <div style={{ "margin-top": '16px' }}>
-              <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: '#94a3b8' }}>X</label>
-              <input 
-                type="number" 
-                value={shape().x ?? 0} 
-                onInput={(e) => updateShape(shape().componentId, { x: parseFloat(e.currentTarget.value) })}
-                style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white', "border-radius": '4px' }}
-              />
-              <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: '#94a3b8' }}>Y</label>
-              <input 
-                type="number" 
-                value={shape().y ?? 0} 
-                onInput={(e) => updateShape(shape().componentId, { y: parseFloat(e.currentTarget.value) })}
-                style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white', "border-radius": '4px' }}
-              />
-              <Show when={shape().width !== undefined}>
-                <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: '#94a3b8' }}>Width</label>
-                <input 
-                  type="number" 
-                  value={shape().width} 
-                  onInput={(e) => updateShape(shape().componentId, { width: parseFloat(e.currentTarget.value) })}
-                  style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white', "border-radius": '4px' }}
-                />
-              </Show>
-              <Show when={shape().height !== undefined}>
-                <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: '#94a3b8' }}>Height</label>
-                <input 
-                  type="number" 
-                  value={shape().height} 
-                  onInput={(e) => updateShape(shape().componentId, { height: parseFloat(e.currentTarget.value) })}
-                  style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white', "border-radius": '4px' }}
-                />
-              </Show>
-              <Show when={shape().text !== undefined}>
-                <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: '#94a3b8' }}>Text</label>
-                <input 
-                  type="text" 
-                  value={shape().text} 
-                  onInput={(e) => updateShape(shape().componentId, { text: e.currentTarget.value })}
-                  style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white', "border-radius": '4px' }}
-                />
-              </Show>
+              <For each={Object.keys(shape()).filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && typeof shape()[k] !== 'object')}>
+                {(key) => {
+                  const val = shape()[key];
+                  const isNum = typeof val === 'number';
+                  const isBool = typeof val === 'boolean';
+                  
+                  return (
+                    <>
+                      <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: '#94a3b8' }}>{key}</label>
+                      {isBool ? (
+                        <input 
+                          type="checkbox" 
+                          checked={val} 
+                          onChange={(e) => updateShape(shape().componentId, { [key]: e.currentTarget.checked })}
+                          style={{ "margin-bottom": '12px' }}
+                        />
+                      ) : (
+                        <input 
+                          type={isNum ? 'number' : 'text'}
+                          value={val ?? ''} 
+                          onInput={(e) => {
+                            let newVal: any = e.currentTarget.value;
+                            if (isNum) newVal = parseFloat(newVal) || 0;
+                            updateShape(shape().componentId, { [key]: newVal });
+                          }}
+                          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white', "border-radius": '4px' }}
+                        />
+                      )}
+                    </>
+                  );
+                }}
+              </For>
             </div>
           </div>
         )}
