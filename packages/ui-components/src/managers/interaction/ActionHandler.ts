@@ -26,7 +26,7 @@ export class ActionHandler {
       });
 
       if (idx !== -1) {
-        const shape = doc.geometry[idx];
+        const shape: any = doc.geometry[idx];
         if (shape.type === 'ConstructReference' && this.ui.options.constructResolver && shape.constructId) {
           const constructDoc = this.ui.options.constructResolver(shape.constructId);
           if (constructDoc) {
@@ -58,7 +58,7 @@ export class ActionHandler {
             
             // Select the newly exploded shapes
             explodedShapes.forEach(s => {
-              if (s.componentId) this.ui.selectedComponentIds.add(s.componentId);
+              if (s.componentId) this.ui.selectedComponentIds.add(String(s.componentId));
             });
             this.ui.primaryComponentType = 'ConstructExploded';
             

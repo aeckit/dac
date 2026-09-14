@@ -36,16 +36,17 @@ export class DragHandler {
         }
         
         if (comp) {
-          const isLine = (comp as any).type === 'Line' || (comp as any).type === 'CAD::Shape::Line' || (comp as any).componentType === 'Line';
+          const c: any = comp;
+          const isLine = c.type === 'Line' || c.type === 'CAD::Shape::Line' || c.componentType === 'Line';
           initialStates.set(cid, {
-            comp,
+            comp: c,
             isLine,
-            x: Number(comp.x) || 0,
-            y: Number(comp.y) || 0,
-            x1: Number((comp as any).x1) || 0,
-            y1: Number((comp as any).y1) || 0,
-            x2: Number((comp as any).x2) || 0,
-            y2: Number((comp as any).y2) || 0,
+            x: Number(c.x) || 0,
+            y: Number(c.y) || 0,
+            x1: Number(c.x1) || 0,
+            y1: Number(c.y1) || 0,
+            x2: Number(c.x2) || 0,
+            y2: Number(c.y2) || 0,
           });
         }
       });
