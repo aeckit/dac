@@ -21,15 +21,16 @@ export function explodeConstruct(
       }
     }
   }
-  if (shape.parameterOverrides) {
-    for (const [key, val] of Object.entries(shape.parameterOverrides)) {
-      resolvedParams[key] = evaluateExpression(val, globalParams);
+  const s: any = shape;
+  if (s.parameterOverrides) {
+    for (const [key, val] of Object.entries(s.parameterOverrides)) {
+      resolvedParams[key] = evaluateExpression(val as any, globalParams);
     }
   }
 
-  const refX = evaluateExpression(shape.x || 0, globalParams);
-  const refY = evaluateExpression(shape.y || 0, globalParams);
-  const refRot = evaluateExpression(shape.rotation || 0, globalParams);
+  const refX = evaluateExpression(s.x || 0, globalParams);
+  const refY = evaluateExpression(s.y || 0, globalParams);
+  const refRot = evaluateExpression(s.rotation || 0, globalParams);
 
   const results: GeometryPrimitive[] = [];
   
@@ -97,9 +98,9 @@ export function explodeConstruct(
     }
 
     if (child.componentId) {
-      cloned.componentId = `${shape.componentId || 'construct'}_${child.componentId}`;
+      cloned.componentId = `${s.componentId || 'construct'}_${child.componentId}`;
     } else {
-      cloned.componentId = `${shape.componentId || 'construct'}_${Math.random().toString(36).substring(2, 7)}`;
+      cloned.componentId = `${s.componentId || 'construct'}_${Math.random().toString(36).substring(2, 7)}`;
     }
 
     results.push(cloned);

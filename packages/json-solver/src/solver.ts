@@ -50,11 +50,11 @@ export function solveDocumentGeometry(
 
   for (const shape of doc.geometry) {
     if (shape.type === 'ConstructReference' && constructResolver) {
-      const constructDoc = constructResolver(shape.constructId!);
+      const constructDoc = constructResolver((shape as any).constructId!);
       if (constructDoc) {
         const exploded = explodeConstruct(shape, constructDoc, resolvedParams);
-        const cid = shape.componentId || `shape_${autoIndex++}`;
-        const ctype = shape.componentType || 'ConstructReference';
+        const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
+        const ctype: string = String(shape.componentType || 'ConstructReference');
 
         for (const childShape of exploded) {
           if (childShape.visible !== undefined) {
@@ -75,8 +75,8 @@ export function solveDocumentGeometry(
       if (isVisible === false || isVisible === 'false' || isVisible === 0) continue;
     }
 
-    const cid = shape.componentId || `shape_${autoIndex++}`;
-    const ctype = shape.componentType || shape.type.split('::').pop() || 'Shape';
+    const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
+    const ctype: string = String(shape.componentType || shape.type.split('::').pop() || 'Shape');
 
     const solved = evaluatePrimitive(shape, resolvedParams, scaleMultiplier, canvasHeight);
     if (!groups[cid]) groups[cid] = { type: ctype, shapes: [] };
@@ -99,36 +99,37 @@ function evaluatePrimitive(
   scaleMultiplier: number,
   canvasHeight: number
 ): SolvedPrimitive {
-  const result: SolvedPrimitive = {
-    ...shape,
-    type: shape.type,
-    componentId: shape.componentId,
-    componentType: shape.componentType
+  const s: any = shape;
+  const result: any = {
+    ...s,
+    type: s.type,
+    componentId: s.componentId,
+    componentType: s.componentType
   };
 
-  if (shape.x !== undefined) result.x = evaluateExpression(shape.x, params);
-  if (shape.y !== undefined) result.y = evaluateExpression(shape.y, params);
-  if (shape.x1 !== undefined) result.x1 = evaluateExpression(shape.x1, params);
-  if (shape.y1 !== undefined) result.y1 = evaluateExpression(shape.y1, params);
-  if (shape.x2 !== undefined) result.x2 = evaluateExpression(shape.x2, params);
-  if (shape.y2 !== undefined) result.y2 = evaluateExpression(shape.y2, params);
-  if (shape.cx !== undefined) result.cx = evaluateExpression(shape.cx, params);
-  if (shape.cy !== undefined) result.cy = evaluateExpression(shape.cy, params);
-  if (shape.r !== undefined) result.r = evaluateExpression(shape.r, params);
-  if (shape.width !== undefined) result.width = evaluateExpression(shape.width, params);
-  if (shape.height !== undefined) result.height = evaluateExpression(shape.height, params);
-  if (shape.dx !== undefined) result.dx = evaluateExpression(shape.dx, params);
-  if (shape.dy !== undefined) result.dy = evaluateExpression(shape.dy, params);
-  if (shape.text !== undefined) result.text = String(evaluateExpression(shape.text, params));
-  if (shape.fontSize !== undefined) result.fontSize = evaluateExpression(shape.fontSize, params);
-  if (shape.rotation !== undefined) result.rotation = evaluateExpression(shape.rotation, params);
-  if (shape.offset !== undefined) result.offset = evaluateExpression(shape.offset, params);
-  if (shape.cropX !== undefined) result.cropX = evaluateExpression(shape.cropX, params);
-  if (shape.cropY !== undefined) result.cropY = evaluateExpression(shape.cropY, params);
-  if (shape.imgWidth !== undefined) result.imgWidth = evaluateExpression(shape.imgWidth, params);
-  if (shape.imgHeight !== undefined) result.imgHeight = evaluateExpression(shape.imgHeight, params);
+  if (s.x !== undefined) result.x = evaluateExpression(s.x, params);
+  if (s.y !== undefined) result.y = evaluateExpression(s.y, params);
+  if (s.x1 !== undefined) result.x1 = evaluateExpression(s.x1, params);
+  if (s.y1 !== undefined) result.y1 = evaluateExpression(s.y1, params);
+  if (s.x2 !== undefined) result.x2 = evaluateExpression(s.x2, params);
+  if (s.y2 !== undefined) result.y2 = evaluateExpression(s.y2, params);
+  if (s.cx !== undefined) result.cx = evaluateExpression(s.cx, params);
+  if (s.cy !== undefined) result.cy = evaluateExpression(s.cy, params);
+  if (s.r !== undefined) result.r = evaluateExpression(s.r, params);
+  if (s.width !== undefined) result.width = evaluateExpression(s.width, params);
+  if (s.height !== undefined) result.height = evaluateExpression(s.height, params);
+  if (s.dx !== undefined) result.dx = evaluateExpression(s.dx, params);
+  if (s.dy !== undefined) result.dy = evaluateExpression(s.dy, params);
+  if (s.text !== undefined) result.text = String(evaluateExpression(s.text, params));
+  if (s.fontSize !== undefined) result.fontSize = evaluateExpression(s.fontSize, params);
+  if (s.rotation !== undefined) result.rotation = evaluateExpression(s.rotation, params);
+  if (s.offset !== undefined) result.offset = evaluateExpression(s.offset, params);
+  if (s.cropX !== undefined) result.cropX = evaluateExpression(s.cropX, params);
+  if (s.cropY !== undefined) result.cropY = evaluateExpression(s.cropY, params);
+  if (s.imgWidth !== undefined) result.imgWidth = evaluateExpression(s.imgWidth, params);
+  if (s.imgHeight !== undefined) result.imgHeight = evaluateExpression(s.imgHeight, params);
 
-  return result;
+  return result as SolvedPrimitive;
 }
 
 /**
