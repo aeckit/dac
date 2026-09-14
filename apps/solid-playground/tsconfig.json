@@ -9,7 +9,8 @@
     "jsxImportSource": "solid-js",
     "strict": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
   },
   "include": ["src/**/*"]
 }
