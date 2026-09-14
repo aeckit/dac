@@ -2,6 +2,7 @@ import { VisualizerDocument, RectangleOptions, LineOptions, TextOptions, ImageOp
 import { ShapeOperations } from './operations/ShapeOperations';
 import { ViewportOperations } from './operations/ViewportOperations';
 import { ComponentOperations } from './operations/ComponentOperations';
+import { GeometryPrimitiveSchema } from '@aeckit/dac-schema';
 
 export class JsonBuilder extends EventTarget {
   private document: any = null;
@@ -81,9 +82,12 @@ export class JsonBuilder extends EventTarget {
       if (shape.y === undefined) shape.y = defaultOffset;
     }
     
-    targetDoc.geometry.push(shape);
+    // Parse through schema to strip invalid fields and inject defaults
+    const parsedShape = GeometryPrimitiveSchema.parse(shape);
+    
+    targetDoc.geometry.push(parsedShape);
     this.notifyChanged();
-    return shape;
+    return parsedShape;
   }
 
   // Delegated backwards-compatible aliases
