@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Monorepo for parametric 2D CAD visualizer VS Code extension",
+  "packageManager": "npm@10.8.2",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -11,14 +12,15 @@
   "scripts": {
     "test": "vitest run",
     "dev": "npm run dev --workspace=@aeckit/playground & npm run dev --workspace=@aeckit/solid-playground",
-    "compile": "npm run compile --workspaces --if-present",
-    "watch": "npm run watch --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present",
-    "package": "npm run package --workspaces --if-present"
+    "compile": "turbo run compile",
+    "watch": "turbo run watch",
+    "build": "turbo run build",
+    "package": "turbo run package"
   },
   "devDependencies": {
     "happy-dom": "^20.11.1",
     "jsdom": "^27.0.1",
+    "turbo": "^2.10.12",
     "typescript": "^5.3.3",
     "vitest": "^4.1.10"
   }
