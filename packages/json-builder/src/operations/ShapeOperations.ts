@@ -9,6 +9,10 @@ export class ShapeOperations {
       type: 'CAD::Shape::Rectangle',
       componentId: this.engine.generateId('rect'),
       componentType: 'Rectangle',
+      color: '#000000',
+      strokeWidth: 1,
+      strokeDasharray: 'none',
+      fill: 'transparent',
       ...options
     };
     return this.engine.addShapeToTarget(shape);
@@ -19,6 +23,9 @@ export class ShapeOperations {
       type: 'CAD::Shape::Line',
       componentId: this.engine.generateId('line'),
       componentType: 'Line',
+      color: '#000000',
+      strokeWidth: 1,
+      strokeDasharray: 'none',
       ...options
     };
     return this.engine.addShapeToTarget(shape);
@@ -29,6 +36,8 @@ export class ShapeOperations {
       type: 'CAD::Annotation::Text',
       componentId: this.engine.generateId('text'),
       componentType: 'Text',
+      color: '#000000',
+      fontSize: 12,
       ...options
     };
     return this.engine.addShapeToTarget(shape);
