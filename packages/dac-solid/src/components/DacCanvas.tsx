@@ -4,10 +4,71 @@ import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
 import { SelectionGizmo } from './SelectionGizmo';
 
 export function DacCanvas() {
-  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, canvasTheme } = useDac();
+  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, canvasTheme, triggerFitView } = useDac();
   const [svgContent, setSvgContent] = createSignal('');
   let containerRef!: HTMLDivElement;
   let contentRef!: HTMLDivElement;
+
+  createEffect(() => {
+    // Dependency on triggerFitView so it runs when triggered
+    if (triggerFitView() > 0) {
+      if (!containerRef) return;
+      const interactives = Array.from(containerRef.querySelectorAll('.interactive-component')) as Element[];
+      if (interactives.length === 0) {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+        return;
+      }
+
+      const containerRect = containerRef.getBoundingClientRect();
+      const currentPan = pan();
+      const currentZoom = zoom();
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      let hasValidBBox = false;
+
+      interactives.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) return;
+        hasValidBBox = true;
+
+        const leftUnscaled = (rect.left - containerRect.left - currentPan.x) / currentZoom;
+        const topUnscaled = (rect.top - containerRect.top - currentPan.y) / currentZoom;
+        const rightUnscaled = (rect.right - containerRect.left - currentPan.x) / currentZoom;
+        const bottomUnscaled = (rect.bottom - containerRect.top - currentPan.y) / currentZoom;
+
+        if (leftUnscaled < minX) minX = leftUnscaled;
+        if (topUnscaled < minY) minY = topUnscaled;
+        if (rightUnscaled > maxX) maxX = rightUnscaled;
+        if (bottomUnscaled > maxY) maxY = bottomUnscaled;
+      });
+
+      const targetW = maxX - minX;
+      const targetH = maxY - minY;
+
+      if (!hasValidBBox || targetW <= 0 || targetH <= 0) {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+        return;
+      }
+
+      const padding = 0.1; // 10% padding on each side
+      const availW = containerRect.width * (1 - padding * 2);
+      const availH = containerRect.height * (1 - padding * 2);
+
+      let newZoom = Math.min(availW / targetW, availH / targetH);
+      newZoom = Math.max(0.05, Math.min(10.0, newZoom)); // Keep within limits
+
+      const centerX = minX + targetW / 2;
+      const centerY = minY + targetH / 2;
+
+      const newPanX = containerRect.width / 2 - centerX * newZoom;
+      const newPanY = containerRect.height / 2 - centerY * newZoom;
+
+      setZoom(newZoom);
+      setPan({ x: newPanX, y: newPanY });
+    }
+  });
 
   createEffect(() => {
     const document = doc();
