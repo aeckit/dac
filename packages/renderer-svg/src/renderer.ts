@@ -58,26 +58,28 @@ export function getOriginIndicator(canvasHeight = 18, scale = 1): string {
     <!-- CAD Origin (0,0) / UCS Axis Indicator -->
     <g class="cad-origin-indicator" opacity="0.85" style="pointer-events: none;">
       <!-- Origin Dot -->
-      <circle cx="${originX}" cy="${originY}" r="${circleRadius}" fill="#f43f5e" />
+      <circle cx="${originX}" cy="${originY}" r="${circleRadius}" fill="var(--cad-origin-x)" />
       
       <!-- X Axis (+X -> Right, Red/Pink) -->
-      <line x1="${originX}" y1="${originY}" x2="${originX + arrowLen}" y2="${originY}" stroke="#f43f5e" stroke-width="${strokeWidth}" marker-end="url(#origin-arrow-x)" />
-      <text x="${originX + arrowLen + labelOffsetX}" y="${originY}" font-size="${fontSize}" fill="#f43f5e" font-family="monospace" font-weight="bold" dominant-baseline="middle">X</text>
+      <line x1="${originX}" y1="${originY}" x2="${originX + arrowLen}" y2="${originY}" stroke="var(--cad-origin-x)" stroke-width="${strokeWidth}" marker-end="url(#origin-arrow-x)" />
+      <text x="${originX + arrowLen + labelOffsetX}" y="${originY}" font-size="${fontSize}" fill="var(--cad-origin-x)" font-family="monospace" font-weight="bold" dominant-baseline="middle">X</text>
       
       <!-- Y Axis (+Y -> Up in Cartesian, -Y in SVG screen space, Cyan/Blue) -->
-      <line x1="${originX}" y1="${originY}" x2="${originX}" y2="${originY - arrowLen}" stroke="#38bdf8" stroke-width="${strokeWidth}" marker-end="url(#origin-arrow-y)" />
-      <text x="${originX}" y="${originY - arrowLen - labelOffsetY}" font-size="${fontSize}" fill="#38bdf8" font-family="monospace" font-weight="bold" text-anchor="middle">Y</text>
+      <line x1="${originX}" y1="${originY}" x2="${originX}" y2="${originY - arrowLen}" stroke="var(--cad-origin-y)" stroke-width="${strokeWidth}" marker-end="url(#origin-arrow-y)" />
+      <text x="${originX}" y="${originY - arrowLen - labelOffsetY}" font-size="${fontSize}" fill="var(--cad-origin-y)" font-family="monospace" font-weight="bold" text-anchor="middle">Y</text>
       
       <!-- (0,0) Coordinate Label -->
-      <text x="${originX - labelOffsetX}" y="${originY + labelOffsetY}" font-size="${(9 / 72) / scale}" fill="#94a3b8" font-family="monospace" text-anchor="end">(0,0)</text>
+      <text x="${originX - labelOffsetX}" y="${originY + labelOffsetY}" font-size="${(9 / 72) / scale}" fill="var(--cad-image-text)" font-family="monospace" text-anchor="end">(0,0)</text>
     </g>
   `;
 }
 
+import { CadTheme } from './theme';
+
 /**
  * Renders a full SolvedDetailLayout into a standalone SVG string
  */
-export function renderSolvedDetail(layout: SolvedDetailLayout, isInteractive = true): string {
+export function renderSolvedDetail(layout: SolvedDetailLayout, isInteractive = true, theme?: CadTheme): string {
   const { scaleMultiplier, canvasWidth, canvasHeight, groups } = layout;
   const geometries = renderSolvedGroups(groups, scaleMultiplier, canvasHeight, isInteractive);
   const originIndicator = getOriginIndicator(canvasHeight, scaleMultiplier);
@@ -97,7 +99,7 @@ export function renderSolvedDetail(layout: SolvedDetailLayout, isInteractive = t
         ${originIndicator}
         ${geometries}
       </g>
-      ${getStyles()}
+      ${getStyles(theme)}
     </svg>
   `;
 }
@@ -105,7 +107,7 @@ export function renderSolvedDetail(layout: SolvedDetailLayout, isInteractive = t
 /**
  * Renders a full SolvedSheetLayout into an SVG string
  */
-export function renderSolvedSheet(sheetLayout: SolvedSheetLayout): string {
+export function renderSolvedSheet(sheetLayout: SolvedSheetLayout, theme?: CadTheme): string {
   const { paperWidth, paperHeight } = sheetLayout;
   let sheetContent = '';
 
@@ -153,31 +155,31 @@ export function renderSolvedSheet(sheetLayout: SolvedSheetLayout): string {
       const textStartX = vp.hideDetailNumber ? 0 : lineStartX + (0.1 / vp.scaleMultiplier);
 
       if (!vp.hideDetailNumber) {
-        labelsSvg += `<circle cx="${circleCx}" cy="${circleCy}" r="${circleRadius}" fill="none" stroke="#f1f5f9" stroke-width="${1.5 / 72 / vp.scaleMultiplier}" />\n`;
-        labelsSvg += `<text x="${circleCx}" y="${circleCy}" font-size="${0.25 / vp.scaleMultiplier}" fill="#f1f5f9" font-family="monospace" text-anchor="middle" dominant-baseline="central">${displayDetailNumber}</text>\n`;
+        labelsSvg += `<circle cx="${circleCx}" cy="${circleCy}" r="${circleRadius}" fill="none" stroke="var(--cad-stroke)" stroke-width="${1.5 / 72 / vp.scaleMultiplier}" />\n`;
+        labelsSvg += `<text x="${circleCx}" y="${circleCy}" font-size="${0.25 / vp.scaleMultiplier}" fill="var(--cad-text)" font-family="monospace" text-anchor="middle" dominant-baseline="central">${displayDetailNumber}</text>\n`;
       }
 
-      labelsSvg += `<line x1="${vp.hideDetailNumber ? 0 : lineStartX}" y1="${lineY}" x2="${lineEndX}" y2="${lineY}" stroke="#f1f5f9" stroke-width="${1.5 / 72 / vp.scaleMultiplier}" />\n`;
+      labelsSvg += `<line x1="${vp.hideDetailNumber ? 0 : lineStartX}" y1="${lineY}" x2="${lineEndX}" y2="${lineY}" stroke="var(--cad-stroke)" stroke-width="${1.5 / 72 / vp.scaleMultiplier}" />\n`;
 
       if (!vp.hideTitle) {
         const textY = lineY - (0.1 / vp.scaleMultiplier);
-        labelsSvg += `<text x="${textStartX}" y="${textY}" font-size="${0.2 / vp.scaleMultiplier}" fill="#f1f5f9" font-family="monospace" font-weight="bold" dominant-baseline="alphabetic">${vp.displayTitle.toUpperCase()}</text>\n`;
+        labelsSvg += `<text x="${textStartX}" y="${textY}" font-size="${0.2 / vp.scaleMultiplier}" fill="var(--cad-text)" font-family="monospace" font-weight="bold" dominant-baseline="alphabetic">${vp.displayTitle.toUpperCase()}</text>\n`;
       }
 
       if (!vp.hideScale) {
         const textY = lineY + (0.1 / vp.scaleMultiplier);
-        labelsSvg += `<text x="${textStartX}" y="${textY}" font-size="${0.125 / vp.scaleMultiplier}" fill="#94a3b8" font-family="monospace" dominant-baseline="hanging">${vp.scaleMultiplier}</text>\n`;
+        labelsSvg += `<text x="${textStartX}" y="${textY}" font-size="${0.125 / vp.scaleMultiplier}" fill="var(--cad-image-text)" font-family="monospace" dominant-baseline="hanging">${vp.scaleMultiplier}</text>\n`;
       }
 
       if (vp.titleNote) {
         const textX = lineEndX;
         const textY = lineY + (0.1 / vp.scaleMultiplier);
-        labelsSvg += `<text x="${textX}" y="${textY}" font-size="${0.125 / vp.scaleMultiplier}" fill="#94a3b8" font-family="monospace" text-anchor="end" dominant-baseline="hanging">${vp.titleNote}</text>\n`;
+        labelsSvg += `<text x="${textX}" y="${textY}" font-size="${0.125 / vp.scaleMultiplier}" fill="var(--cad-image-text)" font-family="monospace" text-anchor="end" dominant-baseline="hanging">${vp.titleNote}</text>\n`;
       }
     } else {
       const titleY = vpCanvasHeight - (0.5 / vp.scaleMultiplier);
       if (!vp.hideTitle) {
-        labelsSvg += `<text x="0" y="${titleY}" font-size="${0.5 / vp.scaleMultiplier}" fill="#f1f5f9" font-family="monospace" font-weight="bold">${vp.displayTitle.toUpperCase()}</text>\n`;
+        labelsSvg += `<text x="0" y="${titleY}" font-size="${0.5 / vp.scaleMultiplier}" fill="var(--cad-text)" font-family="monospace" font-weight="bold">${vp.displayTitle.toUpperCase()}</text>\n`;
       }
     }
 
@@ -190,7 +192,7 @@ export function renderSolvedSheet(sheetLayout: SolvedSheetLayout): string {
           </g>
         </g>
         ${labelsSvg}
-        ${hasDimensions ? `<rect x="0" y="${vpCanvasHeight - vp.height! / vp.scaleMultiplier}" width="${vp.width! / vp.scaleMultiplier}" height="${vp.height! / vp.scaleMultiplier}" fill="transparent" stroke="#475569" stroke-width="${1.0 / 72 / vp.scaleMultiplier}" stroke-dasharray="0.1, 0.1" pointer-events="all" />` : ''}
+        ${hasDimensions ? `<rect x="0" y="${vpCanvasHeight - vp.height! / vp.scaleMultiplier}" width="${vp.width! / vp.scaleMultiplier}" height="${vp.height! / vp.scaleMultiplier}" fill="transparent" stroke="var(--cad-image-border)" stroke-width="${1.0 / 72 / vp.scaleMultiplier}" stroke-dasharray="0.1, 0.1" pointer-events="all" />` : ''}
       </g>
     `;
   }
@@ -202,7 +204,7 @@ export function renderSolvedSheet(sheetLayout: SolvedSheetLayout): string {
       <g id="sheet-content">
         ${sheetContent}
       </g>
-      ${getStyles()}
+      ${getStyles(theme)}
     </svg>
   `;
 }
@@ -214,10 +216,11 @@ export function renderDetail(
   doc: DetailDocument,
   sandboxWidth = 24,
   sandboxHeight = 18,
-  constructResolver?: (id: string) => ConstructDocument | undefined
+  constructResolver?: (id: string) => ConstructDocument | undefined,
+  theme?: CadTheme
 ): string {
   const layout = solveDetailDocument(doc, sandboxWidth, sandboxHeight, constructResolver);
-  return renderSolvedDetail(layout);
+  return renderSolvedDetail(layout, true, theme);
 }
 
 /**
@@ -231,9 +234,10 @@ export function renderSheet(
   tbOffsetX = 0,
   tbOffsetY = 0,
   paperSize = 'ARCH D',
-  constructResolver?: (id: string) => ConstructDocument | undefined
+  constructResolver?: (id: string) => ConstructDocument | undefined,
+  theme?: CadTheme
 ): string {
   const layout = solveSheetDocument(sheet, titleBlockData, viewportsMap, titleBlockDoc, tbOffsetX, tbOffsetY, paperSize, constructResolver);
-  return renderSolvedSheet(layout);
+  return renderSolvedSheet(layout, theme);
 }
 

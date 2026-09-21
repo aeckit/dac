@@ -12,7 +12,7 @@ export function drawLine(shape: SolvedPrimitive, scale: number, canvasHeight = 1
   const y1 = canvasHeight - Number(shape.y1 ?? 0);
   const x2 = Number(shape.x2 ?? 0);
   const y2 = canvasHeight - Number(shape.y2 ?? 0);
-  const strokeColor = shape.color || '#f8fafc';
+  const strokeColor = shape.color || 'var(--cad-stroke)';
   const strokeWidth = ((Number(shape.strokeWidth) || 2) / 72) / scale;
   const dashArray = shape.strokeDasharray ? `stroke-dasharray="${shape.strokeDasharray}"` : '';
 
@@ -28,7 +28,7 @@ export function drawCircle(shape: SolvedPrimitive, scale: number, canvasHeight =
   const cy = canvasHeight - Number(shape.cy ?? 0);
   const r = Number(shape.r ?? 0);
   const fillColor = shape.fill || 'none';
-  const strokeColor = shape.color || '#f8fafc';
+  const strokeColor = shape.color || 'var(--cad-stroke)';
   const strokeWidth = ((Number(shape.strokeWidth) || 2) / 72) / scale;
 
   const hitTarget = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />`;
@@ -60,7 +60,7 @@ export function drawRectangle(shape: SolvedPrimitive, scale: number, canvasHeigh
     fillStr = `fill="${shape.fill}"`;
   }
 
-  const strokeColor = shape.color || '#f8fafc';
+  const strokeColor = shape.color || 'var(--cad-stroke)';
   const strokeWidth = ((Number(shape.strokeWidth) || 2) / 72) / scale;
 
   const rot = Number(shape.rotation || 0);
@@ -141,7 +141,7 @@ export function drawText(shape: SolvedPrimitive, scale: number, canvasHeight = 1
   const y = canvasHeight - Number(shape.y ?? 0);
   const text = String(shape.text ?? '');
   const fontSize = ((Number(shape.fontSize) || 11) / 72) / scale;
-  const color = shape.color || '#f1f5f9';
+  const color = shape.color || 'var(--cad-text)';
 
   const lines = text.split(/\\n|\n/);
   const rot = Number(shape.rotation || 0);
@@ -167,7 +167,7 @@ export function drawTextBox(shape: SolvedPrimitive, scale: number, canvasHeight 
   const y = canvasHeight - rawY;
   const text = String(shape.text ?? '');
   const fontSize = ((Number(shape.fontSize) || 11) / 72) / scale;
-  const color = shape.color || '#f1f5f9';
+  const color = shape.color || 'var(--cad-text)';
 
   return `<foreignObject x="${x}" y="${y}" width="${width}" height="100"><div xmlns="http://www.w3.org/1999/xhtml" style="color: ${color}; font-size: ${fontSize}px; white-space: pre-wrap; font-family: monospace;">${text}</div></foreignObject>`;
 }
@@ -214,9 +214,9 @@ export function drawImage(shape: SolvedPrimitive, scale: number, canvasHeight = 
   const textLabel = shape.href ? shape.href : 'No Image';
   const placeholder = `
     <g id="${fallbackId}">
-      <rect x="${x - cropX}" y="${y + cropY}" width="${imgWidth}" height="${imgHeight}" fill="#334155" />
-      <path d="M ${x - cropX} ${y + cropY} L ${x - cropX + imgWidth} ${y + cropY + imgHeight} M ${x - cropX + imgWidth} ${y + cropY} L ${x - cropX} ${y + cropY + imgHeight}" stroke="#475569" stroke-width="0.1" />
-      <text x="${x - cropX + imgWidth/2}" y="${y + cropY + imgHeight/2}" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="${Math.min(imgHeight/4, imgWidth/8)}" fill="#94a3b8">${textLabel}</text>
+      <rect x="${x - cropX}" y="${y + cropY}" width="${imgWidth}" height="${imgHeight}" fill="var(--cad-image-bg)" />
+      <path d="M ${x - cropX} ${y + cropY} L ${x - cropX + imgWidth} ${y + cropY + imgHeight} M ${x - cropX + imgWidth} ${y + cropY} L ${x - cropX} ${y + cropY + imgHeight}" stroke="var(--cad-image-border)" stroke-width="0.1" />
+      <text x="${x - cropX + imgWidth/2}" y="${y + cropY + imgHeight/2}" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="${Math.min(imgHeight/4, imgWidth/8)}" fill="var(--cad-image-text)">${textLabel}</text>
     </g>
   `;
 
