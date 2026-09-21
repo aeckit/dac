@@ -8,8 +8,8 @@ export function WorkspaceSidebar(props: {
   onDelete: (name: string) => void;
 }) {
   return (
-    <div style={{ width: '250px', "background-color": '#0f172a', color: '#f8fafc', "border-right": '1px solid #334155', display: 'flex', "flex-direction": 'column' }}>
-      <div style={{ padding: '16px', "font-weight": 'bold', "border-bottom": '1px solid #334155' }}>
+    <div style={{ width: '250px', "background-color": 'var(--app-bg-sidebar)', color: 'var(--app-text)', "border-right": '1px solid var(--app-border)', display: 'flex', "flex-direction": 'column' }}>
+      <div style={{ padding: '16px', "font-weight": 'bold', "border-bottom": '1px solid var(--app-border)' }}>
         Workspace
       </div>
       <div style={{ padding: '8px', flex: 1, "overflow-y": 'auto' }}>
@@ -19,7 +19,7 @@ export function WorkspaceSidebar(props: {
               style={{
                 padding: '8px',
                 cursor: 'pointer',
-                "background-color": file === props.activeFileId ? '#1e293b' : 'transparent',
+                "background-color": file === props.activeFileId ? 'var(--app-bg-panel)' : 'transparent',
                 "border-radius": '4px',
                 display: 'flex',
                 "justify-content": 'space-between',
@@ -35,13 +35,13 @@ export function WorkspaceSidebar(props: {
           )}
         </For>
       </div>
-      <div style={{ padding: '16px', "border-top": '1px solid #334155' }}>
+      <div style={{ padding: '16px', "border-top": '1px solid var(--app-border)' }}>
         <button 
           onClick={() => {
             const name = prompt('File name:');
             if (name) props.onAdd(name);
           }}
-          style={{ width: '100%', padding: '8px', background: '#3b82f6', color: 'white', border: 'none', "border-radius": '4px', cursor: 'pointer' }}
+          style={{ width: '100%', padding: '8px', background: 'var(--app-accent)', color: 'white', border: 'none', "border-radius": '4px', cursor: 'pointer' }}
         >
           + New File
         </button>
