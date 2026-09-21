@@ -1,7 +1,7 @@
 import { useDac } from '../hooks/useDac';
 
 export function DacToolbar() {
-  const { addShape, setZoom, zoom } = useDac();
+  const { addShape, setZoom, zoom, setPan } = useDac();
 
   const buttonStyle = {
     background: 'var(--app-btn-bg, #334155)',
@@ -17,6 +17,11 @@ export function DacToolbar() {
     gap: '6px'
   };
 
+  const handleReset = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
   return (
     <div style={{ display: 'flex', padding: '12px', "background-color": 'var(--app-bg-panel, #1e293b)', "border-bottom": '1px solid var(--app-border, #334155)', "align-items": 'center' }}>
       <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
@@ -29,7 +34,7 @@ export function DacToolbar() {
         <button style={buttonStyle} onClick={() => setZoom(z => z * 0.9)}>-</button>
         <span style={{ color: 'var(--app-text, white)', "font-size": '14px', "min-width": '40px', "text-align": 'center' }}>{Math.round(zoom() * 100)}%</span>
         <button style={buttonStyle} onClick={() => setZoom(z => z * 1.1)}>+</button>
-        <button style={buttonStyle} onClick={() => setZoom(1)}>Reset</button>
+        <button style={buttonStyle} onClick={handleReset}>Reset</button>
       </div>
     </div>
   );

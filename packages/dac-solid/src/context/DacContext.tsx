@@ -12,6 +12,8 @@ export interface DacContextValue {
   setActiveSheetId: Setter<string | null>;
   zoom: Accessor<number>;
   setZoom: Setter<number>;
+  pan: Accessor<{x: number, y: number}>;
+  setPan: Setter<{x: number, y: number}>;
   canvasTheme: Accessor<CadTheme | undefined>;
 }
 
@@ -32,6 +34,7 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
   const [selectionIds, setSelectionIds] = createSignal<string[]>([]);
   const [activeSheetId, setActiveSheetId] = createSignal<string | null>(null);
   const [zoom, setZoom] = createSignal<number>(1);
+  const [pan, setPan] = createSignal<{x: number, y: number}>({ x: 0, y: 0 });
 
   createEffect(() => {
     const b = builderSignal();
@@ -74,6 +77,8 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
     setActiveSheetId,
     zoom,
     setZoom,
+    pan,
+    setPan,
     canvasTheme: canvasThemeSignal
   };
 

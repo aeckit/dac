@@ -4,12 +4,10 @@ import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
 import { SelectionGizmo } from './SelectionGizmo';
 
 export function DacCanvas() {
-  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, activeSheetId, canvasTheme } = useDac();
+  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, canvasTheme } = useDac();
   const [svgContent, setSvgContent] = createSignal('');
   let containerRef!: HTMLDivElement;
   let contentRef!: HTMLDivElement;
-  
-  const [pan, setPan] = createSignal({ x: 0, y: 0 });
 
   createEffect(() => {
     const document = doc();
