@@ -7,7 +7,7 @@ export function useDac() {
     throw new Error('useDac must be used within a DacProvider');
   }
 
-  const { doc, builder, selectionIds, setSelectionIds, zoom, setZoom, activeSheetId, setActiveSheetId, nestedDocs } = context;
+  const { doc, builder, selectionIds, setSelectionIds, zoom, setZoom, activeSheetId, setActiveSheetId, nestedDocs, canvasTheme } = context;
 
   const selectShape = (id: string, multi = false) => {
     if (multi) {
@@ -82,6 +82,7 @@ export function useDac() {
     zoom,
     setZoom,
     activeSheetId,
-    setActiveSheetId
+    setActiveSheetId,
+    canvasTheme
   };
 }

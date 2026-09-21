@@ -4,7 +4,7 @@ import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
 import { SelectionGizmo } from './SelectionGizmo';
 
 export function DacCanvas() {
-  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, activeSheetId } = useDac();
+  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, activeSheetId, canvasTheme } = useDac();
   const [svgContent, setSvgContent] = createSignal('');
   let containerRef!: HTMLDivElement;
   let contentRef!: HTMLDivElement;
@@ -28,14 +28,14 @@ export function DacCanvas() {
                   if (detailDoc) viewportsMap.set(vp.detailId, detailDoc);
                 });
              }
-             const svg = renderSheet(sheet, document.projectData || {}, viewportsMap, undefined);
+             const svg = renderSheet(sheet, document.projectData || {}, viewportsMap, undefined, 0, 0, 'ARCH D', undefined, canvasTheme());
              setSvgContent(svg);
              return;
           }
         }
         setSvgContent('<svg><text x="50" y="50" fill="white">Select a sheet to view</text></svg>');
       } else {
-        const svg = renderDetail(document as any, 24, 18, (id) => nestedDocs()?.get(id));
+        const svg = renderDetail(document as any, 24, 18, (id) => nestedDocs()?.get(id), canvasTheme());
         setSvgContent(svg);
       }
     } catch (e: any) {
@@ -254,7 +254,7 @@ export function DacCanvas() {
     <div 
       ref={containerRef}
       data-canvas-container="true"
-      style={{ width: '100%', height: '100%', overflow: 'hidden', "background-color": '#0f172a', position: 'relative', cursor: 'crosshair' }}
+      style={{ width: '100%', height: '100%', overflow: 'hidden', "background-color": 'var(--app-bg-canvas, #0f172a)', position: 'relative', cursor: 'crosshair' }}
       onPointerDown={handlePointerDown}
     >
       <div 

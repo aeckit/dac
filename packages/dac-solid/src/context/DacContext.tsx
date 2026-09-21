@@ -1,5 +1,6 @@
 import { createContext, createSignal, createEffect, onCleanup, ParentComponent, Accessor, Setter } from 'solid-js';
 import { JsonBuilder } from '@aeckit/dac-json-builder';
+import { CadTheme } from '@aeckit/dac-renderer-svg';
 
 export interface DacContextValue {
   doc: Accessor<any>;
@@ -11,6 +12,7 @@ export interface DacContextValue {
   setActiveSheetId: Setter<string | null>;
   zoom: Accessor<number>;
   setZoom: Setter<number>;
+  canvasTheme: Accessor<CadTheme | undefined>;
 }
 
 export const DacContext = createContext<DacContextValue>();
@@ -19,11 +21,13 @@ export interface DacProviderProps {
   doc: any;
   nestedDocs?: Map<string, any>;
   onChange?: (doc: any, nestedDocs?: Map<string, any>, isTransient?: boolean) => void;
+  canvasTheme?: CadTheme;
 }
 
 export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
   const [docSignal, setDocSignal] = createSignal<any>(props.doc);
   const [nestedDocsSignal, setNestedDocsSignal] = createSignal<Map<string, any> | undefined>(props.nestedDocs);
+  const [canvasThemeSignal, setCanvasThemeSignal] = createSignal<CadTheme | undefined>(props.canvasTheme);
   const [builderSignal] = createSignal<JsonBuilder>(new JsonBuilder());
   const [selectionIds, setSelectionIds] = createSignal<string[]>([]);
   const [activeSheetId, setActiveSheetId] = createSignal<string | null>(null);
@@ -56,6 +60,10 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
     });
   });
 
+  createEffect(() => {
+    setCanvasThemeSignal(props.canvasTheme);
+  });
+
   const value: DacContextValue = {
     doc: docSignal,
     nestedDocs: nestedDocsSignal,
@@ -65,7 +73,8 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
     activeSheetId,
     setActiveSheetId,
     zoom,
-    setZoom
+    setZoom,
+    canvasTheme: canvasThemeSignal
   };
 
   return (
