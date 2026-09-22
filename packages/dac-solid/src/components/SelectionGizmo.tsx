@@ -16,9 +16,11 @@ export function SelectionGizmo() {
     // Capture initial state
     const shape = selectedShape();
     if (!shape) return;
+    const isCircleShape = shape.type === 'Circle' || shape.type === 'CAD::Shape::Circle';
     const initial = { 
       x: shape.x, y: shape.y, w: shape.width, h: shape.height,
-      x1: shape.x1, y1: shape.y1, x2: shape.x2, y2: shape.y2 
+      x1: shape.x1, y1: shape.y1, x2: shape.x2, y2: shape.y2,
+      cx: shape.cx, cy: shape.cy, r: shape.r 
     };
 
     const container = document.querySelector('[data-canvas-container]') as HTMLElement;
@@ -55,6 +57,8 @@ export function SelectionGizmo() {
             x2: initial.x2 + dx,
             y2: initial.y2 - dy 
           }, true);
+        } else if (isCircleShape) {
+          updateShape(shape.componentId, { cx: initial.cx + dx, cy: initial.cy - dy }, true);
         } else {
           updateShape(shape.componentId, { x: initial.x + dx, y: initial.y - dy }, true);
         }
@@ -63,37 +67,49 @@ export function SelectionGizmo() {
       } else if (mode === 'line-end') {
         updateShape(shape.componentId, { x2: initial.x2 + dx, y2: initial.y2 - dy }, true);
       } else {
-        let newX = initial.x;
-        let newY = initial.y;
-        let newW = initial.w;
-        let newH = initial.h;
+        if (isCircleShape) {
+          let dr = 0;
+          if (mode.includes('e')) dr = dx;
+          else if (mode.includes('w')) dr = -dx;
+          else if (mode.includes('s')) dr = dy;
+          else if (mode.includes('n')) dr = -dy;
+          
+          let newR = initial.r + dr;
+          if (newR < 0.1) newR = 0.1;
+          updateShape(shape.componentId, { r: newR }, true);
+        } else {
+          let newX = initial.x;
+          let newY = initial.y;
+          let newW = initial.w;
+          let newH = initial.h;
 
-        if (mode.includes('w')) {
-          newX = initial.x + dx;
-          newW = initial.w - dx;
-        }
-        if (mode.includes('e')) {
-          newW = initial.w + dx;
-        }
-        if (mode.includes('n')) {
-          newH = initial.h - dy;
-        }
-        if (mode.includes('s')) {
-          newY = initial.y - dy;
-          newH = initial.h + dy;
-        }
+          if (mode.includes('w')) {
+            newX = initial.x + dx;
+            newW = initial.w - dx;
+          }
+          if (mode.includes('e')) {
+            newW = initial.w + dx;
+          }
+          if (mode.includes('n')) {
+            newH = initial.h - dy;
+          }
+          if (mode.includes('s')) {
+            newY = initial.y - dy;
+            newH = initial.h + dy;
+          }
 
-        const minSize = 0.1;
-        if (newW < minSize) {
-          if (mode.includes('w')) newX -= (minSize - newW);
-          newW = minSize;
-        }
-        if (newH < minSize) {
-          if (mode.includes('s')) newY -= (minSize - newH);
-          newH = minSize;
-        }
+          const minSize = 0.1;
+          if (newW < minSize) {
+            if (mode.includes('w')) newX -= (minSize - newW);
+            newW = minSize;
+          }
+          if (newH < minSize) {
+            if (mode.includes('s')) newY -= (minSize - newH);
+            newH = minSize;
+          }
 
-        updateShape(shape.componentId, { x: newX, y: newY, width: newW, height: newH }, true);
+          updateShape(shape.componentId, { x: newX, y: newY, width: newW, height: newH }, true);
+        }
       }
     };
 

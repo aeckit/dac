@@ -22,7 +22,7 @@ export function DacToolbar() {
       <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
         <button style={buttonStyle} onClick={() => addShape('Rectangle', { width: 4, height: 2 })}>Rectangle</button>
         <button style={buttonStyle} onClick={() => addShape('Line', { x2: 4, y2: 2 })}>Line</button>
-        <button style={buttonStyle} onClick={() => addShape('Circle', { radius: 2 })}>Circle</button>
+        <button style={buttonStyle} onClick={() => addShape('Circle', { cx: 2, cy: 2, r: 2 })}>Circle</button>
         <button style={buttonStyle} onClick={() => addShape('Text', { text: 'New Text' })}>Text</button>
       </div>
       <div style={{ display: 'flex', gap: '8px', "align-items": 'center' }}>

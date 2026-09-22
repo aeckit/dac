@@ -25,6 +25,7 @@ export function useDac() {
     switch (type) {
       case 'Rectangle': newShape = b.addRectangle(options); break;
       case 'Line': newShape = b.addLine(options); break;
+      case 'Circle': newShape = b.addCircle(options); break;
       case 'Text': newShape = b.addText(options); break;
       default:
         newShape = b.addShapeToTarget({ type, ...options });
