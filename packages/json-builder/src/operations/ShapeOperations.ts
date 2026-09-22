@@ -1,5 +1,5 @@
 import { JsonBuilder } from '../JsonBuilder';
-import { RectangleOptions, LineOptions, TextOptions, ImageOptions } from '../types';
+import { RectangleOptions, LineOptions, TextOptions, ImageOptions, CircleOptions } from '../types';
 
 export class ShapeOperations {
   constructor(private engine: JsonBuilder) {}
@@ -23,6 +23,19 @@ export class ShapeOperations {
       type: 'CAD::Shape::Line',
       componentId: this.engine.generateId('line'),
       componentType: 'Line',
+      color: '#000000',
+      strokeWidth: 1,
+      strokeDasharray: 'none',
+      ...options
+    };
+    return this.engine.addShapeToTarget(shape);
+  }
+
+  public addCircle(options?: CircleOptions): any {
+    const shape: any = {
+      type: 'CAD::Shape::Circle',
+      componentId: this.engine.generateId('circle'),
+      componentType: 'Circle',
       color: '#000000',
       strokeWidth: 1,
       strokeDasharray: 'none',

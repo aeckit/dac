@@ -93,6 +93,7 @@ export class JsonBuilder extends EventTarget {
   // Delegated backwards-compatible aliases
   public addRectangle(options?: RectangleOptions): any { return this.shapes.addRectangle(options); }
   public addLine(options?: LineOptions): any { return this.shapes.addLine(options); }
+  public addCircle(options?: any): any { return this.shapes.addCircle(options); }
   public addText(options?: TextOptions): any { return this.shapes.addText(options); }
   public addImage(options?: ImageOptions): any { return this.shapes.addImage(options); }
   public addViewport(options?: ViewportOptions): any { return this.viewports.addViewport(options); }

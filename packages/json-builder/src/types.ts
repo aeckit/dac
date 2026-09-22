@@ -42,6 +42,12 @@ export interface TextOptions extends ShapeOptions {
   fontSize?: number;
 }
 
+export interface CircleOptions extends ShapeOptions {
+  cx?: number;
+  cy?: number;
+  r?: number;
+}
+
 export interface ImageOptions extends ShapeOptions {
   url?: string;
   width?: number;
