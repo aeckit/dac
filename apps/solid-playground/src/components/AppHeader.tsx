@@ -21,7 +21,7 @@ export function AppHeader(props: { activeFileId: string, shareUrl: () => string,
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '16px', "pointer-events": 'none', display: 'flex', "justify-content": 'space-between', "align-items": 'flex-start', "z-index": 50 }}>
       
       {/* Top Left Pill */}
-      <div style={{ "pointer-events": 'auto', display: 'flex', "align-items": 'center', gap: '8px', background: 'var(--app-bg-panel)', padding: '6px 16px 6px 6px', "border-radius": '9999px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)' }}>
+      <div style={{ "pointer-events": 'auto', display: 'flex', "align-items": 'center', gap: '8px', background: 'var(--app-bg-panel)', "backdrop-filter": 'var(--app-backdrop)', padding: '6px 16px 6px 6px', "border-radius": '9999px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)' }}>
         <button onClick={props.toggleSidebar} style={iconBtnStyle} title="Toggle Sidebar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
@@ -29,7 +29,7 @@ export function AppHeader(props: { activeFileId: string, shareUrl: () => string,
       </div>
 
       {/* Top Right Pill */}
-      <div style={{ "pointer-events": 'auto', display: 'flex', gap: '4px', background: 'var(--app-bg-panel)', padding: '6px', "border-radius": '9999px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)' }}>
+      <div style={{ "pointer-events": 'auto', display: 'flex', gap: '4px', background: 'var(--app-bg-panel)', "backdrop-filter": 'var(--app-backdrop)', padding: '6px', "border-radius": '9999px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)' }}>
         <button 
           onClick={props.onOpenSettings}
           style={iconBtnStyle}

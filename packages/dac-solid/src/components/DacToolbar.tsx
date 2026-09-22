@@ -17,7 +17,7 @@ export function DacToolbar() {
   };
 
   return (
-    <div style={{ "pointer-events": 'auto', display: 'flex', padding: '6px', "background-color": 'var(--app-bg-panel, #1e293b)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '16px', "border-radius": '9999px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
+    <div style={{ "pointer-events": 'auto', display: 'flex', padding: '6px', "background-color": 'var(--app-bg-panel, #1e293b)', "backdrop-filter": 'var(--app-backdrop)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '16px', "border-radius": '9999px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
       <div style={{ display: 'flex', gap: '4px' }}>
         <button style={buttonStyle} onClick={() => addShape('Rectangle', { width: 4, height: 2 })} title="Rectangle">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>

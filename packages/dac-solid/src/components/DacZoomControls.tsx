@@ -17,7 +17,7 @@ export function DacZoomControls() {
   };
 
   return (
-    <div style={{ "pointer-events": 'auto', display: 'flex', gap: '8px', padding: '12px', "background-color": 'var(--app-bg-panel, #1e293b)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '8px 8px 16px 16px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
+    <div style={{ "pointer-events": 'auto', display: 'flex', gap: '8px', padding: '12px', "background-color": 'var(--app-bg-panel, #1e293b)', "backdrop-filter": 'var(--app-backdrop)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '8px 8px 16px 16px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
       <button style={buttonStyle} onClick={() => setZoom(z => z * 0.9)}>-</button>
       <span style={{ color: 'var(--app-text, white)', "font-size": '14px', "min-width": '40px', "text-align": 'center' }}>{Math.round(zoom() * 100)}%</span>
       <button style={buttonStyle} onClick={() => setZoom(z => z * 1.1)}>+</button>
