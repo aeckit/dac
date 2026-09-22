@@ -18,7 +18,7 @@ export function DacToolbar() {
   };
 
   return (
-    <div style={{ display: 'flex', padding: '12px', "background-color": 'var(--app-bg-panel, #1e293b)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '8px 8px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
+    <div style={{ "pointer-events": 'auto', display: 'flex', padding: '12px', "background-color": 'var(--app-bg-panel, #1e293b)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '8px 8px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
       <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
         <button style={buttonStyle} onClick={() => addShape('Rectangle', { width: 4, height: 2 })}>Rectangle</button>
         <button style={buttonStyle} onClick={() => addShape('Line', { x2: 4, y2: 2 })}>Line</button>

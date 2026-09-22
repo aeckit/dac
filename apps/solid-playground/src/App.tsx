@@ -15,64 +15,70 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
 
   return (
-    <div style={{ ...cssVariables(), display: 'flex', "flex-direction": 'column', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--app-bg-main)', color: 'var(--app-text)' }}>
-      <AppHeader activeFileId={activeFileId()} shareUrl={shareUrl} onOpenSettings={() => setIsSettingsOpen(true)} />
-      
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <WorkspaceSidebar 
-          files={files()} 
-          activeFileId={activeFileId()} 
-          onSelect={setActiveFileId} 
-          onAdd={addFile} 
-          onDelete={deleteFile} 
-        />
-        
-        <DacProvider 
-          doc={activeDoc()} 
-          onChange={(newDoc) => updateActiveDoc(newDoc)}
-          canvasTheme={activeCanvasTheme()}
-        >
-          <div style={{ display: 'flex', "flex-direction": 'column', flex: 1, "min-width": '0' }}>
-            <DacToolbar />
-            <div style={{ display: 'flex', flex: 1, position: 'relative', "min-height": '0' }}>
-              <div style={{ flex: 1, position: 'relative' }}>
-                <DacCanvas />
-              </div>
-            </div>
-          </div>
+    <div style={{ ...cssVariables(), position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--cad-bg, #f8fafc)', color: 'var(--app-text)' }}>
+      <DacProvider 
+        doc={activeDoc()} 
+        onChange={(newDoc) => updateActiveDoc(newDoc)}
+        canvasTheme={activeCanvasTheme()}
+      >
+        {/* Layer 0: Full-Bleed Canvas */}
+        <div style={{ position: 'absolute', inset: 0, "z-index": 0 }}>
+          <DacCanvas />
+        </div>
+
+        {/* Layer 1: Floating UI Overlay */}
+        <div style={{ position: 'absolute', inset: 0, "z-index": 10, "pointer-events": 'none', display: 'flex', "flex-direction": 'column' }}>
+          <AppHeader activeFileId={activeFileId()} shareUrl={shareUrl} onOpenSettings={() => setIsSettingsOpen(true)} />
           
-          <div style={{ width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', margin: '8px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>
-            <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'space-between', "align-items": 'center' }}>
-              <h3 style={{ margin: 0, "font-size": '14px', "text-transform": 'uppercase', color: 'var(--app-text-muted)' }}>Document</h3>
-              
-              {/* Document GUI vs JSON Toggle */}
-              <div style={{ display: 'flex', background: 'var(--app-bg-sidebar)', "border-radius": '6px', overflow: 'hidden', border: '1px solid var(--app-border)' }}>
-                 <button 
-                  onClick={() => setDocumentViewMode('rendered')}
-                  style={{ padding: '4px 12px', background: documentViewMode() === 'rendered' ? 'var(--app-btn-bg)' : 'transparent', color: documentViewMode() === 'rendered' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer' }}
-                >
-                  GUI
-                </button>
-                <button 
-                  onClick={() => setDocumentViewMode('json')}
-                  style={{ padding: '4px 12px', background: documentViewMode() === 'json' ? 'var(--app-btn-bg)' : 'transparent', color: documentViewMode() === 'json' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer' }}
-                >
-                  JSON
-                </button>
+          <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <WorkspaceSidebar 
+              files={files()} 
+              activeFileId={activeFileId()} 
+              onSelect={setActiveFileId} 
+              onAdd={addFile} 
+              onDelete={deleteFile} 
+            />
+            
+            <div style={{ display: 'flex', "flex-direction": 'column', flex: 1, "min-width": '0' }}>
+              <div style={{ display: 'flex', "justify-content": 'center' }}>
+                <DacToolbar />
               </div>
+              <div style={{ flex: 1 }} /> {/* Empty space letting clicks pass through to canvas */}
             </div>
             
-            <div style={{ flex: 1, display: 'flex', "flex-direction": 'column', "min-height": '0', "overflow-y": 'auto' }}>
-              <Show when={documentViewMode() === 'rendered'}>
-                <DacInspector />
-              </Show>
-              <Show when={documentViewMode() === 'json'}>
-                <DocJsonEditor />
-              </Show>
+            <div style={{ "pointer-events": 'auto', width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', margin: '8px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>
+                <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'space-between', "align-items": 'center' }}>
+                  <h3 style={{ margin: 0, "font-size": '14px', "text-transform": 'uppercase', color: 'var(--app-text-muted)' }}>Document</h3>
+                  
+                  {/* Document GUI vs JSON Toggle */}
+                  <div style={{ display: 'flex', background: 'var(--app-bg-sidebar)', "border-radius": '6px', overflow: 'hidden', border: '1px solid var(--app-border)' }}>
+                     <button 
+                      onClick={() => setDocumentViewMode('rendered')}
+                      style={{ padding: '4px 12px', background: documentViewMode() === 'rendered' ? 'var(--app-btn-bg)' : 'transparent', color: documentViewMode() === 'rendered' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer' }}
+                    >
+                      GUI
+                    </button>
+                    <button 
+                      onClick={() => setDocumentViewMode('json')}
+                      style={{ padding: '4px 12px', background: documentViewMode() === 'json' ? 'var(--app-btn-bg)' : 'transparent', color: documentViewMode() === 'json' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer' }}
+                    >
+                      JSON
+                    </button>
+                  </div>
+                </div>
+                
+                <div style={{ flex: 1, display: 'flex', "flex-direction": 'column', "min-height": '0', "overflow-y": 'auto' }}>
+                  <Show when={documentViewMode() === 'rendered'}>
+                    <DacInspector />
+                  </Show>
+                  <Show when={documentViewMode() === 'json'}>
+                    <DocJsonEditor />
+                  </Show>
+              </div>
             </div>
           </div>
-        </DacProvider>
-      </div>
+        </div>
+      </DacProvider>
 
       <SettingsModal isOpen={isSettingsOpen()} onClose={() => setIsSettingsOpen(false)} />
     </div>
