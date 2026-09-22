@@ -13,6 +13,7 @@ export function App() {
   
   const [documentViewMode, setDocumentViewMode] = createSignal<'rendered' | 'json'>('rendered');
   const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
+  const [isSidebarOpen, setIsSidebarOpen] = createSignal(true);
 
   return (
     <div style={{ ...cssVariables(), position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--cad-bg, #f8fafc)', color: 'var(--app-text)' }}>
@@ -28,16 +29,23 @@ export function App() {
 
         {/* Layer 1: Floating UI Overlay */}
         <div style={{ position: 'absolute', inset: 0, "z-index": 10, "pointer-events": 'none', display: 'flex', "flex-direction": 'column' }}>
-          <AppHeader activeFileId={activeFileId()} shareUrl={shareUrl} onOpenSettings={() => setIsSettingsOpen(true)} />
+          <AppHeader 
+            activeFileId={activeFileId()} 
+            shareUrl={shareUrl} 
+            onOpenSettings={() => setIsSettingsOpen(true)} 
+            toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen())}
+          />
           
           <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-            <WorkspaceSidebar 
-              files={files()} 
-              activeFileId={activeFileId()} 
-              onSelect={setActiveFileId} 
-              onAdd={addFile} 
-              onDelete={deleteFile} 
-            />
+            <Show when={isSidebarOpen()}>
+              <WorkspaceSidebar 
+                files={files()} 
+                activeFileId={activeFileId()} 
+                onSelect={setActiveFileId} 
+                onAdd={addFile} 
+                onDelete={deleteFile} 
+              />
+            </Show>
             
             <div style={{ display: 'flex', "flex-direction": 'column', flex: 1, "min-width": '0' }}>
               <div style={{ display: 'flex', "justify-content": 'center' }}>
@@ -49,7 +57,7 @@ export function App() {
               </div>
             </div>
             
-            <div style={{ "pointer-events": 'auto', width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', margin: '8px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>
+            <div style={{ "pointer-events": 'auto', width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', margin: '72px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>
                 <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'space-between', "align-items": 'center' }}>
                   <h3 style={{ margin: 0, "font-size": '14px', "text-transform": 'uppercase', color: 'var(--app-text-muted)' }}>Document</h3>
                   
