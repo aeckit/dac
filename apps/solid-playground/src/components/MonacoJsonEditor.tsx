@@ -1,9 +1,7 @@
 import { createEffect, createSignal, onMount, onCleanup } from 'solid-js';
 import * as monaco from 'monaco-editor';
-import { useDac } from '@aeckit/dac-solid';
 
-export function MonacoJsonEditor() {
-  const { doc, builder } = useDac();
+export function MonacoJsonEditor(props: { value: string; onChange: (value: string) => void }) {
   let containerRef: HTMLDivElement | undefined;
   let editor: monaco.editor.IStandaloneCodeEditor | undefined;
   const [isTyping, setIsTyping] = createSignal(false);
@@ -11,7 +9,7 @@ export function MonacoJsonEditor() {
   onMount(() => {
     if (!containerRef) return;
     editor = monaco.editor.create(containerRef, {
-      value: JSON.stringify(doc() || {}, null, 2),
+      value: props.value,
       language: 'json',
       theme: 'vs-dark',
       automaticLayout: true,
@@ -21,13 +19,7 @@ export function MonacoJsonEditor() {
     const disposable = editor.onDidChangeModelContent(() => {
       if (editor?.hasTextFocus()) {
         setIsTyping(true);
-        try {
-          const val = editor.getValue();
-          const parsed = JSON.parse(val);
-          builder().setDocument(parsed);
-        } catch (e) {
-          // invalid json, ignore
-        }
+        props.onChange(editor.getValue());
       }
     });
 
@@ -41,10 +33,9 @@ export function MonacoJsonEditor() {
   });
 
   createEffect(() => {
-    const d = doc();
     if (editor && !isTyping()) {
       const current = editor.getValue();
-      const next = JSON.stringify(d || {}, null, 2);
+      const next = props.value;
       if (current !== next) {
         // Prevent cursor jumping
         const position = editor.getPosition();
