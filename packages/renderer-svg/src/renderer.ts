@@ -57,19 +57,12 @@ export function getOriginIndicator(canvasHeight = 18, scale = 1): string {
   return `
     <!-- CAD Origin (0,0) / UCS Axis Indicator -->
     <g class="cad-origin-indicator" opacity="0.85" style="pointer-events: none;">
+      <!-- Infinite Axes -->
+      <line x1="-50000" y1="${originY}" x2="50000" y2="${originY}" stroke="var(--cad-origin-x)" stroke-width="${strokeWidth}" opacity="0.6" />
+      <line x1="${originX}" y1="-50000" x2="${originX}" y2="50000" stroke="var(--cad-origin-y)" stroke-width="${strokeWidth}" opacity="0.6" />
+
       <!-- Origin Dot -->
       <circle cx="${originX}" cy="${originY}" r="${circleRadius}" fill="var(--cad-origin-x)" />
-      
-      <!-- X Axis (+X -> Right, Red/Pink) -->
-      <line x1="${originX}" y1="${originY}" x2="${originX + arrowLen}" y2="${originY}" stroke="var(--cad-origin-x)" stroke-width="${strokeWidth}" marker-end="url(#origin-arrow-x)" />
-      <text x="${originX + arrowLen + labelOffsetX}" y="${originY}" font-size="${fontSize}" fill="var(--cad-origin-x)" font-family="monospace" font-weight="bold" dominant-baseline="middle">X</text>
-      
-      <!-- Y Axis (+Y -> Up in Cartesian, -Y in SVG screen space, Cyan/Blue) -->
-      <line x1="${originX}" y1="${originY}" x2="${originX}" y2="${originY - arrowLen}" stroke="var(--cad-origin-y)" stroke-width="${strokeWidth}" marker-end="url(#origin-arrow-y)" />
-      <text x="${originX}" y="${originY - arrowLen - labelOffsetY}" font-size="${fontSize}" fill="var(--cad-origin-y)" font-family="monospace" font-weight="bold" text-anchor="middle">Y</text>
-      
-      <!-- (0,0) Coordinate Label -->
-      <text x="${originX - labelOffsetX}" y="${originY + labelOffsetY}" font-size="${(9 / 72) / scale}" fill="var(--cad-image-text)" font-family="monospace" text-anchor="end">(0,0)</text>
     </g>
   `;
 }
