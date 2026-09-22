@@ -5,7 +5,7 @@ export function AppHeader(props: { activeFileId: string, shareUrl: () => string,
   };
 
   return (
-    <div style={{ display: 'flex', "justify-content": 'space-between', "align-items": 'center', padding: '12px 24px', background: 'var(--app-bg-panel)', color: 'var(--app-text)', "border-bottom": '1px solid var(--app-border)' }}>
+    <div style={{ display: 'flex', "justify-content": 'space-between', "align-items": 'center', padding: '12px 24px', background: 'var(--app-bg-panel)', color: 'var(--app-text)', margin: '16px 16px 8px 16px', "border-radius": '12px', border: '1px solid var(--app-border)', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
       <div style={{ "font-weight": 'bold' }}>Solid Playground - {props.activeFileId}</div>
       <div style={{ display: 'flex', gap: '8px' }}>
         <button 

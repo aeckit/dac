@@ -41,7 +41,7 @@ export function App() {
             </div>
           </div>
           
-          <div style={{ width: '400px', "border-left": '1px solid var(--app-border)', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)' }}>
+          <div style={{ width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', margin: '8px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>
             <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'space-between', "align-items": 'center' }}>
               <h3 style={{ margin: 0, "font-size": '14px', "text-transform": 'uppercase', color: 'var(--app-text-muted)' }}>Document</h3>
               

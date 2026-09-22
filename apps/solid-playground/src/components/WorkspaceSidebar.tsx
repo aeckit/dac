@@ -8,7 +8,7 @@ export function WorkspaceSidebar(props: {
   onDelete: (name: string) => void;
 }) {
   return (
-    <div style={{ width: '250px', "background-color": 'var(--app-bg-sidebar)', color: 'var(--app-text)', "border-right": '1px solid var(--app-border)', display: 'flex', "flex-direction": 'column' }}>
+    <div style={{ width: '250px', "background-color": 'var(--app-bg-sidebar)', color: 'var(--app-text)', border: '1px solid var(--app-border)', display: 'flex', "flex-direction": 'column', margin: '8px 8px 16px 16px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
       <div style={{ padding: '16px', "font-weight": 'bold', "border-bottom": '1px solid var(--app-border)' }}>
         Workspace
       </div>
