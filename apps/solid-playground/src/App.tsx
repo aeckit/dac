@@ -1,5 +1,5 @@
 import { createSignal, Show } from 'solid-js';
-import { DacProvider, DacCanvas, DacInspector, DacToolbar } from '@aeckit/dac-solid';
+import { DacProvider, DacCanvas, DacInspector, DacToolbar, DacZoomControls } from '@aeckit/dac-solid';
 import { useWorkspace } from './hooks/useWorkspace';
 import { useSettings } from './hooks/useSettings';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
@@ -44,6 +44,9 @@ export function App() {
                 <DacToolbar />
               </div>
               <div style={{ flex: 1 }} /> {/* Empty space letting clicks pass through to canvas */}
+              <div style={{ display: 'flex', "justify-content": 'flex-start' }}>
+                <DacZoomControls />
+              </div>
             </div>
             
             <div style={{ "pointer-events": 'auto', width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', margin: '8px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>

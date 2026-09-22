@@ -1,0 +1,27 @@
+import { useDac } from '../hooks/useDac';
+
+export function DacZoomControls() {
+  const { setZoom, zoom, fitView } = useDac();
+
+  const buttonStyle = {
+    background: 'var(--app-btn-bg, #334155)',
+    border: 'none',
+    color: 'var(--app-btn-text, white)',
+    padding: '8px 12px',
+    cursor: 'pointer',
+    "border-radius": '4px',
+    "font-size": '14px',
+    display: 'flex',
+    "align-items": 'center',
+    "justify-content": 'center',
+  };
+
+  return (
+    <div style={{ "pointer-events": 'auto', display: 'flex', gap: '8px', padding: '12px', "background-color": 'var(--app-bg-panel, #1e293b)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '8px 8px 16px 16px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
+      <button style={buttonStyle} onClick={() => setZoom(z => z * 0.9)}>-</button>
+      <span style={{ color: 'var(--app-text, white)', "font-size": '14px', "min-width": '40px', "text-align": 'center' }}>{Math.round(zoom() * 100)}%</span>
+      <button style={buttonStyle} onClick={() => setZoom(z => z * 1.1)}>+</button>
+      <button style={buttonStyle} onClick={fitView}>Fit</button>
+    </div>
+  );
+}

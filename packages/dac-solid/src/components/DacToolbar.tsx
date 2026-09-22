@@ -18,18 +18,12 @@ export function DacToolbar() {
   };
 
   return (
-    <div style={{ "pointer-events": 'auto', display: 'flex', padding: '12px', "background-color": 'var(--app-bg-panel, #1e293b)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '8px 8px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
-      <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
+    <div style={{ "pointer-events": 'auto', display: 'flex', padding: '8px', "background-color": 'var(--app-bg-panel, #1e293b)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '16px', "border-radius": '9999px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
+      <div style={{ display: 'flex', gap: '8px' }}>
         <button style={buttonStyle} onClick={() => addShape('Rectangle', { width: 4, height: 2 })}>Rectangle</button>
         <button style={buttonStyle} onClick={() => addShape('Line', { x2: 4, y2: 2 })}>Line</button>
         <button style={buttonStyle} onClick={() => addShape('Circle', { cx: 2, cy: 2, r: 2 })}>Circle</button>
         <button style={buttonStyle} onClick={() => addShape('Text', { text: 'New Text' })}>Text</button>
-      </div>
-      <div style={{ display: 'flex', gap: '8px', "align-items": 'center' }}>
-        <button style={buttonStyle} onClick={() => setZoom(z => z * 0.9)}>-</button>
-        <span style={{ color: 'var(--app-text, white)', "font-size": '14px', "min-width": '40px', "text-align": 'center' }}>{Math.round(zoom() * 100)}%</span>
-        <button style={buttonStyle} onClick={() => setZoom(z => z * 1.1)}>+</button>
-        <button style={buttonStyle} onClick={fitView}>Fit</button>
       </div>
     </div>
   );
