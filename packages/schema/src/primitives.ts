@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 const BaseShapeSchema = z.object({
   componentId: z.string().optional(),
-  componentType: z.string().optional(),
   visible: z.any().optional(),
   color: z.string().optional(),
   strokeWidth: z.union([z.number(), z.string()]).optional(),

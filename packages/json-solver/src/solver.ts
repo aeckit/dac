@@ -54,7 +54,7 @@ export function solveDocumentGeometry(
       if (constructDoc) {
         const exploded = explodeConstruct(shape, constructDoc, resolvedParams);
         const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
-        const ctype: string = String(shape.componentType || 'ConstructReference');
+        const ctype: string = 'ConstructReference';
 
         for (const childShape of exploded) {
           if (childShape.visible !== undefined) {
@@ -76,7 +76,7 @@ export function solveDocumentGeometry(
     }
 
     const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
-    const ctype: string = String(shape.componentType || shape.type.split('::').pop() || 'Shape');
+    const ctype: string = String(shape.type.split('::').pop() || 'Shape');
 
     const solved = evaluatePrimitive(shape, resolvedParams, scaleMultiplier, canvasHeight);
     if (!groups[cid]) groups[cid] = { type: ctype, shapes: [] };
@@ -103,8 +103,7 @@ function evaluatePrimitive(
   const result: any = {
     ...s,
     type: s.type,
-    componentId: s.componentId,
-    componentType: s.componentType
+    componentId: s.componentId
   };
 
   if (s.x !== undefined) result.x = evaluateExpression(s.x, params);

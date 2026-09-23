@@ -37,7 +37,7 @@ export class DragHandler {
         
         if (comp) {
           const c: any = comp;
-          const isLine = c.type === 'Line' || c.type === 'CAD::Shape::Line' || c.componentType === 'Line';
+          const isLine = c.type === 'Line' || c.type === 'CAD::Shape::Line';
           initialStates.set(cid, {
             comp: c,
             isLine,

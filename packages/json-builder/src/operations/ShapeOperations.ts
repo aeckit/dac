@@ -8,7 +8,6 @@ export class ShapeOperations {
     const shape = {
       type: 'CAD::Shape::Rectangle',
       componentId: this.engine.generateId('rect'),
-      componentType: 'Rectangle',
       color: '#000000',
       strokeWidth: 1,
       strokeDasharray: 'none',
@@ -22,7 +21,6 @@ export class ShapeOperations {
     const shape: any = {
       type: 'CAD::Shape::Line',
       componentId: this.engine.generateId('line'),
-      componentType: 'Line',
       color: '#000000',
       strokeWidth: 1,
       strokeDasharray: 'none',
@@ -35,7 +33,6 @@ export class ShapeOperations {
     const shape: any = {
       type: 'CAD::Shape::Circle',
       componentId: this.engine.generateId('circle'),
-      componentType: 'Circle',
       color: '#000000',
       strokeWidth: 1,
       strokeDasharray: 'none',
@@ -48,7 +45,6 @@ export class ShapeOperations {
     const shape = {
       type: 'CAD::Annotation::Text',
       componentId: this.engine.generateId('text'),
-      componentType: 'Text',
       color: '#000000',
       fontSize: 12,
       ...options
@@ -60,7 +56,6 @@ export class ShapeOperations {
     const shape = {
       type: 'CAD::Shape::Image',
       componentId: this.engine.generateId('img'),
-      componentType: 'Image',
       ...options
     };
     return this.engine.addShapeToTarget(shape);

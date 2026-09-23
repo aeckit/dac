@@ -20,7 +20,6 @@ export class ViewportOperations {
     const shape = {
       type: 'CAD::Viewport',
       componentId: this.engine.generateId('viewport'),
-      componentType: 'Viewport',
       detail: '',
       detailNumber: String(targetDoc.viewports.length + 1),
       x: defaultOffset,
