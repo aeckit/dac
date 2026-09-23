@@ -61,19 +61,19 @@ export function App() {
                 <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'space-between', "align-items": 'center' }}>
                   <h3 style={{ margin: 0, "font-size": '14px', "text-transform": 'uppercase', color: 'var(--app-text-muted)' }}>Document</h3>
                   
-                  {/* Document GUI vs JSON Toggle */}
+                  {/* Document Form vs JSON Toggle */}
                   <div style={{ display: 'flex', background: 'var(--app-bg-sidebar)', "border-radius": '6px', overflow: 'hidden', border: '1px solid var(--app-border)' }}>
                      <button 
                       onClick={() => setDocumentViewMode('rendered')}
                       style={{ padding: '4px 12px', background: documentViewMode() === 'rendered' ? 'var(--app-btn-bg)' : 'transparent', color: documentViewMode() === 'rendered' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer', "font-weight": documentViewMode() === 'rendered' ? 'bold' : 'normal' }}
                     >
-                      Properties
+                      Form
                     </button>
                     <button 
                       onClick={() => setDocumentViewMode('json')}
                       style={{ padding: '4px 12px', background: documentViewMode() === 'json' ? 'var(--app-btn-bg)' : 'transparent', color: documentViewMode() === 'json' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer', "font-weight": documentViewMode() === 'json' ? 'bold' : 'normal' }}
                     >
-                      Code
+                      JSON
                     </button>
                   </div>
                 </div>
