@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onMount } from 'solid-js';
+import { createSignal, createEffect, onMount, untrack } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
 import { SelectionGizmo } from './SelectionGizmo';
@@ -11,7 +11,9 @@ export function DacCanvas() {
 
   createEffect(() => {
     // Dependency on triggerFitView so it runs when triggered
-    if (triggerFitView() > 0) {
+    const trigger = triggerFitView();
+    if (trigger > 0) {
+      untrack(() => {
       if (!containerRef) return;
       const interactives = Array.from(containerRef.querySelectorAll('.interactive-component')) as Element[];
       if (interactives.length === 0) {
@@ -67,6 +69,7 @@ export function DacCanvas() {
 
       setZoom(newZoom);
       setPan({ x: newPanX, y: newPanY });
+      });
     }
   });
 
