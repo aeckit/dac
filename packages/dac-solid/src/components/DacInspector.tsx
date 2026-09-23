@@ -11,7 +11,7 @@ export function DacInspector() {
       <Show
         when={selectedShape()}
         fallback={
-          <Show when={activeSheetId()} fallback={<p style={{ color: '#94a3b8' }}>Select a shape or sheet to inspect properties.</p>}>
+          <Show when={activeSheetId()} fallback={<p style={{ color: 'var(--app-text-muted, #94a3b8)' }}>Select a shape or sheet to inspect properties.</p>}>
             <div>
               <p><strong>Sheet Inspector</strong></p>
               <p>Sheet ID: {activeSheetId()}</p>
@@ -24,7 +24,7 @@ export function DacInspector() {
             <p><strong>Type:</strong> {shape().type}</p>
             <p><strong>ID:</strong> {shape().componentId}</p>
             <div style={{ "margin-top": '16px' }}>
-              <For each={Object.keys(shape()).filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && typeof shape()[k] !== 'object')}>
+              <For each={Object.keys(shape()).filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && k !== 'componentType' && typeof shape()[k] !== 'object')}>
                 {(key) => {
                   const val = shape()[key];
                   const isNum = typeof val === 'number';
@@ -32,7 +32,7 @@ export function DacInspector() {
                   
                   return (
                     <>
-                      <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: '#94a3b8' }}>{key}</label>
+                      <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: 'var(--app-text-muted, #94a3b8)' }}>{key}</label>
                       {isBool ? (
                         <input 
                           type="checkbox" 
@@ -49,7 +49,7 @@ export function DacInspector() {
                             if (isNum) newVal = parseFloat(newVal) || 0;
                             updateShape(shape().componentId, { [key]: newVal });
                           }}
-                          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: '#0f172a', border: '1px solid #475569', color: 'white', "border-radius": '4px' }}
+                          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px' }}
                         />
                       )}
                     </>
