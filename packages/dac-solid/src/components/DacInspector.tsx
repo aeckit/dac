@@ -5,7 +5,7 @@ export function DacInspector() {
   const { selectedShape, updateShape, activeSheetId } = useDac();
 
   return (
-    <div style={{ width: '300px', "background-color": 'var(--app-bg-panel, #1e293b)', color: 'var(--app-text, #f8fafc)', padding: '16px', "box-sizing": 'border-box', "border-left": '1px solid var(--app-border, #334155)', "overflow-y": 'auto' }}>
+    <div style={{ width: '100%', height: '100%', "background-color": 'var(--app-bg-panel, #1e293b)', color: 'var(--app-text, #f8fafc)', padding: '16px', "box-sizing": 'border-box', "overflow-y": 'auto' }}>
       <h3 style={{ "margin-top": '0' }}>Inspector</h3>
       
       <Show
