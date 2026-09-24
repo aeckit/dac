@@ -106,6 +106,10 @@ function evaluatePrimitive(
     componentId: s.componentId
   };
 
+  // Normalize 'auto' keywords so downstream renderers can apply their own environment defaults
+  if (result.color === 'auto') result.color = '';
+  if (result.fill === 'auto') result.fill = '';
+
   if (s.x !== undefined) result.x = evaluateExpression(s.x, params);
   if (s.y !== undefined) result.y = evaluateExpression(s.y, params);
   if (s.x1 !== undefined) result.x1 = evaluateExpression(s.x1, params);
