@@ -12,6 +12,7 @@ export class ShapeOperations {
       strokeWidth: 1,
       strokeDasharray: 'none',
       fill: 'transparent',
+      hatch: '',
       ...options
     };
     return this.engine.addShapeToTarget(shape);
@@ -36,6 +37,7 @@ export class ShapeOperations {
       color: 'auto',
       strokeWidth: 1,
       strokeDasharray: 'none',
+      fill: 'transparent',
       ...options
     };
     return this.engine.addShapeToTarget(shape);

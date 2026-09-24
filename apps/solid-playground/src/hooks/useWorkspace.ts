@@ -2,8 +2,8 @@ import { createSignal, createEffect } from 'solid-js';
 import LZString from 'lz-string';
 
 const DEMO_FILES = {
-  'DEMO-1.json': { type: 'CAD::Detail', geometry: [{ type: 'Rectangle', id: 'r1', x: 0, y: 0, width: 4, height: 2 }] },
-  'DEMO-2.json': { type: 'CAD::Detail', geometry: [{ type: 'Circle', id: 'c1', cx: 2, cy: 2, r: 2 }] },
+  'DEMO-1.json': { type: 'CAD::Detail', version: '1.0', scale: '1:1', geometry: [{ type: 'Rectangle', id: 'r1', x: 0, y: 0, width: 4, height: 2 }] },
+  'DEMO-2.json': { type: 'CAD::Detail', version: '1.0', scale: '1:1', geometry: [{ type: 'Circle', id: 'c1', cx: 2, cy: 2, r: 2 }] },
 };
 
 export function useWorkspace() {
@@ -32,7 +32,7 @@ export function useWorkspace() {
   };
 
   const addFile = (name: string) => {
-    setFiles(prev => ({ ...prev, [name]: { type: 'CAD::Detail', geometry: [] } }));
+    setFiles(prev => ({ ...prev, [name]: { type: 'CAD::Detail', version: '1.0', scale: '1:1', geometry: [] } }));
     setActiveFileId(name);
   };
 

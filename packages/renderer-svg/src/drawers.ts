@@ -49,9 +49,11 @@ export function drawRectangle(shape: SolvedPrimitive, scale: number, canvasHeigh
   let extraGraphics = '';
 
   if (hatch === 'Concrete') {
-    fillStr = 'fill="url(#concrete-hatch)"';
+    const hatchId = `concrete-hatch-${shape.componentId || Math.random().toString(36).substring(2, 9)}`;
+    fillStr = `fill="url(#${hatchId})"`;
+    extraGraphics = `<pattern id="${hatchId}" href="#concrete-hatch" patternTransform="scale(${1 / scale})" />`;
   } else if (hatch === 'TimberCross') {
-    fillStr = 'fill="rgba(120, 53, 15, 0.15)"';
+    fillStr = shape.fill && shape.fill !== 'transparent' ? `fill="${shape.fill}"` : 'fill="none"';
     extraGraphics = `
       <line x1="${x}" y1="${canvasHeight - rawY}" x2="${x + w}" y2="${canvasHeight - (rawY + h)}" class="cad-hatch" stroke-width="${(1.5 / 72) / scale}" />
       <line x1="${x + w}" y1="${canvasHeight - rawY}" x2="${x}" y2="${canvasHeight - (rawY + h)}" class="cad-hatch" stroke-width="${(1.5 / 72) / scale}" />
