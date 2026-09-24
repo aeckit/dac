@@ -58,8 +58,7 @@ export function App() {
             </div>
             
             <div style={{ "pointer-events": 'auto', width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', "backdrop-filter": 'var(--app-backdrop)', margin: '72px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>
-                <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'space-between', "align-items": 'center' }}>
-                  <h3 style={{ margin: 0, "font-size": '14px', "text-transform": 'uppercase', color: 'var(--app-text-muted)' }}>Document</h3>
+                <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'flex-end', "align-items": 'center' }}>
                   
                   {/* Document Form vs JSON Toggle */}
                   <div style={{ display: 'flex', background: 'var(--app-bg-sidebar)', "border-radius": '6px', overflow: 'hidden', border: '1px solid var(--app-border)' }}>

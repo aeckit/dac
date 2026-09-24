@@ -2,7 +2,7 @@ import { useDac } from '@aeckit/dac-solid';
 import { MonacoJsonEditor } from './MonacoJsonEditor';
 
 export function DocJsonEditor() {
-  const { doc, builder } = useDac();
+  const { doc, builder, selectionIds } = useDac();
 
   const handleJsonChange = (val: string) => {
     try {
@@ -13,5 +13,5 @@ export function DocJsonEditor() {
     }
   };
 
-  return <MonacoJsonEditor value={JSON.stringify(doc() || {}, null, 2)} onChange={handleJsonChange} />;
+  return <MonacoJsonEditor value={JSON.stringify(doc() || {}, null, 2)} onChange={handleJsonChange} selectedId={selectionIds()[0]} />;
 }

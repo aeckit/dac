@@ -1,46 +1,62 @@
 import { createEffect, createSignal, onMount, onCleanup } from 'solid-js';
 import * as monaco from 'monaco-editor';
 
-export function MonacoJsonEditor(props: { value: string; onChange: (value: string) => void }) {
+export function MonacoJsonEditor(props: { value: string; onChange: (value: string) => void; selectedId?: string }) {
   let containerRef: HTMLDivElement | undefined;
-  let editor: monaco.editor.IStandaloneCodeEditor | undefined;
+  const [editor, setEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | undefined>();
   const [isTyping, setIsTyping] = createSignal(false);
 
   onMount(() => {
     if (!containerRef) return;
-    editor = monaco.editor.create(containerRef, {
+    const ed = monaco.editor.create(containerRef, {
       value: props.value,
       language: 'json',
       theme: 'vs-dark',
       automaticLayout: true,
       minimap: { enabled: false }
     });
+    setEditor(ed);
 
-    const disposable = editor.onDidChangeModelContent(() => {
-      if (editor?.hasTextFocus()) {
+    const disposable = ed.onDidChangeModelContent(() => {
+      if (ed.hasTextFocus()) {
         setIsTyping(true);
-        props.onChange(editor.getValue());
+        props.onChange(ed.getValue());
       }
     });
 
-    const blurDisposable = editor.onDidBlurEditorText(() => setIsTyping(false));
+    const blurDisposable = ed.onDidBlurEditorText(() => setIsTyping(false));
 
     onCleanup(() => {
       disposable.dispose();
       blurDisposable.dispose();
-      editor?.dispose();
+      ed.dispose();
     });
   });
 
   createEffect(() => {
-    if (editor && !isTyping()) {
-      const current = editor.getValue();
+    const ed = editor();
+    if (ed && !isTyping()) {
+      const current = ed.getValue();
       const next = props.value;
       if (current !== next) {
         // Prevent cursor jumping
-        const position = editor.getPosition();
-        editor.setValue(next);
-        if (position) editor.setPosition(position);
+        const position = ed.getPosition();
+        ed.setValue(next);
+        if (position) ed.setPosition(position);
+      }
+    }
+  });
+
+  createEffect(() => {
+    const ed = editor();
+    if (ed && props.selectedId) {
+      const model = ed.getModel();
+      if (!model) return;
+      const matches = model.findMatches(`"componentId": "${props.selectedId}"`, false, false, false, null, true);
+      if (matches.length > 0) {
+        const match = matches[0];
+        ed.revealLineInCenter(match.range.startLineNumber);
+        ed.setSelection(match.range);
       }
     }
   });

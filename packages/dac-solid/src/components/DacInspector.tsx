@@ -2,16 +2,34 @@ import { Show, For } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 
 export function DacInspector() {
-  const { selectedShape, updateShape, activeSheetId } = useDac();
+  const { selectedShape, updateShape, activeSheetId, doc, selectShape } = useDac();
 
   return (
     <div style={{ width: '100%', height: '100%', "background-color": 'var(--app-bg-panel, #1e293b)', color: 'var(--app-text, #f8fafc)', padding: '16px', "box-sizing": 'border-box', "overflow-y": 'auto' }}>
-      <h3 style={{ "margin-top": '0' }}>Inspector</h3>
-      
       <Show
         when={selectedShape()}
         fallback={
-          <Show when={activeSheetId()} fallback={<p style={{ color: 'var(--app-text-muted, #94a3b8)' }}>Select a shape or sheet to inspect properties.</p>}>
+          <Show when={activeSheetId()} fallback={
+            <div>
+              <p><strong>View Type:</strong> {doc()?.type}</p>
+              <div style={{ "margin-top": '16px' }}>
+                <p><strong>Geometries:</strong></p>
+                <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px' }}>
+                  <For each={doc()?.geometry || []}>
+                    {(geom: any) => (
+                      <div 
+                        onClick={() => selectShape(geom.componentId)}
+                        style={{ padding: '8px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', "border-radius": '4px', cursor: 'pointer' }}
+                      >
+                        <div style={{ "font-size": '12px', "font-weight": 'bold' }}>{geom.type}</div>
+                        <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{geom.componentId}</div>
+                      </div>
+                    )}
+                  </For>
+                </div>
+              </div>
+            </div>
+          }>
             <div>
               <p><strong>Sheet Inspector</strong></p>
               <p>Sheet ID: {activeSheetId()}</p>
