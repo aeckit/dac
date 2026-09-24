@@ -14,6 +14,17 @@
     },
     "clean": {
       "cache": false
+    },
+    "compile": {
+      "dependsOn": ["^compile"]
+    },
+    "watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "package": {
+      "dependsOn": ["build"],
+      "outputs": ["*.vsix"]
     }
   }
 }
