@@ -1,6 +1,7 @@
 const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
+const { solidPlugin } = require('esbuild-plugin-solid');
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -51,7 +52,7 @@ async function main() {
 
   // 2. Compile Webview UI (Browser)
   const webviewCtx = await esbuild.context({
-    entryPoints: ['src/webview/main.ts'],
+    entryPoints: ['src/webview/main.tsx'],
     bundle: true,
     format: 'iife',
     minify: production,
@@ -61,7 +62,7 @@ async function main() {
     platform: 'browser',
     target: 'es2020',
     logLevel: 'silent',
-    plugins: [esbuildLogPlugin('webview')],
+    plugins: [solidPlugin(), esbuildLogPlugin('webview')],
   });
 
   if (watch) {
