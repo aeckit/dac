@@ -47,12 +47,13 @@
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "build": "node esbuild.js --production",
-    "package": "npx @vscode/vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies"
   },
   "devDependencies": {
     "@aeckit/dac-schema": "*",
     "@types/node": "^18.17.0",
     "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.32.0",
     "esbuild": "^0.20.1",
     "typescript": "^5.3.3"
   },
