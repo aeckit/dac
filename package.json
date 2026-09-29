@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "dev": "npm run dev --workspace=@aeckit/playground & npm run dev --workspace=@aeckit/solid-playground",
+    "dev": "npm run dev --workspace=@aeckit/solid-playground",
     "compile": "turbo run compile",
     "watch": "turbo run watch",
     "build": "turbo run build",
