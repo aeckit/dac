@@ -81,21 +81,32 @@ export function DacCanvas() {
       if (document.type === 'CAD::Project') {
         const sheetId = activeSheetId();
         if (sheetId) {
-          const sheet = nestedDocs()?.get(sheetId) || document.sheets?.find((s: any) => s.id === sheetId);
+          const sheetRef = document.sheets?.find((s: any) => s.sheetNumber === sheetId || s.id === sheetId) || sheetId;
+          const sheet = typeof sheetRef === 'object' ? sheetRef : nestedDocs()?.get(sheetRef as string);
           if (sheet) {
              const viewportsMap = new Map();
              if (sheet.viewports) {
                 sheet.viewports.forEach((vp: any) => {
-                  const detailDoc = nestedDocs()?.get(vp.detailId);
-                  if (detailDoc) viewportsMap.set(vp.detailId, detailDoc);
+                  const detailDoc = nestedDocs()?.get(vp.detail);
+                  if (detailDoc) viewportsMap.set(vp.detail, detailDoc);
                 });
              }
-             const svg = renderSheet(sheet, document.projectData || {}, viewportsMap, undefined, 0, 0, 'ARCH D', undefined, canvasTheme());
+             const svg = renderSheet(sheet, document.parameters || {}, viewportsMap, undefined, 0, 0, document.defaultPaperSize || 'ARCH D', undefined, canvasTheme());
              setSvgContent(svg);
              return;
           }
         }
         setSvgContent('<svg><text x="50" y="50" fill="white">Select a sheet to view</text></svg>');
+      } else if (document.type === 'CAD::SheetConfiguration') {
+        const viewportsMap = new Map();
+        if (document.viewports) {
+          document.viewports.forEach((vp: any) => {
+            const detailDoc = nestedDocs()?.get(vp.detail);
+            if (detailDoc) viewportsMap.set(vp.detail, detailDoc);
+          });
+        }
+        const svg = renderSheet(document, {}, viewportsMap, undefined, 0, 0, 'ARCH D', undefined, canvasTheme());
+        setSvgContent(svg);
       } else {
         const svg = renderDetail(document as any, 24, 18, (id) => nestedDocs()?.get(id), canvasTheme());
         setSvgContent(svg);
