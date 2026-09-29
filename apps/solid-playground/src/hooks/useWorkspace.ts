@@ -23,7 +23,13 @@ export function useWorkspace() {
     const saved = localStorage.getItem('dac_workspace');
     if (saved) {
       try {
-        setFiles(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        // Merge so we don't lose the new demo files if upgrading
+        const merged = { ...DEMO_FILES, ...parsed };
+        setFiles(merged);
+        if (!merged[activeFileId()]) {
+           setActiveFileId(Object.keys(merged)[0] || '');
+        }
       } catch(e) {}
     }
   });

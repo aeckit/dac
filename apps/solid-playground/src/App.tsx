@@ -19,6 +19,7 @@ export function App() {
     <div style={{ ...cssVariables(), position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--cad-bg, #f8fafc)', color: 'var(--app-text)' }}>
       <DacProvider 
         doc={activeDoc()} 
+        nestedDocs={new Map(Object.entries(files()))}
         onChange={(newDoc) => updateActiveDoc(newDoc)}
         canvasTheme={activeCanvasTheme()}
       >
