@@ -124,7 +124,17 @@ export function drawDimension(shape: SolvedPrimitive, scale: number, canvasHeigh
   const textY = ty + ny * textOffset + (3 / 72) / scale;
 
   const strokeWidth = (1.5 / 72) / scale;
-  const fontSize = (11 / 72) / scale;
+  
+  // Helper to parse fractional strings like "1/8" or "3/32"
+  let parsedFontSize = 11;
+  if (typeof shape.fontSize === 'string' && shape.fontSize.includes('/')) {
+    const parts = shape.fontSize.split('/');
+    parsedFontSize = (Number(parts[0]) / Number(parts[1])) * 72;
+  } else if (shape.fontSize !== undefined) {
+    parsedFontSize = Number(shape.fontSize);
+  }
+  
+  const fontSize = (parsedFontSize / 72) / scale;
 
   return `
     <!-- Extension lines -->
@@ -142,7 +152,16 @@ export function drawText(shape: SolvedPrimitive, scale: number, canvasHeight = 1
   const x = Number(shape.x ?? 0);
   const y = canvasHeight - Number(shape.y ?? 0);
   const text = String(shape.text ?? '');
-  const fontSize = ((Number(shape.fontSize) || 11) / 72) / scale;
+  
+  let parsedFontSize = 11;
+  if (typeof shape.fontSize === 'string' && shape.fontSize.includes('/')) {
+    const parts = shape.fontSize.split('/');
+    parsedFontSize = (Number(parts[0]) / Number(parts[1])) * 72;
+  } else if (shape.fontSize !== undefined) {
+    parsedFontSize = Number(shape.fontSize);
+  }
+  const fontSize = (parsedFontSize / 72) / scale;
+  
   const color = shape.color || 'var(--cad-text)';
 
   const lines = text.split(/\\n|\n/);
@@ -168,7 +187,16 @@ export function drawTextBox(shape: SolvedPrimitive, scale: number, canvasHeight 
   const width = Number(shape.width || 8);
   const y = canvasHeight - rawY;
   const text = String(shape.text ?? '');
-  const fontSize = ((Number(shape.fontSize) || 11) / 72) / scale;
+  
+  let parsedFontSize = 11;
+  if (typeof shape.fontSize === 'string' && shape.fontSize.includes('/')) {
+    const parts = shape.fontSize.split('/');
+    parsedFontSize = (Number(parts[0]) / Number(parts[1])) * 72;
+  } else if (shape.fontSize !== undefined) {
+    parsedFontSize = Number(shape.fontSize);
+  }
+  const fontSize = (parsedFontSize / 72) / scale;
+  
   const color = shape.color || 'var(--cad-text)';
 
   return `<foreignObject x="${x}" y="${y}" width="${width}" height="100"><div xmlns="http://www.w3.org/1999/xhtml" style="color: ${color}; font-size: ${fontSize}px; white-space: pre-wrap; font-family: monospace;">${text}</div></foreignObject>`;
@@ -188,7 +216,15 @@ export function drawLeader(shape: SolvedPrimitive, scale: number, canvasHeight =
   const textX = anchorX + offsetX;
   const textY = anchorY + offsetY;
 
-  const fontSize = ((Number(shape.fontSize) || 11) / 72) / scale;
+  let parsedFontSize = 11;
+  if (typeof shape.fontSize === 'string' && shape.fontSize.includes('/')) {
+    const parts = shape.fontSize.split('/');
+    parsedFontSize = (Number(parts[0]) / Number(parts[1])) * 72;
+  } else if (shape.fontSize !== undefined) {
+    parsedFontSize = Number(shape.fontSize);
+  }
+  const fontSize = (parsedFontSize / 72) / scale;
+  
   const strokeWidth = (1.5 / 72) / scale;
   const text = String(shape.text ?? '');
   const color = shape.color || '#06b6d4';
