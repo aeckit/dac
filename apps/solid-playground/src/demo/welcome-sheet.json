@@ -1,0 +1,45 @@
+{
+  "type": "CAD::Project",
+  "projectName": "Playground Starter Guide",
+  "sheets": [
+    {
+      "type": "CAD::SheetConfiguration",
+      "sheetNumber": "A101",
+      "sheetName": "Welcome Guide",
+      "viewports": [
+        {
+          "detail": "guide-intro.json",
+          "x": 2,
+          "y": 20,
+          "scale": "1:1",
+          "detailNumber": "1",
+          "title": "Welcome to aeckit DaC"
+        },
+        {
+          "detail": "guide-json-editor.json",
+          "x": 2,
+          "y": 12,
+          "scale": "1:1",
+          "detailNumber": "2",
+          "title": "Using the Editor"
+        },
+        {
+          "detail": "guide-canvas.json",
+          "x": 2,
+          "y": 4,
+          "scale": "1:1",
+          "detailNumber": "3",
+          "title": "Canvas Navigation"
+        },
+        {
+          "detail": "guide-llm-prompt.json",
+          "x": 12,
+          "y": 12,
+          "scale": "1:1",
+          "detailNumber": "4",
+          "title": "AI Generation Guide"
+        }
+      ]
+    }
+  ]
+}
