@@ -275,6 +275,7 @@ export function drawImage(shape: SolvedPrimitive, scale: number, canvasHeight = 
 }
 
 export const L1_REGISTRY: Record<string, ShapeDrawer> = {
+  // Fully Qualified Types
   "CAD::Shape::Line": drawLine,
   "CAD::Shape::Circle": drawCircle,
   "CAD::Shape::Rectangle": drawRectangle,
@@ -283,13 +284,14 @@ export const L1_REGISTRY: Record<string, ShapeDrawer> = {
   "CAD::Annotation::TextBox": drawTextBox,
   "CAD::Annotation::Leader": drawLeader,
   "CAD::Annotation::Image": drawImage,
-  // Shorthand aliases for convenience
-  "line": drawLine,
-  "circle": drawCircle,
-  "rect": drawRectangle,
-  "dimension": drawDimension,
-  "text": drawText,
-  "textbox": drawTextBox,
-  "leader": drawLeader,
-  "image": drawImage,
+  
+  // Strict Schema Aliases (PascalCase)
+  "Line": drawLine,
+  "Circle": drawCircle,
+  "Rectangle": drawRectangle,
+  "Dimension": drawDimension,
+  "Text": drawText,
+  "TextBox": drawTextBox,
+  "Leader": drawLeader,
+  "Image": drawImage,
 };
