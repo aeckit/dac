@@ -1,17 +1,24 @@
 import { createEffect, createSignal, onMount, onCleanup } from 'solid-js';
 import * as monaco from 'monaco-editor';
 
+import { useSettings } from '../hooks/useSettings';
+import solarizedLightTheme from '../themes/solarizedLight.json';
+
+// Register the custom theme once
+monaco.editor.defineTheme('solarized-light', solarizedLightTheme as monaco.editor.IStandaloneThemeData);
+
 export function MonacoJsonEditor(props: { value: string; onChange: (value: string) => void; selectedId?: string }) {
   let containerRef: HTMLDivElement | undefined;
   const [editor, setEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | undefined>();
   const [isTyping, setIsTyping] = createSignal(false);
+  const { settings } = useSettings();
 
   onMount(() => {
     if (!containerRef) return;
     const ed = monaco.editor.create(containerRef, {
       value: props.value,
       language: 'json',
-      theme: 'vs-dark',
+      theme: settings().appTheme === 'light' ? 'solarized-light' : 'vs-dark',
       automaticLayout: true,
       minimap: { enabled: false }
     });
@@ -31,6 +38,11 @@ export function MonacoJsonEditor(props: { value: string; onChange: (value: strin
       blurDisposable.dispose();
       ed.dispose();
     });
+  });
+
+  createEffect(() => {
+    const currentTheme = settings().appTheme === 'light' ? 'solarized-light' : 'vs-dark';
+    monaco.editor.setTheme(currentTheme);
   });
 
   createEffect(() => {
