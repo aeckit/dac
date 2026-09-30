@@ -91,7 +91,10 @@ export function DacCanvas() {
                   if (detailDoc) viewportsMap.set(vp.detail, detailDoc);
                 });
              }
-             const svg = renderSheet(sheet, document.parameters || {}, viewportsMap, undefined, 0, 0, document.defaultPaperSize || 'ARCH D', undefined, canvasTheme());
+             const titleBlockDoc = sheet.titleBlock ? nestedDocs()?.get(sheet.titleBlock) : (document.defaultTitleBlock ? nestedDocs()?.get(document.defaultTitleBlock) : undefined);
+             const paperSize = sheet.paperSize || document.defaultPaperSize || 'ARCH D';
+             const titleBlockData = { ...document.parameters, ...sheet.parameters, sheetName: sheet.sheetName, sheetNumber: sheet.sheetNumber };
+             const svg = renderSheet(sheet, titleBlockData, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
              setSvgContent(svg);
              return;
           }
@@ -105,7 +108,10 @@ export function DacCanvas() {
             if (detailDoc) viewportsMap.set(vp.detail, detailDoc);
           });
         }
-        const svg = renderSheet(document, {}, viewportsMap, undefined, 0, 0, 'ARCH D', undefined, canvasTheme());
+        const titleBlockDoc = document.titleBlock ? nestedDocs()?.get(document.titleBlock) : undefined;
+        const paperSize = document.paperSize || 'ARCH D';
+        const titleBlockData = { ...document.parameters, sheetName: document.sheetName, sheetNumber: document.sheetNumber };
+        const svg = renderSheet(document, titleBlockData, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
         setSvgContent(svg);
       } else {
         const svg = renderDetail(document as any, 24, 18, (id) => nestedDocs()?.get(id), canvasTheme());

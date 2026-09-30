@@ -5,13 +5,15 @@ import guideIntro from '../demo/guide-intro.json';
 import guideJsonEditor from '../demo/guide-json-editor.json';
 import guideCanvas from '../demo/guide-canvas.json';
 import guideLlmPrompt from '../demo/guide-llm-prompt.json';
+import titleblock from '../demo/titleblock.json';
 
 const DEMO_FILES = {
   'welcome-sheet.json': welcomeSheet,
   'guide-intro.json': guideIntro,
   'guide-json-editor.json': guideJsonEditor,
   'guide-canvas.json': guideCanvas,
-  'guide-llm-prompt.json': guideLlmPrompt
+  'guide-llm-prompt.json': guideLlmPrompt,
+  'titleblock.json': titleblock
 };
 
 export function useWorkspace() {

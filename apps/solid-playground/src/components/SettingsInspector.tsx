@@ -69,6 +69,24 @@ export function SettingsInspector() {
           </div>
         ))}
       </div>
+
+      <div style={{ "border-top": '1px solid var(--app-border)', "padding-top": '16px', "margin-top": '16px' }}>
+        <h4 style={{ "margin-top": 0, color: '#ef4444' }}>Danger Zone</h4>
+        <button 
+          onClick={() => {
+            if (window.confirm('Are you sure? This will delete all your local changes and restore the default demo files.')) {
+              localStorage.removeItem('dac_workspace');
+              window.location.reload();
+            }
+          }}
+          style={{ padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', "border-radius": '4px', cursor: 'pointer', "font-weight": 'bold' }}
+        >
+          Reset Workspace (Reload Demos)
+        </button>
+        <p style={{ "font-size": '12px', color: 'var(--app-text-muted)', "margin-top": '8px' }}>
+          This will delete all your local files and restore the default demo files from the repository.
+        </p>
+      </div>
     </div>
   );
 }

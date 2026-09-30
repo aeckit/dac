@@ -2,6 +2,11 @@
   "type": "CAD::SheetConfiguration",
   "sheetNumber": "A101",
   "sheetName": "Welcome Guide",
+  "paperSize": "ARCH D",
+  "titleBlock": "titleblock.json",
+  "parameters": {
+    "projectName": "DRAWINGS AS CODE"
+  },
   "viewports": [
     {
       "detail": "guide-intro.json",
