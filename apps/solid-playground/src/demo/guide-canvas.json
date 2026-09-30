@@ -3,9 +3,39 @@
   "version": "1.0",
   "scale": "1:1",
   "geometry": [
-    { "type": "CAD::Shape::Rectangle", "x": 0, "y": 0, "width": 8, "height": 4, "fill": "#fdf4ff", "color": "#c026d3" },
-    { "type": "CAD::Annotation::Text", "x": 0.5, "y": 3.2, "text": "Canvas Navigation", "fontSize": 0.35, "color": "#701a75" },
-    { "type": "CAD::Annotation::TextBox", "x": 0.5, "y": 2.2, "width": 7, "text": "- Middle Click & Drag: Pan around the canvas\n- Scroll Wheel: Zoom in and out\n- Top toolbar: Quick tools for fits and selection.", "fontSize": 0.15, "color": "#86198f" },
-    { "type": "CAD::Annotation::Leader", "x": 6, "y": 1, "dx": 1, "dy": -1, "text": "Try panning!", "color": "#c026d3" }
+    {
+      "type": "CAD::Shape::Rectangle",
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 4,
+      "fill": "#fdf4ff",
+      "color": "#c026d3"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": 0.5,
+      "y": 3.2,
+      "text": "Canvas Navigation",
+      "fontSize": 11,
+      "color": "#701a75"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": 0.5,
+      "y": 2.2,
+      "text": "- Middle Click & Drag: Pan around the canvas\n- Scroll Wheel: Zoom in and out\n- Top toolbar: Quick tools for fits and selection.",
+      "fontSize": 11,
+      "color": "#86198f"
+    },
+    {
+      "type": "CAD::Annotation::Leader",
+      "x": 6,
+      "y": 1,
+      "dx": 1,
+      "dy": -1,
+      "text": "Try panning!",
+      "color": "#c026d3"
+    }
   ]
 }

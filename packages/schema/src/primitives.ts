@@ -43,15 +43,6 @@ export const TextSchema = BaseShapeSchema.extend({
   fontSize: z.union([z.number(), z.string()]).optional(),
 });
 
-export const TextBoxSchema = BaseShapeSchema.extend({
-  type: z.union([z.literal('CAD::Annotation::TextBox'), z.literal('TextBox')]),
-  x: z.number().default(0),
-  y: z.number().default(0),
-  width: z.number().default(10),
-  text: z.string().default('Text Box'),
-  fontSize: z.union([z.number(), z.string()]).optional(),
-});
-
 export const DimensionSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Annotation::Dimension'), z.literal('Dimension')]),
   x1: z.number().default(0),
@@ -103,7 +94,6 @@ export type GeometryPrimitive =
   | z.infer<typeof LineSchema>
   | z.infer<typeof CircleSchema>
   | z.infer<typeof TextSchema>
-  | z.infer<typeof TextBoxSchema>
   | z.infer<typeof DimensionSchema>
   | z.infer<typeof LeaderSchema>
   | z.infer<typeof ImageSchema>
@@ -115,7 +105,6 @@ export const GeometryPrimitiveSchema: z.ZodType<GeometryPrimitive> = z.union([
   LineSchema,
   CircleSchema,
   TextSchema,
-  TextBoxSchema,
   DimensionSchema,
   LeaderSchema,
   ImageSchema,

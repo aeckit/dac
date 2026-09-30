@@ -180,27 +180,6 @@ export function drawText(shape: SolvedPrimitive, scale: number, canvasHeight = 1
   return `<text x="${x}" y="${y}" font-size="${fontSize}" fill="${color}" class="cad-text" dominant-baseline="auto"${transform}>${tspans}</text>`;
 }
 
-// Annotation: TextBox (Cartesian +Y = UP)
-export function drawTextBox(shape: SolvedPrimitive, scale: number, canvasHeight = 18): string {
-  const x = Number(shape.x ?? 0);
-  const rawY = Number(shape.y ?? 0);
-  const width = Number(shape.width || 8);
-  const y = canvasHeight - rawY;
-  const text = String(shape.text ?? '');
-  
-  let parsedFontSize = 11;
-  if (typeof shape.fontSize === 'string' && shape.fontSize.includes('/')) {
-    const parts = shape.fontSize.split('/');
-    parsedFontSize = (Number(parts[0]) / Number(parts[1])) * 72;
-  } else if (shape.fontSize !== undefined) {
-    parsedFontSize = Number(shape.fontSize);
-  }
-  const fontSize = (parsedFontSize / 72) / scale;
-  
-  const color = shape.color || 'var(--cad-text)';
-
-  return `<foreignObject x="${x}" y="${y}" width="${width}" height="100"><div xmlns="http://www.w3.org/1999/xhtml" style="color: ${color}; font-size: ${fontSize}px; white-space: pre-wrap; font-family: monospace;">${text}</div></foreignObject>`;
-}
 
 // Annotation: Leader (Cartesian +Y = UP)
 export function drawLeader(shape: SolvedPrimitive, scale: number, canvasHeight = 18): string {
@@ -281,7 +260,6 @@ export const L1_REGISTRY: Record<string, ShapeDrawer> = {
   "CAD::Shape::Rectangle": drawRectangle,
   "CAD::Annotation::Dimension": drawDimension,
   "CAD::Annotation::Text": drawText,
-  "CAD::Annotation::TextBox": drawTextBox,
   "CAD::Annotation::Leader": drawLeader,
   "CAD::Annotation::Image": drawImage,
   
@@ -291,7 +269,6 @@ export const L1_REGISTRY: Record<string, ShapeDrawer> = {
   "Rectangle": drawRectangle,
   "Dimension": drawDimension,
   "Text": drawText,
-  "TextBox": drawTextBox,
   "Leader": drawLeader,
   "Image": drawImage,
 };
