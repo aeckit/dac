@@ -5,14 +5,25 @@ import { useSettings } from './hooks/useSettings';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
 import { DocJsonEditor } from './components/DocJsonEditor';
 import { AppHeader } from './components/AppHeader';
+import { SettingsInspector } from './components/SettingsInspector';
+import { SettingsJsonEditor } from './components/SettingsJsonEditor';
 
 export function App() {
   const { files, activeFileId, setActiveFileId, activeDoc, updateActiveDoc, addFile, deleteFile, shareUrl } = useWorkspace();
   const { cssVariables, activeCanvasTheme } = useSettings();
   
-  const [documentViewMode, setDocumentViewMode] = createSignal<'rendered' | 'json'>('rendered');
-  const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
+  const [rightPaneMode, setRightPaneMode] = createSignal<'properties' | 'settings' | 'closed'>('properties');
+  const [viewMode, setViewMode] = createSignal<'rendered' | 'json'>('rendered');
+  
   const [isSidebarOpen, setIsSidebarOpen] = createSignal(true);
+
+  const toggleRightPane = (mode: 'properties' | 'settings') => {
+    if (rightPaneMode() === mode) {
+      setRightPaneMode('closed');
+    } else {
+      setRightPaneMode(mode);
+    }
+  };
 
   return (
     <div style={{ ...cssVariables(), position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--cad-bg, #f8fafc)', color: 'var(--app-text)' }}>
@@ -31,9 +42,11 @@ export function App() {
         <div style={{ position: 'absolute', inset: 0, "z-index": 10, "pointer-events": 'none', display: 'flex', "flex-direction": 'column' }}>
           <AppHeader 
             activeFileId={activeFileId()} 
-            shareUrl={shareUrl} 
-            onOpenProperties={() => setDocumentViewMode('rendered')}
-            onOpenSettings={() => setIsSettingsOpen(true)} 
+            shareUrl={shareUrl}
+            rightPaneMode={rightPaneMode()}
+            isSidebarOpen={isSidebarOpen()}
+            onOpenProperties={() => toggleRightPane('properties')}
+            onOpenSettings={() => toggleRightPane('settings')} 
             toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen())}
           />
           
@@ -58,40 +71,50 @@ export function App() {
               </div>
             </div>
             
-            <div style={{ "pointer-events": 'auto', width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', "backdrop-filter": 'var(--app-backdrop)', margin: '72px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>
-                <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'flex-end', "align-items": 'center' }}>
-                  
-                  {/* Document Form vs JSON Toggle */}
-                  <div style={{ display: 'flex', background: 'var(--app-bg-sidebar)', "border-radius": '6px', overflow: 'hidden', border: '1px solid var(--app-border)' }}>
-                     <button 
-                      onClick={() => setDocumentViewMode('rendered')}
-                      style={{ padding: '4px 12px', background: documentViewMode() === 'rendered' ? 'var(--app-btn-bg)' : 'transparent', color: documentViewMode() === 'rendered' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer', "font-weight": documentViewMode() === 'rendered' ? 'bold' : 'normal' }}
-                    >
-                      Form
-                    </button>
-                    <button 
-                      onClick={() => setDocumentViewMode('json')}
-                      style={{ padding: '4px 12px', background: documentViewMode() === 'json' ? 'var(--app-btn-bg)' : 'transparent', color: documentViewMode() === 'json' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer', "font-weight": documentViewMode() === 'json' ? 'bold' : 'normal' }}
-                    >
-                      JSON
-                    </button>
+            <Show when={rightPaneMode() !== 'closed'}>
+              <div style={{ "pointer-events": 'auto', width: '400px', display: 'flex', "flex-direction": 'column', background: 'var(--app-bg-sidebar)', "backdrop-filter": 'var(--app-backdrop)', margin: '72px 16px 16px 8px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid var(--app-border)', overflow: 'hidden' }}>
+                  <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', background: 'var(--app-bg-panel)', display: 'flex', "justify-content": 'space-between', "align-items": 'center' }}>
+                    <h2 style={{ margin: 0, "font-size": '16px' }}>{rightPaneMode() === 'properties' ? 'Properties' : 'App Settings'}</h2>
+                    {/* Form vs JSON Toggle */}
+                    <div style={{ display: 'flex', background: 'var(--app-bg-sidebar)', "border-radius": '6px', overflow: 'hidden', border: '1px solid var(--app-border)' }}>
+                      <button 
+                        onClick={() => setViewMode('rendered')}
+                        style={{ padding: '4px 12px', background: viewMode() === 'rendered' ? 'var(--app-btn-bg)' : 'transparent', color: viewMode() === 'rendered' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer', "font-weight": viewMode() === 'rendered' ? 'bold' : 'normal' }}
+                      >
+                        Form
+                      </button>
+                      <button 
+                        onClick={() => setViewMode('json')}
+                        style={{ padding: '4px 12px', background: viewMode() === 'json' ? 'var(--app-btn-bg)' : 'transparent', color: viewMode() === 'json' ? 'var(--app-btn-text)' : 'var(--app-text-muted)', border: 'none', "font-size": '12px', cursor: 'pointer', "font-weight": viewMode() === 'json' ? 'bold' : 'normal' }}
+                      >
+                        JSON
+                      </button>
+                    </div>
                   </div>
+                  
+                  <div style={{ flex: 1, display: 'flex', "flex-direction": 'column', "min-height": '0', "overflow-y": 'auto' }}>
+                    <Show when={rightPaneMode() === 'properties'}>
+                      <Show when={viewMode() === 'rendered'}>
+                        <DacInspector />
+                      </Show>
+                      <Show when={viewMode() === 'json'}>
+                        <DocJsonEditor />
+                      </Show>
+                    </Show>
+                    <Show when={rightPaneMode() === 'settings'}>
+                      <Show when={viewMode() === 'rendered'}>
+                        <SettingsInspector />
+                      </Show>
+                      <Show when={viewMode() === 'json'}>
+                        <SettingsJsonEditor />
+                      </Show>
+                    </Show>
                 </div>
-                
-                <div style={{ flex: 1, display: 'flex', "flex-direction": 'column', "min-height": '0', "overflow-y": 'auto' }}>
-                  <Show when={documentViewMode() === 'rendered'}>
-                    <DacInspector />
-                  </Show>
-                  <Show when={documentViewMode() === 'json'}>
-                    <DocJsonEditor />
-                  </Show>
               </div>
-            </div>
+            </Show>
           </div>
         </div>
       </DacProvider>
-
-      <SettingsModal isOpen={isSettingsOpen()} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }
