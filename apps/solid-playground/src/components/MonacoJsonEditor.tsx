@@ -3,9 +3,25 @@ import * as monaco from 'monaco-editor';
 
 import { useSettings } from '../hooks/useSettings';
 import solarizedLightTheme from '../themes/solarizedLight.json';
+import { VisualizerDocumentSchema } from '@aeckit/dac-schema';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 // Register the custom theme once
 monaco.editor.defineTheme('solarized-light', solarizedLightTheme as monaco.editor.IStandaloneThemeData);
+
+// Setup DaC JSON Schema validation
+// @ts-ignore - TS complains about excessively deep instantiation due to complex Zod unions
+const dacJsonSchema = zodToJsonSchema(VisualizerDocumentSchema as any, "dac");
+monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+  validate: true,
+  schemas: [
+    {
+      uri: "http://aeckit.org/dac-schema.json",
+      fileMatch: ["*"],
+      schema: dacJsonSchema
+    }
+  ]
+});
 
 export function MonacoJsonEditor(props: { value: string; onChange: (value: string) => void; selectedId?: string }) {
   let containerRef: HTMLDivElement | undefined;

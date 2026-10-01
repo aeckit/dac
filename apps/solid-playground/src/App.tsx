@@ -5,7 +5,6 @@ import { useSettings } from './hooks/useSettings';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
 import { DocJsonEditor } from './components/DocJsonEditor';
 import { AppHeader } from './components/AppHeader';
-import { SettingsModal } from './components/SettingsModal';
 
 export function App() {
   const { files, activeFileId, setActiveFileId, activeDoc, updateActiveDoc, addFile, deleteFile, shareUrl } = useWorkspace();
@@ -33,6 +32,7 @@ export function App() {
           <AppHeader 
             activeFileId={activeFileId()} 
             shareUrl={shareUrl} 
+            onOpenProperties={() => setDocumentViewMode('rendered')}
             onOpenSettings={() => setIsSettingsOpen(true)} 
             toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen())}
           />

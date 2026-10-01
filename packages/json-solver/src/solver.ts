@@ -62,9 +62,13 @@ export function solveDocumentGeometry(
             if (isVisible === false || isVisible === 'false' || isVisible === 0) continue;
           }
 
-          const solved = evaluatePrimitive(childShape, resolvedParams, scaleMultiplier, canvasHeight);
-          if (!groups[cid]) groups[cid] = { type: ctype, shapes: [] };
-          groups[cid].shapes.push(solved);
+          try {
+            const solved = evaluatePrimitive(childShape, resolvedParams, scaleMultiplier, canvasHeight);
+            if (!groups[cid]) groups[cid] = { type: ctype, shapes: [] };
+            groups[cid].shapes.push(solved);
+          } catch (err) {
+            console.warn('Skipped malformed construct child in solver:', err);
+          }
         }
       }
       continue;
@@ -75,12 +79,16 @@ export function solveDocumentGeometry(
       if (isVisible === false || isVisible === 'false' || isVisible === 0) continue;
     }
 
-    const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
-    const ctype: string = String(shape.type.split('::').pop() || 'Shape');
+    try {
+      const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
+      const ctype: string = shape.type ? String(shape.type.split('::').pop() || 'Shape') : 'Unknown';
 
-    const solved = evaluatePrimitive(shape, resolvedParams, scaleMultiplier, canvasHeight);
-    if (!groups[cid]) groups[cid] = { type: ctype, shapes: [] };
-    groups[cid].shapes.push(solved);
+      const solved = evaluatePrimitive(shape, resolvedParams, scaleMultiplier, canvasHeight);
+      if (!groups[cid]) groups[cid] = { type: ctype, shapes: [] };
+      groups[cid].shapes.push(solved);
+    } catch (err) {
+      console.warn('Skipped malformed shape in solver:', err);
+    }
   }
 
   return Object.entries(groups).map(([cid, group]) => ({

@@ -1,5 +1,6 @@
 import { Show, For } from 'solid-js';
 import { useDac } from '../hooks/useDac';
+import { GeometryPrimitiveSchema } from '@aeckit/dac-schema';
 
 export function DacInspector() {
   const { selectedShape, updateShape, activeSheetId, doc, selectShape, builder } = useDac();
@@ -55,8 +56,25 @@ export function DacInspector() {
           </Show>
         }
       >
-        {(shape) => (
+        {(shape) => {
+          const validationResult = GeometryPrimitiveSchema.safeParse(shape());
+          const errors = !validationResult.success ? validationResult.error.issues : [];
+          
+          return (
           <div>
+            <Show when={errors.length > 0 || !shape().componentId}>
+              <div style={{ "background-color": 'rgba(234, 88, 12, 0.1)', border: '1px solid #ea580c', color: '#fed7aa', padding: '12px', "border-radius": '4px', "margin-bottom": '16px', "font-size": '12px' }}>
+                <strong style={{ display: 'block', "margin-bottom": '4px', color: '#fdba74' }}>⚠️ Schema Warnings</strong>
+                <ul style={{ margin: 0, "padding-left": '20px' }}>
+                  <Show when={!shape().componentId}>
+                    <li style={{ "margin-bottom": '4px' }}>Missing <code style={{ "background-color": 'rgba(0,0,0,0.3)', padding: '2px 4px', "border-radius": '2px' }}>componentId</code>. Moving this shape via UI may behave unexpectedly.</li>
+                  </Show>
+                  <For each={errors}>
+                    {(err) => <li style={{ "margin-bottom": '4px' }}>{err.path.join('.')} - {err.message}</li>}
+                  </For>
+                </ul>
+              </div>
+            </Show>
             <p><strong>Type:</strong> {shape().type}</p>
             <p><strong>ID:</strong> {shape().componentId}</p>
             <div style={{ "margin-top": '16px' }}>
@@ -122,7 +140,7 @@ export function DacInspector() {
               </For>
             </div>
           </div>
-        )}
+        )}}
       </Show>
     </div>
   );
