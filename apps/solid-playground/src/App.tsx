@@ -49,7 +49,7 @@ export function App() {
             </Show>
             
             <div style={{ display: 'flex', "flex-direction": 'column', flex: 1, "min-width": '0', position: 'relative' }}>
-              <div style={{ position: 'fixed', top: '72px', left: '50%', transform: 'translateX(-50%)', "z-index": 10 }}>
+              <div style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', "z-index": 10 }}>
                 <DacToolbar />
               </div>
               <div style={{ flex: 1 }} /> {/* Empty space letting clicks pass through to canvas */}
