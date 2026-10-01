@@ -19,17 +19,19 @@ export function WorkspaceSidebar(props: {
               style={{
                 padding: '8px',
                 cursor: 'pointer',
-                "background-color": file === props.activeFileId ? 'var(--app-bg-panel)' : 'transparent',
+                "background-color": file === props.activeFileId ? 'var(--app-accent)' : 'transparent',
+                "color": file === props.activeFileId ? '#ffffff' : 'inherit',
                 "border-radius": '4px',
                 display: 'flex',
                 "justify-content": 'space-between',
-                "margin-bottom": '4px'
+                "margin-bottom": '4px',
+                "font-weight": file === props.activeFileId ? '500' : 'normal'
               }}
             >
               <span onClick={() => props.onSelect(file)} style={{ flex: 1 }}>{file}</span>
               <button 
                 onClick={() => props.onDelete(file)}
-                style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', "font-size": '16px' }}
+                style={{ background: 'transparent', border: 'none', color: file === props.activeFileId ? '#ffcdd2' : '#ef4444', cursor: 'pointer', "font-size": '16px' }}
               >×</button>
             </div>
           )}
