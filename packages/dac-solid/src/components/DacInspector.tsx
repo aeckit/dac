@@ -3,7 +3,7 @@ import { useDac } from '../hooks/useDac';
 import { GeometryPrimitiveSchema } from '@aeckit/dac-schema';
 
 export function DacInspector() {
-  const { selectedShape, updateShape, activeSheetId, doc, selectShape, builder, solverWarnings } = useDac();
+  const { selectedShape, updateShape, activeSheetId, doc, selectShape, builder, solverWarnings, selectionIds } = useDac();
 
   return (
     <div style={{ width: '100%', height: '100%', "background-color": 'var(--app-bg-panel, #1e293b)', color: 'var(--app-text, #f8fafc)', padding: '16px', "box-sizing": 'border-box', "overflow-y": 'auto' }}>
@@ -57,11 +57,7 @@ export function DacInspector() {
         }
       >
         {(shape) => {
-          let currentId = shape().componentId;
-          if (!currentId) {
-             const idx = (doc()?.geometry || []).findIndex((g: any) => g === shape());
-             currentId = `shape_${idx}`;
-          }
+          const currentId = selectionIds()[0];
 
           const warningsForShape = solverWarnings ? solverWarnings().filter(w => w.componentId === currentId) : [];
           
