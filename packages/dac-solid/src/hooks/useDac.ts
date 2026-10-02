@@ -7,7 +7,7 @@ export function useDac() {
     throw new Error('useDac must be used within a DacProvider');
   }
 
-  const { doc, builder, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, setActiveSheetId, nestedDocs, canvasTheme, triggerFitView, fitView } = context;
+  const { doc, builder, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, setActiveSheetId, nestedDocs, canvasTheme, triggerFitView, fitView, solverWarnings, setSolverWarnings } = context;
 
   const selectShape = (id: string, multi = false) => {
     if (multi) {
@@ -88,6 +88,8 @@ export function useDac() {
     setActiveSheetId,
     canvasTheme,
     triggerFitView,
-    fitView
+    fitView,
+    solverWarnings,
+    setSolverWarnings
   };
 }

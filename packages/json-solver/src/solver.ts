@@ -14,6 +14,7 @@ import { evaluateExpression } from './expressions';
 import { resolveScaleMultiplier } from './scale';
 import { explodeConstruct } from './constructs';
 import { getPaperDimensions } from './paper';
+import { GeometryPrimitiveSchema } from '@aeckit/dac-schema';
 
 /**
  * Solves geometry primitives for a single document into static groups of solved primitives.
@@ -45,16 +46,30 @@ export function solveDocumentGeometry(
     }
   }
 
-  const groups: Record<string, { type: string; shapes: SolvedPrimitive[] }> = {};
+  const groups: Record<string, { type: string; shapes: SolvedPrimitive[]; warnings: import('./types').DiagnosticWarning[] }> = {};
   let autoIndex = 0;
 
   for (const shape of doc.geometry) {
+    // Validate schema
+    const validationResult = GeometryPrimitiveSchema.safeParse(shape);
+    const shapeWarnings: import('./types').DiagnosticWarning[] = [];
+    if (!shape.componentId) {
+      shapeWarnings.push({ message: 'Missing componentId. Interactivity may be unstable.' });
+    }
+    if (!validationResult.success) {
+      for (const err of validationResult.error.issues) {
+        shapeWarnings.push({ message: `${err.path.join('.')}: ${err.message}` });
+      }
+    }
+
     if (shape.type === 'ConstructReference' && constructResolver) {
       const constructDoc = constructResolver((shape as any).constructId!);
       if (constructDoc) {
         const exploded = explodeConstruct(shape, constructDoc, resolvedParams);
         const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
         const ctype: string = 'ConstructReference';
+        
+        if (!groups[cid]) groups[cid] = { type: ctype, shapes: [], warnings: shapeWarnings.map(w => ({...w, componentId: cid})) };
 
         for (const childShape of exploded) {
           if (childShape.visible !== undefined) {
@@ -64,7 +79,6 @@ export function solveDocumentGeometry(
 
           try {
             const solved = evaluatePrimitive(childShape, resolvedParams, scaleMultiplier, canvasHeight);
-            if (!groups[cid]) groups[cid] = { type: ctype, shapes: [] };
             groups[cid].shapes.push(solved);
           } catch (err) {
             console.warn('Skipped malformed construct child in solver:', err);
@@ -84,7 +98,7 @@ export function solveDocumentGeometry(
       const ctype: string = shape.type ? String(shape.type.split('::').pop() || 'Shape') : 'Unknown';
 
       const solved = evaluatePrimitive(shape, resolvedParams, scaleMultiplier, canvasHeight);
-      if (!groups[cid]) groups[cid] = { type: ctype, shapes: [] };
+      if (!groups[cid]) groups[cid] = { type: ctype, shapes: [], warnings: shapeWarnings.map(w => ({...w, componentId: cid})) };
       groups[cid].shapes.push(solved);
     } catch (err) {
       console.warn('Skipped malformed shape in solver:', err);
@@ -94,7 +108,8 @@ export function solveDocumentGeometry(
   return Object.entries(groups).map(([cid, group]) => ({
     componentId: cid,
     componentType: group.type,
-    shapes: group.shapes
+    shapes: group.shapes,
+    warnings: group.warnings
   }));
 }
 

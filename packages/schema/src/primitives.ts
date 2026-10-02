@@ -7,7 +7,7 @@ const BaseShapeSchema = z.object({
   strokeWidth: z.union([z.number(), z.string()]).optional(),
   strokeDasharray: z.string().optional(),
   rotation: z.union([z.number(), z.string()]).optional(),
-});
+}).strict();
 
 export const RectangleSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Shape::Rectangle'), z.literal('Rectangle')]),
@@ -17,7 +17,7 @@ export const RectangleSchema = BaseShapeSchema.extend({
   height: z.number().default(10),
   fill: z.string().optional(),
   hatch: z.string().optional(),
-});
+}).strict();
 
 export const LineSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Shape::Line'), z.literal('Line')]),
@@ -25,7 +25,7 @@ export const LineSchema = BaseShapeSchema.extend({
   y1: z.number().default(0),
   x2: z.number().default(10),
   y2: z.number().default(10),
-});
+}).strict();
 
 export const CircleSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Shape::Circle'), z.literal('Circle')]),
@@ -33,7 +33,7 @@ export const CircleSchema = BaseShapeSchema.extend({
   cy: z.number().default(0),
   r: z.number().default(5),
   fill: z.string().optional(),
-});
+}).strict();
 
 export const TextSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Annotation::Text'), z.literal('Text')]),
@@ -41,7 +41,7 @@ export const TextSchema = BaseShapeSchema.extend({
   y: z.number().default(0),
   text: z.string().default('Text'),
   fontSize: z.union([z.number(), z.string()]).optional(),
-});
+}).strict();
 
 export const DimensionSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Annotation::Dimension'), z.literal('Dimension')]),
@@ -51,7 +51,7 @@ export const DimensionSchema = BaseShapeSchema.extend({
   y2: z.number().default(0),
   offset: z.union([z.number(), z.string()]).default(20),
   text: z.string().optional(),
-});
+}).strict();
 
 export const LeaderSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Annotation::Leader'), z.literal('Leader')]),
@@ -61,7 +61,7 @@ export const LeaderSchema = BaseShapeSchema.extend({
   dy: z.number().default(10),
   text: z.string().default('Leader Note'),
   fontSize: z.union([z.number(), z.string()]).optional(),
-});
+}).strict();
 
 export const ImageSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Shape::Image'), z.literal('Image')]),
@@ -75,7 +75,7 @@ export const ImageSchema = BaseShapeSchema.extend({
   imgWidth: z.number().optional(),
   imgHeight: z.number().optional(),
   lockAspectRatio: z.boolean().optional(),
-});
+}).strict();
 
 export const ConstructReferenceSchema = BaseShapeSchema.extend({
   type: z.literal('ConstructReference'),
@@ -83,7 +83,7 @@ export const ConstructReferenceSchema = BaseShapeSchema.extend({
   y: z.number().default(0),
   constructId: z.string().optional(),
   parameterOverrides: z.record(z.any()).optional(),
-});
+}).strict();
 
 const AnyOtherSchema = z.object({
   type: z.string(),

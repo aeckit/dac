@@ -17,6 +17,8 @@ export interface DacContextValue {
   canvasTheme: Accessor<CadTheme | undefined>;
   triggerFitView: Accessor<number>;
   fitView: () => void;
+  solverWarnings: Accessor<any[]>;
+  setSolverWarnings: Setter<any[]>;
 }
 
 export const DacContext = createContext<DacContextValue>();
@@ -38,6 +40,7 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
   const [zoom, setZoom] = createSignal<number>(1);
   const [pan, setPan] = createSignal<{x: number, y: number}>({ x: 0, y: 0 });
   const [triggerFitView, setTriggerFitView] = createSignal<number>(0);
+  const [solverWarnings, setSolverWarnings] = createSignal<any[]>([]);
 
   const fitView = () => setTriggerFitView(v => v + 1);
 
@@ -86,7 +89,9 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
     setPan,
     canvasTheme: canvasThemeSignal,
     triggerFitView,
-    fitView
+    fitView,
+    solverWarnings,
+    setSolverWarnings
   };
 
   return (

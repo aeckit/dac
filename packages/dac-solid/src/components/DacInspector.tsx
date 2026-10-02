@@ -3,7 +3,7 @@ import { useDac } from '../hooks/useDac';
 import { GeometryPrimitiveSchema } from '@aeckit/dac-schema';
 
 export function DacInspector() {
-  const { selectedShape, updateShape, activeSheetId, doc, selectShape, builder } = useDac();
+  const { selectedShape, updateShape, activeSheetId, doc, selectShape, builder, solverWarnings } = useDac();
 
   return (
     <div style={{ width: '100%', height: '100%', "background-color": 'var(--app-bg-panel, #1e293b)', color: 'var(--app-text, #f8fafc)', padding: '16px', "box-sizing": 'border-box', "overflow-y": 'auto' }}>
@@ -57,20 +57,22 @@ export function DacInspector() {
         }
       >
         {(shape) => {
-          const validationResult = GeometryPrimitiveSchema.safeParse(shape());
-          const errors = !validationResult.success ? validationResult.error.issues : [];
+          let currentId = shape().componentId;
+          if (!currentId) {
+             const idx = (doc()?.geometry || []).findIndex((g: any) => g === shape());
+             currentId = `shape_${idx}`;
+          }
+
+          const warningsForShape = solverWarnings ? solverWarnings().filter(w => w.componentId === currentId) : [];
           
           return (
           <div>
-            <Show when={errors.length > 0 || !shape().componentId}>
+            <Show when={warningsForShape.length > 0}>
               <div style={{ "background-color": 'rgba(234, 88, 12, 0.1)', border: '1px solid #ea580c', color: '#fed7aa', padding: '12px', "border-radius": '4px', "margin-bottom": '16px', "font-size": '12px' }}>
                 <strong style={{ display: 'block', "margin-bottom": '4px', color: '#fdba74' }}>⚠️ Schema Warnings</strong>
                 <ul style={{ margin: 0, "padding-left": '20px' }}>
-                  <Show when={!shape().componentId}>
-                    <li style={{ "margin-bottom": '4px' }}>Missing <code style={{ "background-color": 'rgba(0,0,0,0.3)', padding: '2px 4px', "border-radius": '2px' }}>componentId</code>. Moving this shape via UI may behave unexpectedly.</li>
-                  </Show>
-                  <For each={errors}>
-                    {(err) => <li style={{ "margin-bottom": '4px' }}>{err.path.join('.')} - {err.message}</li>}
+                  <For each={warningsForShape}>
+                    {(err) => <li style={{ "margin-bottom": '4px' }}>{err.message}</li>}
                   </For>
                 </ul>
               </div>

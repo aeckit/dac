@@ -94,8 +94,9 @@ export function DacCanvas() {
              const titleBlockDoc = sheet.titleBlock ? nestedDocs()?.get(sheet.titleBlock) : (document.defaultTitleBlock ? nestedDocs()?.get(document.defaultTitleBlock) : undefined);
              const paperSize = sheet.paperSize || document.defaultPaperSize || 'ARCH D';
              const titleBlockData = { ...document.parameters, ...sheet.parameters, sheetName: sheet.sheetName, sheetNumber: sheet.sheetNumber };
-             const svg = renderSheet(sheet, titleBlockData, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
+             const { svg, warnings } = renderSheet(sheet, titleBlockData, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
              setSvgContent(svg);
+             if (setSolverWarnings) setSolverWarnings(warnings);
              return;
           }
         }
@@ -111,15 +112,18 @@ export function DacCanvas() {
         const titleBlockDoc = document.titleBlock ? nestedDocs()?.get(document.titleBlock) : undefined;
         const paperSize = document.paperSize || 'ARCH D';
         const titleBlockData = { ...document.parameters, sheetName: document.sheetName, sheetNumber: document.sheetNumber };
-        const svg = renderSheet(document, titleBlockData, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
+        const { svg, warnings } = renderSheet(document, titleBlockData, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
         setSvgContent(svg);
+        if (setSolverWarnings) setSolverWarnings(warnings);
       } else {
-        const svg = renderDetail(document as any, 24, 18, (id) => nestedDocs()?.get(id), canvasTheme());
+        const { svg, warnings } = renderDetail(document as any, 24, 18, (id) => nestedDocs()?.get(id), canvasTheme());
         setSvgContent(svg);
+        if (setSolverWarnings) setSolverWarnings(warnings);
       }
     } catch (e: any) {
       console.error('Render error:', e);
       setSvgContent(`<svg><text x="50" y="50" fill="red">Render Error: ${e.message}</text></svg>`);
+      if (setSolverWarnings) setSolverWarnings([{ message: `Render Error: ${e.message}` }]);
     }
   });
 

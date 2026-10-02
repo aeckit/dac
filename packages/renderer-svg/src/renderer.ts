@@ -211,9 +211,9 @@ export function renderDetail(
   sandboxHeight = 18,
   constructResolver?: (id: string) => ConstructDocument | undefined,
   theme?: CadTheme
-): string {
+): { svg: string, warnings: any[] } {
   const layout = solveDetailDocument(doc, sandboxWidth, sandboxHeight, constructResolver);
-  return renderSolvedDetail(layout, true, theme);
+  return { svg: renderSolvedDetail(layout, true, theme), warnings: layout.groups.flatMap(g => g.warnings || []) };
 }
 
 /**
@@ -229,8 +229,16 @@ export function renderSheet(
   paperSize = 'ARCH D',
   constructResolver?: (id: string) => ConstructDocument | undefined,
   theme?: CadTheme
-): string {
+): { svg: string, warnings: any[] } {
   const layout = solveSheetDocument(sheet, titleBlockData, viewportsMap, titleBlockDoc, tbOffsetX, tbOffsetY, paperSize, constructResolver);
-  return renderSolvedSheet(layout, theme);
+  
+  const warnings: any[] = [];
+  if (layout.titleBlockGroups) warnings.push(...layout.titleBlockGroups.flatMap(g => g.warnings || []));
+  if (layout.sheetGeometryGroups) warnings.push(...layout.sheetGeometryGroups.flatMap(g => g.warnings || []));
+  layout.viewports.forEach(vp => {
+    warnings.push(...vp.resolvedDetailGroups.flatMap(g => g.warnings || []));
+  });
+
+  return { svg: renderSolvedSheet(layout, theme), warnings };
 }
 

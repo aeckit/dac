@@ -58,10 +58,16 @@ export interface SolvedPrimitive {
   [key: string]: any;
 }
 
+export interface DiagnosticWarning {
+  componentId?: string;
+  message: string;
+}
+
 export interface SolvedGroup {
   componentId: string;
   componentType: string;
   shapes: SolvedPrimitive[];
+  warnings?: DiagnosticWarning[];
 }
 
 export interface SolvedDetailLayout {
@@ -69,6 +75,7 @@ export interface SolvedDetailLayout {
   canvasWidth: number;
   canvasHeight: number;
   groups: SolvedGroup[];
+  warnings?: DiagnosticWarning[];
 }
 
 export interface SolvedViewport {
@@ -102,4 +109,5 @@ export interface SolvedSheetLayout {
   titleBlockOffsetY: number;
   sheetGeometryGroups?: SolvedGroup[];
   viewports: SolvedViewport[];
+  warnings?: DiagnosticWarning[];
 }
