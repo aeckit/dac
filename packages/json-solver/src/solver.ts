@@ -14,7 +14,10 @@ import { evaluateExpression } from './expressions';
 import { resolveScaleMultiplier } from './scale';
 import { explodeConstruct } from './constructs';
 import { getPaperDimensions } from './paper';
-import { GeometryPrimitiveSchema } from '@aeckit/dac-schema';
+import { 
+  RectangleSchema, LineSchema, CircleSchema, TextSchema, 
+  DimensionSchema, LeaderSchema, ImageSchema, ConstructReferenceSchema 
+} from '@aeckit/dac-schema';
 
 /**
  * Solves geometry primitives for a single document into static groups of solved primitives.
@@ -51,7 +54,19 @@ export function solveDocumentGeometry(
 
   for (const shape of doc.geometry) {
     // Validate schema
-    const validationResult = GeometryPrimitiveSchema.safeParse(shape);
+    let validationResult: any = { success: true };
+    const t = shape.type ? String(shape.type.split('::').pop() || '') : '';
+    switch (t) {
+      case 'Rectangle': validationResult = RectangleSchema.safeParse(shape); break;
+      case 'Line': validationResult = LineSchema.safeParse(shape); break;
+      case 'Circle': validationResult = CircleSchema.safeParse(shape); break;
+      case 'Text': validationResult = TextSchema.safeParse(shape); break;
+      case 'Dimension': validationResult = DimensionSchema.safeParse(shape); break;
+      case 'Leader': validationResult = LeaderSchema.safeParse(shape); break;
+      case 'Image': validationResult = ImageSchema.safeParse(shape); break;
+      case 'ConstructReference': validationResult = ConstructReferenceSchema.safeParse(shape); break;
+    }
+
     const shapeWarnings: import('./types').DiagnosticWarning[] = [];
     if (!shape.componentId) {
       shapeWarnings.push({ message: 'Missing componentId. Interactivity may be unstable.' });
