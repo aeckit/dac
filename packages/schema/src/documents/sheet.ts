@@ -6,8 +6,11 @@ export const SheetConfigurationSchema = z.object({
   type: z.literal('CAD::SheetConfiguration'),
   sheetNumber: z.string(),
   sheetName: z.string(),
+  titleBlockRef: z.string().optional(),
   titleBlockOffsetX: z.number().optional(),
   titleBlockOffsetY: z.number().optional(),
+  titleBlockParameters: z.record(z.any()).optional(),
+  overrideParameters: z.record(z.any()).optional(),
   viewports: z.array(ViewportSchema),
   geometry: z.array(GeometryPrimitiveSchema).optional(),
 }).passthrough();

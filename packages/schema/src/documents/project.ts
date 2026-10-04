@@ -10,6 +10,7 @@ export const ProjectDocumentSchema = z.object({
   titleBlockOffsetX: z.number().optional(),
   titleBlockOffsetY: z.number().optional(),
   parameters: z.record(z.any()).optional(),
+  titleBlockParameters: z.record(z.any()).optional(),
   sheets: z.array(z.union([z.string(), SheetConfigurationSchema])),
 }).passthrough();
 export type ProjectDocument = z.infer<typeof ProjectDocumentSchema>;
