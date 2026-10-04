@@ -221,7 +221,7 @@ export function renderDetail(
  */
 export function renderSheet(
   sheet: SheetConfiguration,
-  titleBlockData: Record<string, any>,
+  projectTitleBlockParams: Record<string, any> = {},
   viewportsMap: Map<string, DetailDocument>,
   titleBlockDoc?: TitleBlockDocument,
   tbOffsetX = 0,
@@ -230,7 +230,7 @@ export function renderSheet(
   constructResolver?: (id: string) => ConstructDocument | undefined,
   theme?: CadTheme
 ): { svg: string, warnings: any[] } {
-  const layout = solveSheetDocument(sheet, titleBlockData, viewportsMap, titleBlockDoc, tbOffsetX, tbOffsetY, paperSize, constructResolver);
+  const layout = solveSheetDocument(sheet, projectTitleBlockParams, viewportsMap, titleBlockDoc, tbOffsetX, tbOffsetY, paperSize, constructResolver);
   
   const warnings: any[] = [];
   if (layout.titleBlockGroups) warnings.push(...layout.titleBlockGroups.flatMap(g => g.warnings || []));
