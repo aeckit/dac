@@ -91,10 +91,9 @@ export function DacCanvas() {
                   if (detailDoc) viewportsMap.set(vp.detail, detailDoc);
                 });
              }
-             const titleBlockDoc = sheet.titleBlock ? nestedDocs()?.get(sheet.titleBlock) : (document.defaultTitleBlock ? nestedDocs()?.get(document.defaultTitleBlock) : undefined);
+             const titleBlockDoc = sheet.titleBlockRef ? nestedDocs()?.get(sheet.titleBlockRef) : (document.defaultTitleBlockRef ? nestedDocs()?.get(document.defaultTitleBlockRef) : undefined);
              const paperSize = sheet.paperSize || document.defaultPaperSize || 'ARCH D';
-             const titleBlockData = { ...document.parameters, ...sheet.parameters, sheetName: sheet.sheetName, sheetNumber: sheet.sheetNumber };
-             const { svg, warnings } = renderSheet(sheet, titleBlockData, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
+             const { svg, warnings } = renderSheet(sheet, document.titleBlockParameters, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
              setSvgContent(svg);
              if (setSolverWarnings) setSolverWarnings(warnings);
              return;
@@ -109,10 +108,9 @@ export function DacCanvas() {
             if (detailDoc) viewportsMap.set(vp.detail, detailDoc);
           });
         }
-        const titleBlockDoc = document.titleBlock ? nestedDocs()?.get(document.titleBlock) : undefined;
+        const titleBlockDoc = document.titleBlockRef ? nestedDocs()?.get(document.titleBlockRef) : undefined;
         const paperSize = document.paperSize || 'ARCH D';
-        const titleBlockData = { ...document.parameters, sheetName: document.sheetName, sheetNumber: document.sheetNumber };
-        const { svg, warnings } = renderSheet(document, titleBlockData, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
+        const { svg, warnings } = renderSheet(document, undefined, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
         setSvgContent(svg);
         if (setSolverWarnings) setSolverWarnings(warnings);
       } else {
