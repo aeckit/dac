@@ -1,0 +1,22 @@
+{
+  "name": "@aeckit/dac-cli",
+  "version": "0.1.0",
+  "description": "Command-line interface for checking Drawing-as-Code files",
+  "type": "module",
+  "bin": {
+    "dac": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "@aeckit/dac-json-solver": "*",
+    "cac": "^6.7.14",
+    "picocolors": "^1.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "typescript": "^5.3.3"
+  }
+}

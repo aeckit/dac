@@ -15,7 +15,8 @@
     "compile": "turbo run compile",
     "watch": "turbo run watch",
     "build": "turbo run build",
-    "package": "turbo run package"
+    "package": "turbo run package",
+    "lint:dac": "node packages/cli/dist/cli.js check"
   },
   "devDependencies": {
     "happy-dom": "^20.11.1",
