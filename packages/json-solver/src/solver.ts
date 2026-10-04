@@ -25,11 +25,11 @@ import {
 export function solveDocumentGeometry(
   doc: DetailDocument | TitleBlockDocument | ConstructDocument,
   scaleMultiplier: number,
-  globalParams: Record<string, number | boolean> = {},
+  globalParams: Record<string, any> = {},
   canvasHeight = 18,
   constructResolver?: (id: string) => ConstructDocument | undefined
 ): SolvedGroup[] {
-  const resolvedParams: Record<string, number | boolean> = { ...globalParams };
+  const resolvedParams: Record<string, any> = { ...globalParams };
 
   if (doc.parameters) {
     for (const [key, param] of Object.entries(doc.parameters)) {
@@ -133,7 +133,7 @@ export function solveDocumentGeometry(
  */
 function evaluatePrimitive(
   shape: GeometryPrimitive,
-  params: Record<string, number | boolean>,
+  params: Record<string, any>,
   scaleMultiplier: number,
   canvasHeight: number
 ): SolvedPrimitive {
@@ -198,7 +198,7 @@ export function solveDetailDocument(
  */
 export function solveSheetDocument(
   sheet: SheetConfiguration,
-  titleBlockData: Record<string, any>,
+  projectTitleBlockParams: Record<string, any> = {},
   viewportsMap: Map<string, DetailDocument>,
   titleBlockDoc?: TitleBlockDocument,
   tbOffsetX = 0,
@@ -208,15 +208,23 @@ export function solveSheetDocument(
 ): SolvedSheetLayout {
   const { width: paperWidth, height: paperHeight } = getPaperDimensions(paperSize);
 
+  const finalTitleBlockParams = {
+    sheetNumber: sheet.sheetNumber,
+    sheetName: sheet.sheetName,
+    ...(sheet.titleBlockParameters || {}),
+    ...projectTitleBlockParams,
+    ...(sheet.overrideParameters || {})
+  };
+
   let titleBlockGroups: SolvedGroup[] | undefined;
   if (titleBlockDoc) {
-    titleBlockGroups = solveDocumentGeometry(titleBlockDoc, 1.0, titleBlockData, paperHeight, constructResolver);
+    titleBlockGroups = solveDocumentGeometry(titleBlockDoc, 1.0, finalTitleBlockParams, paperHeight, constructResolver);
   }
 
   let sheetGeometryGroups: SolvedGroup[] | undefined;
   if (sheet.geometry && sheet.geometry.length > 0) {
     const dummyDoc: DetailDocument = { type: 'CAD::Detail', version: '1.0', scale: '1:1', geometry: sheet.geometry };
-    sheetGeometryGroups = solveDocumentGeometry(dummyDoc, 1.0, titleBlockData, paperHeight, constructResolver);
+    sheetGeometryGroups = solveDocumentGeometry(dummyDoc, 1.0, finalTitleBlockParams, paperHeight, constructResolver);
   }
 
   const solvedViewports: SolvedViewport[] = [];
@@ -230,7 +238,7 @@ export function solveSheetDocument(
     if (detailDoc) {
       const vpScaleMultiplier = resolveScaleMultiplier(vp.scale);
       const vpCanvasHeight = 18;
-      const resolvedDetailGroups = solveDocumentGeometry(detailDoc, vpScaleMultiplier, titleBlockData, vpCanvasHeight, constructResolver);
+      const resolvedDetailGroups = solveDocumentGeometry(detailDoc, vpScaleMultiplier, finalTitleBlockParams, vpCanvasHeight, constructResolver);
 
       let displayTitle = vp.title || '';
       if (!displayTitle && typeof vp.detail === 'string') {

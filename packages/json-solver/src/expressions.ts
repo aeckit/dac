@@ -1,4 +1,4 @@
-export function evaluateExpression(expr: any, params: Record<string, number | boolean>): any {
+export function evaluateExpression(expr: any, params: Record<string, any>): any {
   if (typeof expr !== 'string') return expr;
 
   if (!expr.includes('{parameters.')) {
