@@ -3,3 +3,4 @@ export * from './primitives';
 export * from './viewport';
 export * from './documents';
 export * from './validation';
+export * from './utils';
