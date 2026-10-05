@@ -29,23 +29,53 @@ export function DacInspector() {
               </div>
 
               <div style={{ "margin-top": '16px' }}>
-                <p><strong>Geometries:</strong></p>
-                <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px' }}>
-                  <For each={doc()?.geometry || []}>
-                    {(geom: any, index) => {
-                      const id = geom.componentId || `shape_${index()}`;
-                      return (
-                      <div 
-                        onClick={() => selectShape(id)}
-                        style={{ padding: '8px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', "border-radius": '4px', cursor: 'pointer' }}
-                      >
-                        <div style={{ "font-size": '12px', "font-weight": 'bold' }}>{geom.type}</div>
-                        <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{id}</div>
-                      </div>
-                      );
-                    }}
-                  </For>
-                </div>
+                <Show when={doc()?.geometry && doc().geometry.length > 0}>
+                  <p><strong>Geometries:</strong></p>
+                  <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px', "margin-bottom": '16px' }}>
+                    <For each={doc()?.geometry || []}>
+                      {(geom: any, index) => {
+                        const id = geom.componentId || `shape_${index()}`;
+                        return (
+                        <div 
+                          onClick={() => selectShape(id)}
+                          style={{ padding: '8px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', "border-radius": '4px', cursor: 'pointer' }}
+                        >
+                          <div style={{ "font-size": '12px', "font-weight": 'bold' }}>{geom.type}</div>
+                          <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{id}</div>
+                        </div>
+                        );
+                      }}
+                    </For>
+                  </div>
+                </Show>
+
+                <Show when={doc()?.viewports && doc().viewports.length > 0}>
+                  <p><strong>Viewports:</strong></p>
+                  <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px', "margin-bottom": '16px' }}>
+                    <For each={doc()?.viewports || []}>
+                      {(vp: any, index) => {
+                        const id = vp.componentId || `shape_${index()}`;
+                        return (
+                        <div 
+                          onClick={() => selectShape(id)}
+                          style={{ padding: '8px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', "border-radius": '4px', cursor: 'pointer' }}
+                        >
+                          <div style={{ "font-size": '12px', "font-weight": 'bold' }}>{vp.title || 'Viewport'}</div>
+                          <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{vp.detail}</div>
+                        </div>
+                        );
+                      }}
+                    </For>
+                  </div>
+                </Show>
+
+                <Show when={doc()?.titleBlockRef}>
+                  <p><strong>Title Block:</strong></p>
+                  <div style={{ padding: '8px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', "border-radius": '4px', "margin-bottom": '16px' }}>
+                    <div style={{ "font-size": '12px', "font-weight": 'bold' }}>Reference</div>
+                    <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{doc()?.titleBlockRef}</div>
+                  </div>
+                </Show>
               </div>
             </div>
           }>
