@@ -15,17 +15,37 @@ export function DacInspector() {
               <p><strong>View Type:</strong> {doc()?.type}</p>
               
               <div style={{ "margin-top": '16px', "margin-bottom": '16px' }}>
-                <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: 'var(--app-text-muted, #94a3b8)' }}>Annotative Scale</label>
-                <input 
-                  type="text"
-                  value={doc()?.scale ?? '1:1'}
-                  onChange={(e) => {
-                    builder().mutateDocument((d: any) => { 
-                      d.scale = e.currentTarget.value; 
-                    });
+                <For each={Object.keys(doc() || {}).filter(k => k !== 'type' && k !== 'geometry' && k !== 'viewports' && k !== 'titleblocks' && typeof doc()[k] !== 'object')}>
+                  {(key) => {
+                    const val = doc()[key];
+                    const isNum = typeof val === 'number';
+                    const isBool = typeof val === 'boolean';
+                    return (
+                      <>
+                        <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: 'var(--app-text-muted, #94a3b8)' }}>{key}</label>
+                        {isBool ? (
+                          <input 
+                            type="checkbox" 
+                            checked={val} 
+                            onChange={(e) => builder().mutateDocument((d: any) => { d[key] = e.currentTarget.checked; })}
+                            style={{ "margin-bottom": '12px' }}
+                          />
+                        ) : (
+                          <input 
+                            type={isNum ? 'number' : 'text'}
+                            value={val ?? ''} 
+                            onInput={(e) => {
+                              let newVal: any = e.currentTarget.value;
+                              if (isNum) newVal = parseFloat(newVal) || 0;
+                              builder().mutateDocument((d: any) => { d[key] = newVal; });
+                            }}
+                            style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "box-sizing": 'border-box' }}
+                          />
+                        )}
+                      </>
+                    );
                   }}
-                  style={{ width: '100%', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "box-sizing": 'border-box' }}
-                />
+                </For>
               </div>
 
               <div style={{ "margin-top": '16px' }}>
