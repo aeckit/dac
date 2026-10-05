@@ -75,6 +75,16 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
     setCanvasThemeSignal(props.canvasTheme);
   });
 
+  createEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectionIds([]);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    onCleanup(() => window.removeEventListener('keydown', handleKeyDown));
+  });
+
   const value: DacContextValue = {
     doc: docSignal,
     nestedDocs: nestedDocsSignal,
