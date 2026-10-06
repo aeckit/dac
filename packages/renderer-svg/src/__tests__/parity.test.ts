@@ -6,7 +6,7 @@ import { solveDetailDocument } from '@aeckit/dac-json-solver';
 import { renderDetail, renderSolvedDetail } from '../index';
 
 describe('Architectural Parity: (@aeckit/dac-json-solver + @aeckit/dac-renderer-svg) vs Legacy core-solver', () => {
-  const demoDir = path.resolve(__dirname, '../../../../apps/playground/src/demo');
+  const demoDir = path.resolve(__dirname, '../../../../apps/solid-playground/src/demo');
 
   function loadJson<T>(filePath: string): T {
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
@@ -18,11 +18,11 @@ describe('Architectural Parity: (@aeckit/dac-json-solver + @aeckit/dac-renderer-
       .replace(/img-fallback-[a-zA-Z0-9_-]+/g, 'img-fallback-STATIC');
   }
 
-  it('produces identical SVG output for welcome-detail.json', () => {
-    const doc = loadJson<DetailDocument>(path.join(demoDir, 'welcome-detail.json'));
+  it('produces identical SVG output for guide-intro.json', () => {
+    const doc = loadJson<DetailDocument>(path.join(demoDir, 'guide-intro.json'));
     
     // Legacy monolithic pipeline
-    const legacySvg = normalizeSvg(renderDetail(doc, 24, 18));
+    const legacySvg = normalizeSvg(renderDetail(doc, 24, 18).svg);
 
     // New decoupled pipeline: JSON -> Solved IR -> SVG
     const solvedLayout = solveDetailDocument(doc, 24, 18);
@@ -31,10 +31,10 @@ describe('Architectural Parity: (@aeckit/dac-json-solver + @aeckit/dac-renderer-
     expect(newSvg.trim()).toBe(legacySvg.trim());
   });
 
-  it('produces identical SVG output for components-demo.json', () => {
-    const doc = loadJson<DetailDocument>(path.join(demoDir, 'components-demo.json'));
+  it('produces identical SVG output for guide-json-editor.json', () => {
+    const doc = loadJson<DetailDocument>(path.join(demoDir, 'guide-json-editor.json'));
 
-    const legacySvg = normalizeSvg(renderDetail(doc, 24, 18));
+    const legacySvg = normalizeSvg(renderDetail(doc, 24, 18).svg);
 
     const solvedLayout = solveDetailDocument(doc, 24, 18);
     const newSvg = normalizeSvg(renderSolvedDetail(solvedLayout));
