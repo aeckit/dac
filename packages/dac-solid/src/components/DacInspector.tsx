@@ -2,6 +2,13 @@ import { Show, For } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 import { GeometryPrimitiveSchema } from '@aeckit/dac-schema';
 
+const UI_CONFIG: Record<string, { hiddenFields: string[] }> = {
+  'CAD::Detail': { hiddenFields: ['version'] },
+  'CAD::TitleBlock': { hiddenFields: ['version', 'parameterDefinitions'] },
+  'CAD::Project': { hiddenFields: ['version'] },
+  'CAD::SheetConfiguration': { hiddenFields: ['version'] }
+};
+
 export function DacInspector() {
   const { selectedShape, updateShape, activeSheetId, doc, selectShape, builder, solverWarnings, selectionIds } = useDac();
 
@@ -15,7 +22,12 @@ export function DacInspector() {
               <p><strong>View Type:</strong> {doc()?.type}</p>
               
               <div style={{ "margin-top": '16px', "margin-bottom": '16px' }}>
-                <For each={Object.keys(doc() || {}).filter(k => k !== 'type' && k !== 'geometry' && k !== 'viewports' && k !== 'titleblocks' && typeof doc()[k] !== 'object')}>
+                <For each={Object.keys(doc() || {}).filter(k => {
+                  if (k === 'type' || k === 'geometry' || k === 'viewports' || k === 'titleblocks' || typeof doc()[k] === 'object') return false;
+                  const docType = doc()?.type;
+                  if (docType && UI_CONFIG[docType]?.hiddenFields.includes(k)) return false;
+                  return true;
+                })}>
                   {(key) => {
                     const val = doc()[key];
                     const isNum = typeof val === 'number';
