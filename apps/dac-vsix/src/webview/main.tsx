@@ -52,16 +52,19 @@ try {
     });
 
     const handleDocChange = (newDoc: any, updatedNestedDocs?: Map<string, any>, isTransient?: boolean) => {
+      // Always update local UI state immediately for smooth 60fps dragging
+      setDoc(newDoc);
+      
+      // Only commit to VS Code document history when the drag finishes
       if (!isTransient) {
-        setDoc(newDoc);
         vscode.postMessage({ type: 'updateConfig', config: newDoc });
       }
     };
 
     return (
-      <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#f8fafc', color: '#000' }}>
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', "flex-direction": 'column', overflow: 'hidden', background: '#f8fafc', color: '#000' }}>
         <Show when={errorMsg()}>
-          <div style={{ color: 'red', padding: '20px', fontFamily: 'monospace' }}>
+          <div style={{ color: 'red', padding: '20px', "font-family": 'monospace' }}>
             <h3>Error</h3>
             <pre>{errorMsg()}</pre>
           </div>
@@ -74,24 +77,24 @@ try {
             onChange={handleDocChange}
           >
             {/* Layer 0: Full-Bleed Canvas */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+            <div style={{ position: 'absolute', inset: 0, "z-index": 0 }}>
               <DacCanvas />
             </div>
 
             {/* Layer 1: Floating UI Overlay */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'absolute', inset: 0, "z-index": 10, "pointer-events": 'none', display: 'flex', "flex-direction": 'column' }}>
               <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px', pointerEvents: 'auto' }}>
+                <div style={{ display: 'flex', "flex-direction": 'column', flex: 1, "min-width": '0' }}>
+                  <div style={{ display: 'flex', "justify-content": 'center', "margin-top": '16px', "pointer-events": 'auto' }}>
                     <DacToolbar />
                   </div>
                   <div style={{ flex: 1 }} />
-                  <div style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: '16px', marginBottom: '16px', pointerEvents: 'auto' }}>
+                  <div style={{ display: 'flex', "justify-content": 'flex-start', "margin-left": '16px', "margin-bottom": '16px', "pointer-events": 'auto' }}>
                     <DacZoomControls />
                   </div>
                 </div>
                 
-                <div class="left-panel" style={{ pointerEvents: 'auto', width: '350px', display: 'flex', flexDirection: 'column', background: '#ffffff', boxShadow: '-4px 0 12px rgba(0,0,0,0.05)', borderLeft: '1px solid #e2e8f0', zIndex: 20 }}>
+                <div class="left-panel" style={{ "pointer-events": 'auto', width: '350px', display: 'flex', "flex-direction": 'column', background: '#ffffff', "box-shadow": '-4px 0 12px rgba(0,0,0,0.05)', "border-left": '1px solid #e2e8f0', "z-index": 20 }}>
                   <div style={{ flex: 1, overflow: 'auto' }}>
                     <DacInspector />
                   </div>
