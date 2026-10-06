@@ -29,7 +29,7 @@ describe('@aeckit/dac-json-builder mutation engine', () => {
     expect(updated.geometry[0].width).toBe(20);
   });
 
-  it('adds lines and texts to document', () => {
+  it('adds lines, texts, and leaders to document', () => {
     const doc: DetailDocument = {
       type: 'CAD::Detail',
       version: '1.0',
@@ -40,11 +40,15 @@ describe('@aeckit/dac-json-builder mutation engine', () => {
     builder.setDocument(doc);
     builder.shapes.addLine({ x: 0, y: 0 });
     builder.shapes.addText({ text: 'Hello DaC' });
+    builder.shapes.addLeader({ x: 5, y: 5, dx: 15, dy: -10, text: 'Point 1' });
 
     const updated = builder.getDocument() as DetailDocument;
-    expect(updated.geometry.length).toBe(2);
+    expect(updated.geometry.length).toBe(3);
     expect(updated.geometry[0].type).toBe('CAD::Shape::Line');
     expect(updated.geometry[1].type).toBe('CAD::Annotation::Text');
+    expect(updated.geometry[2].type).toBe('CAD::Annotation::Leader');
+    expect((updated.geometry[2] as any).text).toBe('Point 1');
+    expect((updated.geometry[2] as any).dx).toBe(15);
   });
 
   it('updates and deletes components', () => {

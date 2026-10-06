@@ -42,6 +42,13 @@ export interface TextOptions extends ShapeOptions {
   fontSize?: number;
 }
 
+export interface LeaderOptions extends ShapeOptions {
+  dx?: number;
+  dy?: number;
+  text?: string;
+  fontSize?: number;
+}
+
 export interface CircleOptions extends ShapeOptions {
   cx?: number;
   cy?: number;

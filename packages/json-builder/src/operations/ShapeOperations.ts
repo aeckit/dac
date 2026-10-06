@@ -1,5 +1,5 @@
 import { JsonBuilder } from '../JsonBuilder';
-import { RectangleOptions, LineOptions, TextOptions, ImageOptions, CircleOptions } from '../types';
+import { RectangleOptions, LineOptions, TextOptions, ImageOptions, CircleOptions, LeaderOptions } from '../types';
 
 export class ShapeOperations {
   constructor(private engine: JsonBuilder) {}
@@ -49,6 +49,20 @@ export class ShapeOperations {
       componentId: this.engine.generateId('text'),
       color: 'auto',
       fontSize: 12,
+      ...options
+    };
+    return this.engine.addShapeToTarget(shape);
+  }
+
+  public addLeader(options?: LeaderOptions): any {
+    const shape = {
+      type: 'CAD::Annotation::Leader',
+      componentId: this.engine.generateId('leader'),
+      x: 0,
+      y: 0,
+      dx: 10,
+      dy: 10,
+      text: 'Leader Note',
       ...options
     };
     return this.engine.addShapeToTarget(shape);

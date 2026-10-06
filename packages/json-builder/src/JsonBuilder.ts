@@ -1,4 +1,4 @@
-import { VisualizerDocument, RectangleOptions, LineOptions, TextOptions, ImageOptions, ViewportOptions } from './types';
+import { VisualizerDocument, RectangleOptions, LineOptions, TextOptions, ImageOptions, ViewportOptions, LeaderOptions } from './types';
 import { ShapeOperations } from './operations/ShapeOperations';
 import { ViewportOperations } from './operations/ViewportOperations';
 import { ComponentOperations } from './operations/ComponentOperations';
@@ -95,6 +95,7 @@ export class JsonBuilder extends EventTarget {
   public addLine(options?: LineOptions): any { return this.shapes.addLine(options); }
   public addCircle(options?: any): any { return this.shapes.addCircle(options); }
   public addText(options?: TextOptions): any { return this.shapes.addText(options); }
+  public addLeader(options?: LeaderOptions): any { return this.shapes.addLeader(options); }
   public addImage(options?: ImageOptions): any { return this.shapes.addImage(options); }
   public addViewport(options?: ViewportOptions): any { return this.viewports.addViewport(options); }
   public updateComponent(id: string, properties: Partial<any>, isTransient = false): void { return this.components.updateComponent(id, properties, isTransient); }
