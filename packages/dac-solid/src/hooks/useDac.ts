@@ -53,15 +53,27 @@ export function useDac() {
     try {
       const targetDoc = builder().getTargetDocument();
       if (!targetDoc) return null;
-      let autoIndex = 0;
-      const findShape = (items: any[]) => items?.find((g: any) => {
-        const sid = g.componentId || 'shape_' + autoIndex++;
-        return sid === ids[0];
-      }) || null;
 
-      if (targetDoc.geometry) return findShape(targetDoc.geometry);
-      if (targetDoc.viewports) return findShape(targetDoc.viewports);
-      if (targetDoc.titleblocks) return findShape(targetDoc.titleblocks);
+      const findShape = (items: any[], prefix: string) => {
+        let autoIndex = 0;
+        return items?.find((g: any) => {
+          const sid = g.componentId || `${prefix}${autoIndex++}`;
+          return sid === ids[0];
+        }) || null;
+      };
+
+      if (targetDoc.geometry) {
+        const res = findShape(targetDoc.geometry, 'shape_');
+        if (res) return res;
+      }
+      if (targetDoc.viewports) {
+        const res = findShape(targetDoc.viewports, 'vp_');
+        if (res) return { ...res, type: 'CAD::Viewport' };
+      }
+      if (targetDoc.titleblocks) {
+        const res = findShape(targetDoc.titleblocks, 'tb_');
+        if (res) return { ...res, type: 'CAD::TitleBlock' };
+      }
       return null;
     } catch (e) {
       return null;
