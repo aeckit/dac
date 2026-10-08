@@ -264,6 +264,7 @@ export function solveSheetDocument(
         titlePosition: vp.titlePosition,
         titleOffsetY: vp.titleOffsetY,
         titleNote: vp.titleNote,
+        printBorder: vp.printBorder,
         resolvedDetailGroups
       });
     }

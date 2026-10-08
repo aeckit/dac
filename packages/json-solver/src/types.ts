@@ -96,6 +96,7 @@ export interface SolvedViewport {
   titlePosition?: 'top' | 'bottom';
   titleOffsetY?: number;
   titleNote?: string;
+  printBorder?: boolean;
   resolvedDetailGroups: SolvedGroup[];
 }
 
