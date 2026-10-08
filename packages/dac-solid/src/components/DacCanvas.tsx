@@ -348,6 +348,16 @@ export function DacCanvas() {
         }}
         innerHTML={svgContent()}
       />
+      <style>
+        {`
+          .interactive-component .viewport-boundary {
+            stroke: var(--app-border, #94a3b8) !important;
+            stroke-dasharray: 4,4 !important;
+            stroke-width: 1px !important;
+            vector-effect: non-scaling-stroke !important;
+          }
+        `}
+      </style>
       <SelectionGizmo />
     </div>
   );
