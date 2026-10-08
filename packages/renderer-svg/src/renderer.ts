@@ -100,7 +100,7 @@ export function renderSolvedDetail(layout: SolvedDetailLayout, isInteractive = t
 /**
  * Renders a full SolvedSheetLayout into an SVG string
  */
-export function renderSolvedSheet(sheetLayout: SolvedSheetLayout, theme?: CadTheme): string {
+export function renderSolvedSheet(sheetLayout: SolvedSheetLayout, isInteractive = true, theme?: CadTheme): string {
   const { paperWidth, paperHeight } = sheetLayout;
   let sheetContent = '';
 
@@ -110,7 +110,7 @@ export function renderSolvedSheet(sheetLayout: SolvedSheetLayout, theme?: CadThe
   }
 
   if (sheetLayout.sheetGeometryGroups) {
-    const geomSvg = renderSolvedGroups(sheetLayout.sheetGeometryGroups, 1.0, paperHeight, false);
+    const geomSvg = renderSolvedGroups(sheetLayout.sheetGeometryGroups, 1.0, paperHeight, isInteractive);
     sheetContent += `\n<!-- Sheet Geometry -->\n<g id="sheet-geometry-layer">${geomSvg}</g>`;
   }
 
@@ -228,7 +228,8 @@ export function renderSheet(
   tbOffsetY = 0,
   paperSize = 'ARCH D',
   constructResolver?: (id: string) => ConstructDocument | undefined,
-  theme?: CadTheme
+  theme?: CadTheme,
+  isInteractive = true
 ): { svg: string, warnings: any[] } {
   const layout = solveSheetDocument(sheet, projectTitleBlockParams, viewportsMap, titleBlockDoc, tbOffsetX, tbOffsetY, paperSize, constructResolver);
   
@@ -239,6 +240,6 @@ export function renderSheet(
     warnings.push(...vp.resolvedDetailGroups.flatMap(g => g.warnings || []));
   });
 
-  return { svg: renderSolvedSheet(layout, theme), warnings };
+  return { svg: renderSolvedSheet(layout, isInteractive, theme), warnings };
 }
 
