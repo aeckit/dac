@@ -18,6 +18,7 @@ export const ViewportSchema = z.object({
   titlePosition: z.enum(['top', 'bottom']).optional(),
   titleOffsetY: z.number().optional(),
   titleNote: z.string().optional(),
+  printBorder: z.boolean().optional(),
   componentId: z.string().optional(),
 }).passthrough();
 export type Viewport = z.infer<typeof ViewportSchema>;
