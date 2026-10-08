@@ -8,9 +8,9 @@ export interface AppSettings {
 }
 
 const defaultSettings: AppSettings = {
-  appTheme: 'dark',
-  canvasTheme: 'blueprint',
-  customTheme: BlueprintTheme
+  appTheme: 'light',
+  canvasTheme: 'paper',
+  customTheme: PaperTheme
 };
 
 const [settings, setSettings] = createSignal<AppSettings>(defaultSettings);
