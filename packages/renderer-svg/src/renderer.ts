@@ -134,6 +134,13 @@ export function renderSolvedSheet(sheetLayout: SolvedSheetLayout, isInteractive 
       const topEdge = vpCanvasHeight - (vp.height! / vp.scaleMultiplier);
       const bottomEdge = vpCanvasHeight;
 
+      const rectX = 0;
+      const rectY = topEdge;
+      const rectW = vp.width! / vp.scaleMultiplier;
+      const rectH = vp.height! / vp.scaleMultiplier;
+      const borderAttr = vp.printBorder ? `stroke="var(--cad-stroke)" stroke-width="${1.5 / 72 / vp.scaleMultiplier}"` : 'stroke="none"';
+      labelsSvg += `<rect class="viewport-boundary" x="${rectX}" y="${rectY}" width="${rectW}" height="${rectH}" fill="none" ${borderAttr} />\n`;
+
       const circleRadius = 0.25 / vp.scaleMultiplier;
       const lineY = titlePos === 'top'
         ? topEdge - circleRadius - (0.125 / vp.scaleMultiplier) - titleOffsetY
