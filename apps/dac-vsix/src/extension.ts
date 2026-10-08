@@ -78,7 +78,63 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  // Helper to parse the JSON drawing document and load dependencies if it's a Project
+  function loadTitleBlock(refPath: string, baseDir: string, titleBlockMap: Record<string, any>) {
+    if (!refPath || titleBlockMap[refPath]) return;
+    try {
+      const tbPath = resolveDacPath(refPath, baseDir);
+      if (tbPath) {
+        const tbContent = fs.readFileSync(tbPath, "utf8");
+        titleBlockMap[refPath] = JSON.parse(tbContent);
+        resolveLocalImages(titleBlockMap[refPath], path.dirname(tbPath));
+      }
+    } catch (e) {
+      console.error("Failed to load title block:", refPath);
+    }
+  }
+
+  function resolveSheetDependencies(
+    sheet: any, 
+    sheetBaseDir: string, 
+    viewportsMap: Record<string, any>, 
+    titleBlockMap: Record<string, any>, 
+    constructsMap: Record<string, any>
+  ) {
+    resolveLocalImages(sheet, sheetBaseDir);
+
+    // Load title blocks (handles both standalone sheets and project overrides)
+    if (typeof sheet.titleBlockRef === 'string') {
+      loadTitleBlock(sheet.titleBlockRef, sheetBaseDir, titleBlockMap);
+    }
+    if (typeof sheet.titleBlockOverride === 'string') {
+      loadTitleBlock(sheet.titleBlockOverride, sheetBaseDir, titleBlockMap);
+    }
+
+    // Load viewports
+    if (sheet.viewports) {
+      for (const vp of sheet.viewports) {
+        if (typeof vp.detail === 'string' && !viewportsMap[vp.detail]) {
+          try {
+            const vpPath = resolveDacPath(vp.detail, sheetBaseDir);
+            if (vpPath) {
+              const vpContent = fs.readFileSync(vpPath, 'utf8');
+              viewportsMap[vp.detail] = JSON.parse(vpContent);
+              resolveLocalImages(viewportsMap[vp.detail], path.dirname(vpPath));
+            } else {
+              console.error('Failed to locate viewport detail:', vp.detail);
+            }
+          } catch (e) {
+            console.error('Failed to load viewport detail:', vp.detail);
+          }
+        }
+        
+        if (typeof vp.detail === 'string' && viewportsMap[vp.detail]) {
+          resolveConstructs(viewportsMap[vp.detail], sheetBaseDir, constructsMap);
+        }
+      }
+    }
+  }
+
+  // Helper to parse the JSON drawing document and load dependencies if it's a Project or Sheet
   async function parseAndLoadDocument(document: vscode.TextDocument): Promise<{ doc: any, viewportsMap?: Record<string, any>, titleBlockMap?: Record<string, any>, constructsMap?: Record<string, any> } | null> {
     const text = document.getText();
     try {
@@ -88,21 +144,15 @@ export function activate(context: vscode.ExtensionContext) {
       const baseDir = path.dirname(document.fileName);
       const constructsMap: Record<string, any> = {};
 
-      if (doc.type === 'CAD::Project' || doc.type === 'CAD::SheetConfiguration') {
-        let ds = doc as ProjectDocument;
-        
-        // If a Sheet is opened directly, wrap it in a dummy Project for the visualizer
-        if (doc.type === 'CAD::SheetConfiguration') {
-          const c = doc as SheetDocument;
-          ds = {
-            type: 'CAD::Project',
-            projectName: "PREVIEW PROJECT",
-            projectAddress: "PREVIEW ADDRESS",
-            sheets: [c]
-          };
-        }
+      if (doc.type === 'CAD::Project') {
+        const ds = doc as ProjectDocument;
         const viewportsMap: Record<string, any> = {};
         const titleBlockMap: Record<string, any> = {};
+        
+        // Load default title block for the project
+        if (typeof ds.defaultTitleBlockRef === 'string') {
+          loadTitleBlock(ds.defaultTitleBlockRef, baseDir, titleBlockMap);
+        }
         
         // Load sheets
         for (let i = 0; i < ds.sheets.length; i++) {
@@ -119,6 +169,7 @@ export function activate(context: vscode.ExtensionContext) {
                 ds.sheets[i] = sheet; // Inline it for the webview
               } else {
                 console.error('Failed to locate sheet:', sheet);
+                continue;
               }
             } catch (e) {
               console.error('Failed to load sheet:', sheet);
@@ -127,57 +178,7 @@ export function activate(context: vscode.ExtensionContext) {
           }
           
           if (typeof sheet !== 'string') {
-            resolveLocalImages(sheet, sheetBaseDir);
-            // Load title block
-
-            if (sheet.titleBlockOverride && typeof sheet.titleBlockOverride === "string") {
-              try {
-                const tbPath = resolveDacPath(sheet.titleBlockOverride, sheetBaseDir);
-                if (tbPath) {
-                  const tbContent = fs.readFileSync(tbPath, "utf8");
-                  titleBlockMap[sheet.titleBlockOverride] = JSON.parse(tbContent);
-                  resolveLocalImages(titleBlockMap[sheet.titleBlockOverride], path.dirname(tbPath));
-                }
-              } catch (e) {
-                console.error("Failed to load title block:", sheet.titleBlockOverride);
-              }
-            }
-            if (ds.defaultTitleBlockRef && typeof ds.defaultTitleBlockRef === "string") {
-              try {
-                const tbPath = resolveDacPath(ds.defaultTitleBlockRef, baseDir);
-                if (tbPath) {
-                  const tbContent = fs.readFileSync(tbPath, "utf8");
-                  titleBlockMap[ds.defaultTitleBlockRef] = JSON.parse(tbContent);
-                  resolveLocalImages(titleBlockMap[ds.defaultTitleBlockRef], path.dirname(tbPath));
-                }
-              } catch (e) {
-                console.error("Failed to load default title block:", ds.defaultTitleBlockRef);
-              }
-            }
-
-            // Load viewports
-            if (sheet.viewports) {
-              for (const vp of sheet.viewports) {
-                if (typeof vp.detail === 'string' && !viewportsMap[vp.detail]) {
-                  try {
-                    const vpPath = resolveDacPath(vp.detail, sheetBaseDir);
-                    if (vpPath) {
-                      const vpContent = fs.readFileSync(vpPath, 'utf8');
-                      viewportsMap[vp.detail] = JSON.parse(vpContent);
-                      resolveLocalImages(viewportsMap[vp.detail], path.dirname(vpPath));
-                    } else {
-                      console.error('Failed to locate viewport detail:', vp.detail);
-                    }
-                  } catch (e) {
-                    console.error('Failed to load viewport detail:', vp.detail);
-                  }
-                }
-                
-                if (typeof vp.detail === 'string' && viewportsMap[vp.detail]) {
-                  resolveConstructs(viewportsMap[vp.detail], sheetBaseDir, constructsMap);
-                }
-              }
-            }
+            resolveSheetDependencies(sheet, sheetBaseDir, viewportsMap, titleBlockMap, constructsMap);
           }
         }
         
@@ -187,6 +188,20 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         return { doc: ds, viewportsMap, titleBlockMap, constructsMap };
+        
+      } else if (doc.type === 'CAD::SheetConfiguration') {
+        const viewportsMap: Record<string, any> = {};
+        const titleBlockMap: Record<string, any> = {};
+        
+        resolveSheetDependencies(doc, baseDir, viewportsMap, titleBlockMap, constructsMap);
+        
+        // Also resolve constructs for the titleblocks
+        for (const tbKey of Object.keys(titleBlockMap)) {
+           resolveConstructs(titleBlockMap[tbKey], baseDir, constructsMap); 
+        }
+        
+        return { doc, viewportsMap, titleBlockMap, constructsMap };
+        
       } else if (doc.type === 'CAD::Detail' || doc.type === 'CAD::Construct' || doc.type === 'CAD::TitleBlock' || doc.geometry) {
         resolveLocalImages(doc, baseDir);
         resolveConstructs(doc, baseDir, constructsMap);

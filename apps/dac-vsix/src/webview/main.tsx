@@ -62,7 +62,7 @@ try {
     };
 
     return (
-      <div style={{ width: '100vw', height: '100vh', display: 'flex', "flex-direction": 'column', overflow: 'hidden', background: '#f8fafc', color: '#000' }}>
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', "flex-direction": 'column', overflow: 'hidden' }}>
         <Show when={errorMsg()}>
           <div style={{ color: 'red', padding: '20px', "font-family": 'monospace' }}>
             <h3>Error</h3>
@@ -94,7 +94,7 @@ try {
                   </div>
                 </div>
                 
-                <div class="left-panel" style={{ "pointer-events": 'auto', width: '350px', display: 'flex', "flex-direction": 'column', background: '#ffffff', "box-shadow": '-4px 0 12px rgba(0,0,0,0.05)', "border-left": '1px solid #e2e8f0', "z-index": 20 }}>
+                <div class="left-panel" style={{ "pointer-events": 'auto', width: '350px', display: 'flex', "flex-direction": 'column', padding: 0, "box-shadow": '-4px 0 12px rgba(0,0,0,0.5)', "border-left": '1px solid var(--vscode-panel-border, #3a3d41)', "z-index": 20 }}>
                   <div style={{ flex: 1, overflow: 'auto' }}>
                     <DacInspector />
                   </div>
