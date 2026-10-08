@@ -64,4 +64,5 @@ export interface ImageOptions extends ShapeOptions {
 export interface ViewportOptions extends ShapeOptions {
   width?: number;
   height?: number;
+  printBorder?: boolean;
 }
