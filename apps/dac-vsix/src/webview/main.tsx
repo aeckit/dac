@@ -43,11 +43,18 @@ try {
         }
       };
 
+      const handleOpenFile = (e: any) => {
+        vscode.postMessage({ type: 'openFile', filename: e.detail.filename });
+      };
+
       window.addEventListener('message', handleMessage);
+      window.addEventListener('dac-open-file', handleOpenFile as EventListener);
+      
       vscode.postMessage({ type: 'ready' });
 
       return () => {
         window.removeEventListener('message', handleMessage);
+        window.removeEventListener('dac-open-file', handleOpenFile as EventListener);
       };
     });
 
@@ -85,12 +92,16 @@ try {
             <div style={{ position: 'absolute', inset: 0, "z-index": 10, "pointer-events": 'none', display: 'flex', "flex-direction": 'column' }}>
               <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', "flex-direction": 'column', flex: 1, "min-width": '0' }}>
-                  <div style={{ display: 'flex', "justify-content": 'center', "margin-top": '16px', "pointer-events": 'auto' }}>
-                    <DacToolbar />
+                  <div style={{ display: 'flex', "justify-content": 'center', "margin-top": '16px' }}>
+                    <div style={{ "pointer-events": 'auto' }}>
+                      <DacToolbar />
+                    </div>
                   </div>
                   <div style={{ flex: 1 }} />
-                  <div style={{ display: 'flex', "justify-content": 'flex-start', "margin-left": '16px', "margin-bottom": '16px', "pointer-events": 'auto' }}>
-                    <DacZoomControls />
+                  <div style={{ display: 'flex', "justify-content": 'flex-start', "margin-left": '16px', "margin-bottom": '16px' }}>
+                    <div style={{ "pointer-events": 'auto' }}>
+                      <DacZoomControls />
+                    </div>
                   </div>
                 </div>
                 

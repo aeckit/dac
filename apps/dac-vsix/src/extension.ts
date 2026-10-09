@@ -294,6 +294,21 @@ export function activate(context: vscode.ExtensionContext) {
               console.error('Failed to apply workspace edit from webview:', err);
             }
           }
+        } else if (message.type === 'openFile') {
+          const baseDir = document ? path.dirname(document.fileName) : '';
+          const resolvedPath = resolveDacPath(message.filename, baseDir);
+          
+          if (resolvedPath) {
+            const targetUri = vscode.Uri.file(resolvedPath);
+            vscode.workspace.openTextDocument(targetUri).then(doc => {
+              // Open in the first editor column so it doesn't overwrite the visualizer panel
+              vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One, preview: false });
+            }, err => {
+              vscode.window.showErrorMessage(`Could not open file: ${err.message}`);
+            });
+          } else {
+            vscode.window.showErrorMessage(`File not found: ${message.filename}`);
+          }
         }
       });
 
