@@ -63,8 +63,10 @@ export function useWorkspace() {
     }
   };
 
-  const shareUrl = () => {
-    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(activeDoc()));
+  const shareUrl = (fileId?: string) => {
+    const targetDoc = fileId ? files()[fileId] : activeDoc();
+    if (!targetDoc) return '';
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(targetDoc));
     return `${window.location.origin}${window.location.pathname}#${compressed}`;
   };
 
