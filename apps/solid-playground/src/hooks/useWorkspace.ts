@@ -22,11 +22,9 @@ export function useWorkspace() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Merge so we don't lose the new demo files if upgrading
-        const merged = { ...DEMO_FILES, ...parsed };
-        setFiles(merged);
-        if (!merged[activeFileId()]) {
-           setActiveFileId(Object.keys(merged)[0] || '');
+        setFiles(parsed);
+        if (!parsed[activeFileId()]) {
+           setActiveFileId(Object.keys(parsed)[0] || '');
         }
       } catch(e) {}
     }
