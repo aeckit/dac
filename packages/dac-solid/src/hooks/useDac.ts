@@ -51,7 +51,7 @@ export function useDac() {
     if (!d || ids.length !== 1) return null;
     
     try {
-      const targetDoc = builder().getTargetDocument();
+      const targetDoc = d; // Use the properly evaluated doc() to support nested sheets!
       if (!targetDoc) return null;
 
       const findShape = (items: any[], prefix: string) => {

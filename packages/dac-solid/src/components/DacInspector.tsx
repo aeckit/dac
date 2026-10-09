@@ -86,7 +86,7 @@ export function DacInspector() {
                   <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px', "margin-bottom": '16px' }}>
                     <For each={doc()?.viewports || []}>
                       {(vp: any, index) => {
-                        const id = vp.componentId || `shape_${index()}`;
+                        const id = vp.componentId || `vp_${index()}`;
                         return (
                         <div 
                           onClick={() => selectShape(id)}

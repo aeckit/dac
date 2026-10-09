@@ -20,7 +20,8 @@ export function SelectionGizmo() {
     const initial = { 
       x: shape.x, y: shape.y, w: shape.width, h: shape.height,
       x1: shape.x1, y1: shape.y1, x2: shape.x2, y2: shape.y2,
-      cx: shape.cx, cy: shape.cy, r: shape.r 
+      cx: shape.cx, cy: shape.cy, r: shape.r,
+      cropX: shape.cropX, cropY: shape.cropY
     };
 
     const container = document.querySelector('[data-canvas-container]') as HTMLElement;
@@ -83,6 +84,8 @@ export function SelectionGizmo() {
           let newW = initial.w;
           let newH = initial.h;
 
+          const isViewport = shape.type === 'CAD::Viewport';
+
           if (mode.includes('w')) {
             newX = initial.x + dx;
             newW = initial.w - dx;
@@ -108,7 +111,31 @@ export function SelectionGizmo() {
             newH = minSize;
           }
 
-          updateShape(shape.componentId, { x: newX, y: newY, width: newW, height: newH }, true);
+          const updatePayload: any = { x: newX, y: newY, width: newW, height: newH };
+          
+          if (isViewport) {
+            let scale = 1;
+            const parts = (shape.scale || '1:1').split(':');
+            if (parts.length === 2) {
+              const n = parseFloat(parts[0]);
+              const d = parseFloat(parts[1]);
+              if (!isNaN(n) && !isNaN(d) && d !== 0) scale = n / d;
+            }
+            
+            let cropX = initial.cropX || 0;
+            let cropY = initial.cropY || 0;
+            
+            const effDx = newX - initial.x;
+            const effDy = initial.y - newY; // Since newY = initial.y - dy
+            
+            if (mode.includes('w')) cropX += effDx / scale;
+            if (mode.includes('s')) cropY -= effDy / scale;
+            
+            updatePayload.cropX = cropX;
+            updatePayload.cropY = cropY;
+          }
+
+          updateShape(shape.componentId, updatePayload, true);
         }
       }
     };
@@ -167,10 +194,19 @@ export function SelectionGizmo() {
         }
       }
 
+      let targetEl = el;
+      if (type === 'CAD::Viewport') {
+        const boundaryNode = el.querySelector('.viewport-boundary') as SVGGraphicsElement;
+        if (boundaryNode) {
+          targetEl = boundaryNode;
+        }
+      }
+
       let bbox;
-      try { bbox = el.getBBox(); } catch(e) { return; }
+      try { bbox = targetEl.getBBox(); } catch(e) { return; }
       
-      if (!screenCTM) return;
+      const elCTM = targetEl.getScreenCTM();
+      if (!elCTM) return;
 
       const tl = rootSvg.createSVGPoint(); tl.x = bbox.x; tl.y = bbox.y;
       const tr = rootSvg.createSVGPoint(); tr.x = bbox.x + bbox.width; tr.y = bbox.y;
@@ -178,7 +214,7 @@ export function SelectionGizmo() {
       const br = rootSvg.createSVGPoint(); br.x = bbox.x + bbox.width; br.y = bbox.y + bbox.height;
 
       if (typeof tl.matrixTransform === 'function') {
-        [tl, tr, bl, br].map(p => p.matrixTransform(screenCTM)).forEach(p => {
+        [tl, tr, bl, br].map(p => p.matrixTransform(elCTM)).forEach(p => {
           minX = Math.min(minX, p.x);
           minY = Math.min(minY, p.y);
           maxX = Math.max(maxX, p.x);
