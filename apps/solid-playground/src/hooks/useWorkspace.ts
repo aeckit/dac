@@ -1,20 +1,16 @@
+/// <reference types="vite/client" />
 import { createSignal, createEffect } from 'solid-js';
 import LZString from 'lz-string';
-import welcomeSheet from '../demo/welcome-sheet.json';
-import guideIntro from '../demo/guide-intro.json';
-import guideJsonEditor from '../demo/guide-json-editor.json';
-import guideCanvas from '../demo/guide-canvas.json';
-import guideLlmPrompt from '../demo/guide-llm-prompt.json';
-import titleblock from '../demo/titleblock.json';
 
-const DEMO_FILES = {
-  'welcome-sheet.json': welcomeSheet,
-  'guide-intro.json': guideIntro,
-  'guide-json-editor.json': guideJsonEditor,
-  'guide-canvas.json': guideCanvas,
-  'guide-llm-prompt.json': guideLlmPrompt,
-  'titleblock.json': titleblock
-};
+const modules = import.meta.glob('../demo/*.json', { eager: true });
+const DEMO_FILES: Record<string, any> = {};
+
+for (const path in modules) {
+  const filename = path.split('/').pop();
+  if (filename) {
+    DEMO_FILES[filename] = (modules[path] as any).default;
+  }
+}
 
 export function useWorkspace() {
   const [files, setFiles] = createSignal<Record<string, any>>(DEMO_FILES);

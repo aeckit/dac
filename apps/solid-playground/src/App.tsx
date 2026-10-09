@@ -1,4 +1,4 @@
-import { createSignal, Show } from 'solid-js';
+import { createSignal, Show, onCleanup } from 'solid-js';
 import { DacProvider, DacCanvas, DacInspector, DacToolbar, DacZoomControls } from '@aeckit/dac-solid';
 import { useWorkspace } from './hooks/useWorkspace';
 import { useSettings } from './hooks/useSettings';
@@ -16,6 +16,14 @@ export function App() {
   const [viewMode, setViewMode] = createSignal<'rendered' | 'json'>('rendered');
   
   const [isSidebarOpen, setIsSidebarOpen] = createSignal(true);
+
+  const handleOpenFile = (e: any) => {
+    const filename = e.detail.filename;
+    setActiveFileId(filename);
+  };
+  
+  window.addEventListener('dac-open-file', handleOpenFile as EventListener);
+  onCleanup(() => window.removeEventListener('dac-open-file', handleOpenFile as EventListener));
 
   const toggleRightPane = (mode: 'properties' | 'settings') => {
     if (rightPaneMode() === mode) {
