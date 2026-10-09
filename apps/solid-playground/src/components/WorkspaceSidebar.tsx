@@ -1,4 +1,4 @@
-import { For, createSignal, createMemo } from 'solid-js';
+import { For, createSignal, createMemo, createEffect, onCleanup } from 'solid-js';
 
 function FileIcon(props: { type: string, color: string }) {
   const iconProps = { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: props.color, "stroke-width": "2", "stroke-linecap": "round" as const, "stroke-linejoin": "round" as const };
@@ -26,8 +26,31 @@ export function WorkspaceSidebar(props: {
   onAdd: (name: string, type: string) => void;
   onDelete: (name: string) => void;
 }) {
-  const [sortMode, setSortMode] = createSignal<'alpha' | 'type'>('type');
+  const [sortMode, setSortMode] = createSignal<'alpha' | 'type' | 'newest' | 'oldest'>('type');
   const [showAddMenu, setShowAddMenu] = createSignal(false);
+  const [showSortMenu, setShowSortMenu] = createSignal(false);
+  let menuRef: HTMLDivElement | undefined;
+  let sortRef: HTMLDivElement | undefined;
+
+  createEffect(() => {
+    if (showAddMenu()) {
+      const handleClick = (e: MouseEvent) => {
+        if (menuRef && !menuRef.contains(e.target as Node)) setShowAddMenu(false);
+      };
+      setTimeout(() => document.addEventListener('click', handleClick), 0);
+      onCleanup(() => document.removeEventListener('click', handleClick));
+    }
+  });
+
+  createEffect(() => {
+    if (showSortMenu()) {
+      const handleClick = (e: MouseEvent) => {
+        if (sortRef && !sortRef.contains(e.target as Node)) setShowSortMenu(false);
+      };
+      setTimeout(() => document.addEventListener('click', handleClick), 0);
+      onCleanup(() => document.removeEventListener('click', handleClick));
+    }
+  });
 
   const handleAdd = (type: string) => {
     const name = prompt('File name (e.g. new-file.json):');
@@ -41,6 +64,12 @@ export function WorkspaceSidebar(props: {
     const keys = Object.keys(props.files);
     if (sortMode() === 'alpha') {
       keys.sort((a, b) => a.localeCompare(b));
+      return keys.map(k => ({ isHeader: false, file: k, label: '' }));
+    } else if (sortMode() === 'newest') {
+      keys.sort((a, b) => (props.files[b]?._createdAt || 0) - (props.files[a]?._createdAt || 0));
+      return keys.map(k => ({ isHeader: false, file: k, label: '' }));
+    } else if (sortMode() === 'oldest') {
+      keys.sort((a, b) => (props.files[a]?._createdAt || 0) - (props.files[b]?._createdAt || 0));
       return keys.map(k => ({ isHeader: false, file: k, label: '' }));
     } else {
       // By type
@@ -77,18 +106,11 @@ export function WorkspaceSidebar(props: {
       <div style={{ padding: '16px', "border-bottom": '1px solid var(--app-border)', display: 'flex', 'justify-content': 'space-between', 'align-items': 'center' }}>
         <span style={{ "font-weight": 'bold' }}>Files</span>
         <div style={{ display: 'flex', gap: '8px', "align-items": 'center' }}>
-          <select 
-            value={sortMode()} 
-            onChange={(e) => setSortMode(e.currentTarget.value as 'alpha' | 'type')}
-            style={{ background: 'var(--app-bg-main)', color: 'var(--app-text)', border: '1px solid var(--app-border)', "border-radius": '4px', "font-size": '12px', padding: '2px 4px', cursor: 'pointer' }}
-          >
-            <option value="alpha">A-Z</option>
-            <option value="type">By Type</option>
-          </select>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }} ref={menuRef}>
             <button 
-              onClick={() => setShowAddMenu(!showAddMenu())}
+              onClick={() => { setShowAddMenu(!showAddMenu()); setShowSortMenu(false); }}
               style={{ background: 'transparent', border: 'none', color: 'var(--app-text)', cursor: 'pointer', "font-size": '20px', "line-height": '1', padding: '0 4px', "font-weight": '300' }}
+              title="New File"
             >
               +
             </button>
@@ -98,6 +120,23 @@ export function WorkspaceSidebar(props: {
                 <div onClick={() => handleAdd('CAD::Detail')} style={{ padding: '8px 12px', cursor: 'pointer', "border-bottom": '1px solid var(--app-border)' }}>Detail</div>
                 <div onClick={() => handleAdd('CAD::Project')} style={{ padding: '8px 12px', cursor: 'pointer', "border-bottom": '1px solid var(--app-border)' }}>Project</div>
                 <div onClick={() => handleAdd('CAD::TitleBlock')} style={{ padding: '8px 12px', cursor: 'pointer' }}>TitleBlock</div>
+              </div>
+            )}
+          </div>
+          <div style={{ position: 'relative' }} ref={sortRef}>
+            <button 
+              onClick={() => { setShowSortMenu(!showSortMenu()); setShowAddMenu(false); }}
+              title="Sort Options"
+              style={{ background: 'transparent', border: 'none', color: 'var(--app-text-muted)', cursor: 'pointer', padding: '4px', display: 'flex', 'align-items': 'center', 'justify-content': 'center' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10"></path><path d="M11 9h10"></path><path d="M11 13h10"></path><path d="M11 17h10"></path><path d="M3 17l4 4 4-4"></path><path d="M7 21V3"></path></svg>
+            </button>
+            {showSortMenu() && (
+              <div style={{ position: 'absolute', top: '100%', right: 0, "background-color": 'var(--app-bg-main)', border: '1px solid var(--app-border)', "border-radius": '4px', "box-shadow": '0 4px 12px rgba(0,0,0,0.1)', "z-index": 100, width: '150px', "margin-top": '4px', "font-size": '13px' }}>
+                <div onClick={() => { setSortMode('alpha'); setShowSortMenu(false); }} style={{ padding: '8px 12px', cursor: 'pointer', "border-bottom": '1px solid var(--app-border)', "background-color": sortMode() === 'alpha' ? 'var(--app-accent)' : 'transparent', color: sortMode() === 'alpha' ? '#ffffff' : 'inherit' }}>A-Z</div>
+                <div onClick={() => { setSortMode('type'); setShowSortMenu(false); }} style={{ padding: '8px 12px', cursor: 'pointer', "border-bottom": '1px solid var(--app-border)', "background-color": sortMode() === 'type' ? 'var(--app-accent)' : 'transparent', color: sortMode() === 'type' ? '#ffffff' : 'inherit' }}>By Type</div>
+                <div onClick={() => { setSortMode('newest'); setShowSortMenu(false); }} style={{ padding: '8px 12px', cursor: 'pointer', "border-bottom": '1px solid var(--app-border)', "background-color": sortMode() === 'newest' ? 'var(--app-accent)' : 'transparent', color: sortMode() === 'newest' ? '#ffffff' : 'inherit' }}>Newest to Oldest</div>
+                <div onClick={() => { setSortMode('oldest'); setShowSortMenu(false); }} style={{ padding: '8px 12px', cursor: 'pointer', "background-color": sortMode() === 'oldest' ? 'var(--app-accent)' : 'transparent', color: sortMode() === 'oldest' ? '#ffffff' : 'inherit' }}>Oldest to Newest</div>
               </div>
             )}
           </div>

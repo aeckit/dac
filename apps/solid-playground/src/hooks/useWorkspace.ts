@@ -58,7 +58,7 @@ export function useWorkspace() {
   };
 
   const addFile = (name: string, type: string = 'CAD::Detail') => {
-    let defaultContent: any = { type, version: '1.0' };
+    let defaultContent: any = { type, version: '1.0', _createdAt: Date.now() };
     if (type === 'CAD::SheetConfiguration') {
       defaultContent = { ...defaultContent, paperSize: 'ARCH_D', viewports: [], titleblocks: [], geometry: [] };
     } else if (type === 'CAD::Project') {
