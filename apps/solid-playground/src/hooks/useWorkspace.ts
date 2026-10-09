@@ -16,8 +16,24 @@ export function useWorkspace() {
   const [files, setFiles] = createSignal<Record<string, any>>(DEMO_FILES);
   const [activeFileId, setActiveFileId] = createSignal<string>('welcome-sheet.json');
   
-  // Load from local storage
+  // Load from local storage or URL hash
   createEffect(() => {
+    if (window.location.hash) {
+      try {
+        const hashPayload = window.location.hash.substring(1);
+        const decompressed = LZString.decompressFromEncodedURIComponent(hashPayload);
+        if (decompressed) {
+          const parsed = JSON.parse(decompressed);
+          setFiles(parsed);
+          setActiveFileId(Object.keys(parsed)[0] || '');
+          window.history.replaceState(null, '', window.location.pathname);
+          return;
+        }
+      } catch(e) {
+        console.error("Failed to parse share URL");
+      }
+    }
+    
     const saved = localStorage.getItem('dac_workspace');
     if (saved) {
       try {
@@ -63,11 +79,13 @@ export function useWorkspace() {
     }
   };
 
-  const shareUrl = (fileId?: string) => {
-    const targetDoc = fileId ? files()[fileId] : activeDoc();
-    if (!targetDoc) return '';
-    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(targetDoc));
-    return `${window.location.origin}${window.location.pathname}#${compressed}`;
+  const shareUrl = (fileIds: string[]) => {
+    const payload: Record<string, any> = {};
+    fileIds.forEach(id => {
+      if (files()[id]) payload[id] = files()[id];
+    });
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(payload));
+    return `https://aeckit.github.io/dac/#${compressed}`;
   };
 
   return { files, activeFileId, setActiveFileId, activeDoc, updateActiveDoc, addFile, deleteFile, shareUrl };

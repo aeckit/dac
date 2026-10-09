@@ -50,6 +50,7 @@ export function App() {
         <div style={{ position: 'absolute', inset: 0, "z-index": 10, "pointer-events": 'none', display: 'flex', "flex-direction": 'column' }}>
           <AppHeader 
             activeFileId={activeFileId()} 
+            filesList={Object.keys(files())}
             shareUrl={shareUrl}
             rightPaneMode={rightPaneMode()}
             isSidebarOpen={isSidebarOpen()}
