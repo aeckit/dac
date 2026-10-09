@@ -46,6 +46,32 @@ export class ComponentOperations {
           return;
         }
       }
+      
+      if (nestedDoc.viewports) {
+        let autoIndex = 0;
+        const vpIndex = nestedDoc.viewports.findIndex((v: any) => {
+          const sid = v.componentId || 'vp_' + autoIndex++;
+          return sid === id;
+        });
+        if (vpIndex !== -1) {
+          nestedDoc.viewports[vpIndex] = { ...nestedDoc.viewports[vpIndex], ...properties };
+          this.engine.notifyChanged(isTransient);
+          return;
+        }
+      }
+
+      if (nestedDoc.titleblocks) {
+        let autoIndex = 0;
+        const tbIndex = nestedDoc.titleblocks.findIndex((t: any) => {
+          const sid = t.componentId || 'tb_' + autoIndex++;
+          return sid === id;
+        });
+        if (tbIndex !== -1) {
+          nestedDoc.titleblocks[tbIndex] = { ...nestedDoc.titleblocks[tbIndex], ...properties };
+          this.engine.notifyChanged(isTransient);
+          return;
+        }
+      }
     }
 
     throw new Error(`Component ${id} not found`);
@@ -110,6 +136,20 @@ export class ComponentOperations {
         let autoIndex = 0;
         nestedDoc.geometry = nestedDoc.geometry.filter((g: any) => {
           const sid = g.componentId || 'shape_' + autoIndex++;
+          return sid !== id;
+        });
+      }
+      if (nestedDoc.viewports) {
+        let autoIndex = 0;
+        nestedDoc.viewports = nestedDoc.viewports.filter((v: any) => {
+          const sid = v.componentId || 'vp_' + autoIndex++;
+          return sid !== id;
+        });
+      }
+      if (nestedDoc.titleblocks) {
+        let autoIndex = 0;
+        nestedDoc.titleblocks = nestedDoc.titleblocks.filter((t: any) => {
+          const sid = t.componentId || 'tb_' + autoIndex++;
           return sid !== id;
         });
       }
