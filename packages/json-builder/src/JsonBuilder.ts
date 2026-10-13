@@ -77,9 +77,13 @@ export class JsonBuilder extends EventTarget {
     
     const defaultOffset = targetDoc.geometry.length * 0.5;
     const isLine = shape.type === 'Line' || shape.type === 'CAD::Shape::Line';
-    if (!isLine) {
+    const isCircle = shape.type === 'Circle' || shape.type === 'CAD::Shape::Circle';
+    if (!isLine && !isCircle) {
       if (shape.x === undefined) shape.x = defaultOffset;
       if (shape.y === undefined) shape.y = defaultOffset;
+    } else if (isCircle) {
+      if (shape.cx === undefined) shape.cx = defaultOffset;
+      if (shape.cy === undefined) shape.cy = defaultOffset;
     }
     
     // Parse through schema to strip invalid fields and inject defaults
