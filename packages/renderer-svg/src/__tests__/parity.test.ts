@@ -18,8 +18,8 @@ describe('Architectural Parity: (@aeckit/dac-json-solver + @aeckit/dac-renderer-
       .replace(/img-fallback-[a-zA-Z0-9_-]+/g, 'img-fallback-STATIC');
   }
 
-  it('produces identical SVG output for guide-intro.json', () => {
-    const doc = loadJson<DetailDocument>(path.join(demoDir, 'guide-intro.json'));
+  it('produces identical SVG output for walkthrough-detail.json', () => {
+    const doc = loadJson<DetailDocument>(path.join(demoDir, 'walkthrough-detail.json'));
     
     // Legacy monolithic pipeline
     const legacySvg = normalizeSvg(renderDetail(doc, 24, 18).svg);
@@ -31,8 +31,8 @@ describe('Architectural Parity: (@aeckit/dac-json-solver + @aeckit/dac-renderer-
     expect(newSvg.trim()).toBe(legacySvg.trim());
   });
 
-  it('produces identical SVG output for guide-json-editor.json', () => {
-    const doc = loadJson<DetailDocument>(path.join(demoDir, 'guide-json-editor.json'));
+  it('produces identical SVG output for slab-on-grade-curb.json', () => {
+    const doc = loadJson<DetailDocument>(path.join(demoDir, 'slab-on-grade-curb.json'));
 
     const legacySvg = normalizeSvg(renderDetail(doc, 24, 18).svg);
 
