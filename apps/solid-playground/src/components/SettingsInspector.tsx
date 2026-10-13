@@ -81,7 +81,7 @@ export function SettingsInspector() {
           }}
           style={{ padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', "border-radius": '4px', cursor: 'pointer', "font-weight": 'bold' }}
         >
-          Reset Workspace (Reload Demos)
+          Reload Demo
         </button>
         <p style={{ "font-size": '12px', color: 'var(--app-text-muted)', "margin-top": '8px' }}>
           This will delete all your local files and restore the default demo files from the repository.
