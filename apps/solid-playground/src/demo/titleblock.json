@@ -4,68 +4,321 @@
   "geometry": [
     {
       "type": "CAD::Shape::Rectangle",
+      "componentId": "da8d6afc-8bc0-41f3-be58-a1fdf08ab244",
       "x": 0.5,
       "y": 0.5,
-      "strokeWidth": 1,
       "width": 35,
       "height": 23,
+      "strokeWidth": 2,
       "color": "auto"
     },
     {
       "type": "CAD::Shape::Rectangle",
+      "componentId": "1f9cd22f-f701-4901-8e4f-e0b356d68dfb",
       "x": 31,
       "y": 0.5,
-      "strokeWidth": 1,
       "width": 4.5,
       "height": 23,
+      "strokeWidth": 2,
       "color": "auto"
     },
     {
       "type": "CAD::Annotation::Text",
+      "componentId": "8f93fcdd-9b9d-43a5-95ff-4b4209c4a0fa",
       "text": "AEC KIT",
-      "x": 33.25,
-      "y": 2,
-      "fontSize": 28,
-      "color": "auto"
-    },
-    {
-      "type": "CAD::Annotation::Text",
-      "text": "PROJECT:",
-      "x": 31.2,
-      "y": 4,
-      "fontSize": 11,
-      "color": "#94a3b8"
-    },
-    {
-      "type": "CAD::Annotation::Text",
-      "text": "{projectName}",
-      "x": 31.2,
-      "y": 4.3,
-      "fontSize": 18,
-      "color": "auto"
-    },
-    {
-      "type": "CAD::Annotation::Text",
-      "text": "SHEET:",
-      "x": 31.2,
-      "y": 5,
-      "fontSize": 11,
-      "color": "#94a3b8"
-    },
-    {
-      "type": "CAD::Annotation::Text",
-      "text": "{sheetName}",
-      "x": 31.2,
-      "y": 5.3,
-      "fontSize": 18,
-      "color": "auto"
-    },
-    {
-      "type": "CAD::Annotation::Text",
-      "text": "{sheetNumber}",
-      "x": 33.25,
+      "x": 32.1,
       "y": 22,
-      "fontSize": 58,
+      "fontSize": 32,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "7ed16761-8743-43df-8a60-e0a5833afc9d",
+      "text": "123 Architecture Blvd, Suite 400",
+      "x": 31.25,
+      "y": 21,
+      "fontSize": 8,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "d54f398e-7f9d-47fe-8bd6-e11123928127",
+      "text": "San Francisco, CA 94105",
+      "x": 31.25,
+      "y": 20.8,
+      "fontSize": 8,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "9f36811a-2285-4939-8688-e2f476570f62",
+      "x1": 31,
+      "y1": 20.5,
+      "x2": 35.5,
+      "y2": 20.5,
+      "strokeWidth": 1,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "771ca864-0beb-46db-ad77-988be1e8d491",
+      "text": "REVISIONS",
+      "x": 31.25,
+      "y": 20,
+      "fontSize": 10,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "1209a544-5c4c-4130-b1e4-932fcc216e1c",
+      "text": "NO.",
+      "x": 31.25,
+      "y": 19.5,
+      "fontSize": 8,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "b5e94a55-d97d-4da6-980d-21e4690bb44b",
+      "text": "DESCRIPTION",
+      "x": 31.75,
+      "y": 19.5,
+      "fontSize": 8,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "20b68d1e-7fe3-4db7-9871-35226f012fbd",
+      "text": "DATE",
+      "x": 34.75,
+      "y": 19.5,
+      "fontSize": 8,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "8e49e360-9e4f-427e-9090-4fd2d9f8a965",
+      "x1": 31,
+      "y1": 19.4,
+      "x2": 35.5,
+      "y2": 19.4,
+      "strokeWidth": 1,
+      "color": "#94a3b8"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "99c386f1-9962-4a7b-aa74-3c570d932c77",
+      "x1": 31,
+      "y1": 18.9,
+      "x2": 35.5,
+      "y2": 18.9,
+      "strokeWidth": 1,
+      "color": "rgba(148,163,184,0.3)"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "c8015b45-2b0e-4ef5-a0f5-64163b267728",
+      "x1": 31,
+      "y1": 18.5,
+      "x2": 35.5,
+      "y2": 18.5,
+      "strokeWidth": 1,
+      "color": "rgba(148,163,184,0.3)"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "5c33be86-52f3-4efb-8fcf-87120c9a7e40",
+      "x1": 31,
+      "y1": 18.099999999999998,
+      "x2": 35.5,
+      "y2": 18.099999999999998,
+      "strokeWidth": 1,
+      "color": "rgba(148,163,184,0.3)"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "8776131a-fb89-4918-aca2-770cfd188758",
+      "x1": 31,
+      "y1": 17.7,
+      "x2": 35.5,
+      "y2": 17.7,
+      "strokeWidth": 1,
+      "color": "rgba(148,163,184,0.3)"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "867b8ef7-c783-4b73-ae84-1b09aad0b331",
+      "x1": 31,
+      "y1": 17.299999999999997,
+      "x2": 35.5,
+      "y2": 17.299999999999997,
+      "strokeWidth": 1,
+      "color": "rgba(148,163,184,0.3)"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "9ac45d6f-e1f1-4c96-a93c-48148602a6a5",
+      "x1": 31,
+      "y1": 17,
+      "x2": 35.5,
+      "y2": 17,
+      "strokeWidth": 1,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "62548f80-31e0-4c7d-93ee-39fe71e36a1b",
+      "text": "PROJECT:",
+      "x": 31.25,
+      "y": 9.5,
+      "fontSize": 10,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "10c0b15b-e802-4389-a7f0-031c741941b5",
+      "text": "{parameters.projectName}",
+      "x": 31.25,
+      "y": 8.8,
+      "fontSize": 14,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "b1c20315-e82c-49f7-ab87-7080cff35d7d",
+      "text": "CLIENT:",
+      "x": 31.25,
+      "y": 7.5,
+      "fontSize": 10,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "5a244326-8ce1-49e3-b5e7-1bbb6bb1a917",
+      "text": "{parameters.clientName}",
+      "x": 31.25,
+      "y": 6.8,
+      "fontSize": 14,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "13ccda8d-6483-40a2-b9bf-f2ceabf160f8",
+      "x1": 31,
+      "y1": 6.5,
+      "x2": 35.5,
+      "y2": 6.5,
+      "strokeWidth": 1,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "36927643-15ba-4f93-bb53-17364c409525",
+      "text": "DRAWN BY:",
+      "x": 31.25,
+      "y": 6,
+      "fontSize": 8,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "d2e38676-1d0f-4f99-805c-a6c85b2e2642",
+      "text": "{parameters.drawnBy}",
+      "x": 32.5,
+      "y": 6,
+      "fontSize": 8,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "fd51abe8-21ff-4bfc-b4f3-a9c087274810",
+      "text": "CHECKED BY:",
+      "x": 31.25,
+      "y": 5.5,
+      "fontSize": 8,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "c413ac71-cff2-496b-a94e-4111924ddda5",
+      "text": "{parameters.checkedBy}",
+      "x": 32.5,
+      "y": 5.5,
+      "fontSize": 8,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "2c08e650-3b5d-4967-be5e-754a2ab9981e",
+      "text": "ISSUE DATE:",
+      "x": 31.25,
+      "y": 5,
+      "fontSize": 8,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "cad64e65-bd68-42d3-aeb4-dc71bfa90abd",
+      "text": "{parameters.issueDate}",
+      "x": 32.5,
+      "y": 5,
+      "fontSize": 8,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "e74d1fb6-e4c7-42bd-8ee9-a0a0838da64d",
+      "x1": 31,
+      "y1": 4.5,
+      "x2": 35.5,
+      "y2": 4.5,
+      "strokeWidth": 1,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "196318a9-a700-415a-92fb-abe02373fd9d",
+      "text": "SHEET TITLE:",
+      "x": 31.25,
+      "y": 4,
+      "fontSize": 10,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "bfda8296-905e-4c25-be90-b6aa0b2f94d5",
+      "text": "{parameters.sheetName}",
+      "x": 31.25,
+      "y": 3.3,
+      "fontSize": 18,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Shape::Line",
+      "componentId": "406a2728-e42e-4b98-84c1-7292af1bc5b3",
+      "x1": 31,
+      "y1": 2.5,
+      "x2": 35.5,
+      "y2": 2.5,
+      "strokeWidth": 1,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "fd4bca2d-525a-4091-9be6-3a796e031a2b",
+      "text": "SHEET NO.",
+      "x": 31.25,
+      "y": 2,
+      "fontSize": 10,
+      "color": "#64748b"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "aad06604-755d-4a53-bb33-25981cc99e20",
+      "text": "{parameters.sheetNumber}",
+      "x": 32,
+      "y": 1,
+      "fontSize": 56,
       "color": "var(--cad-text)"
     }
   ]

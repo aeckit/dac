@@ -3,42 +3,43 @@
   "sheetNumber": "A101",
   "sheetName": "Welcome Guide",
   "paperSize": "ARCH D",
-  "titleBlock": "titleblock.json",
-  "parameters": {
-    "projectName": "DRAWINGS AS CODE"
+  "titleBlockRef": "titleblock.json",
+  "titleBlockParameters": {
+    "projectName": "DRAWINGS AS CODE",
+    "clientName": "AEC KIT COMMUNITY",
+    "drawnBy": "AI",
+    "checkedBy": "NN",
+    "issueDate": "October 9, 2026",
+    "sheetName": "WELCOME GUIDE",
+    "sheetNumber": "A101"
   },
   "viewports": [
     {
-      "detail": "guide-intro.json",
+      "detail": "walkthrough-detail.json",
       "x": 2,
-      "y": 20,
+      "y": 12,
+      "width": 20,
+      "height": 11,
       "scale": "1:1",
       "detailNumber": "1",
-      "title": "Welcome to aeckit DaC"
+      "title": "Quick Start Guide",
+      "componentId": "walkthrough-viewport-1",
+      "cropX": -0.5,
+      "cropY": -0.21708011627197266
     },
     {
-      "detail": "guide-json-editor.json",
+      "detail": "slab-on-grade-curb.json",
       "x": 2,
-      "y": 12,
-      "scale": "1:1",
-      "detailNumber": "2",
-      "title": "Using the Editor"
-    },
-    {
-      "detail": "guide-canvas.json",
-      "x": 2,
-      "y": 4,
-      "scale": "1:1",
-      "detailNumber": "3",
-      "title": "Canvas Navigation"
-    },
-    {
-      "detail": "guide-llm-prompt.json",
-      "x": 12,
-      "y": 12,
-      "scale": "1:1",
-      "detailNumber": "4",
-      "title": "AI Generation Guide"
+      "y": 2,
+      "width": 11,
+      "height": 9,
+      "scale": "1:4",
+      "detailNumber": "1",
+      "title": "Slab-on-grade curb detail",
+      "componentId": "slab-on-grade-detail",
+      "cropX": -11,
+      "cropY": -18
     }
-  ]
+  ],
+  "geometry": []
 }

@@ -1,50 +1,24 @@
 # DaC: Drawings as Code
 
-Welcome to the **Drawings as Code (DaC)** monorepo. This workspace houses a parametric 2D CAD visualizer engine, web UI components, and a VS Code extension that renders construction details (e.g., foundation-to-sill plate connections) as interactive, blueprint-style drawings directly inside the IDE.
-
-![DaC Extension Preview](apps/dac-vsix/resources/preview.gif)
+Welcome to the **Drawings as Code (DaC)** monorepo. DaC is a system of packages including a parametric 2D CAD visualizer engine, SolidJS web UI components, a standalone web playground, and a VS Code extension that renders construction details as interactive, blueprint-style drawings.
 
 ---
 
-## Monorepo Layout
+## Monorepo Architecture
 
-This repository uses npm workspaces:
+This repository uses npm workspaces and Turborepo. It is broken down into highly specialized, isolated packages:
 
-```text
-dac/
-├── packages/
-│   ├── core-solver/      # @aeckit/core-solver — Pure TypeScript CAD renderer
-│   └── ui-components/    # @aeckit/ui-components — Vanilla JS viewport and property panel
-└── apps/
-    └── dac-vsix/         # dac-vsix — VS Code extension wrapper
-```
+### Packages (`packages/`)
+* **`@aeckit/dac-schema`**: The Zod schemas and TypeScript types defining the DaC document structure (Projects, Sheets, Details, and Geometry Primitives).
+* **`@aeckit/dac-json-builder`**: A workspace mutation API that safely traverses nested documents to apply transformations, moves, and deletions to the underlying JSON state.
+* **`@aeckit/dac-json-solver`**: A pure math/geometry resolution engine. Resolves algebraic coordinate expressions (e.g. `"240 + {parameters.offset} - 10"`) into absolute floats, maintaining constraints and dependencies without any graphical output.
+* **`@aeckit/renderer-svg`**: The pure visual output engine. Converts the algebraically solved layouts into static SVG markup representing the final CAD drawing.
+* **`@aeckit/dac-solid`**: Reactivity and DOM integration layer. Built in SolidJS, it mounts the SVG into the browser and powers the interactive UI tools (selection gizmos, inspector panels, pan/zoom canvas).
+* **`@aeckit/dac-cli`**: A command-line interface for headless rendering, validation, and CLI-driven workflows.
 
-### 1. Core Solver (`packages/core-solver`)
-* **npm package:** `@aeckit/core-solver`
-* **Role**: A stateless geometric compiler. It resolves algebraic coordinate expressions (e.g., `"240 + {parameters.offset} - 10"`) and compiles drawing schemas into raw vector SVG strings.
-
-### 2. UI Components (`packages/ui-components`)
-* **npm package:** `@aeckit/ui-components`
-* **Role**: Browser-native split-panel interface. The left panel dynamically generates properties forms from active parameters. The right panel renders the interactive SVG canvas, including custom zoom/pan and outline highlights on click.
-
-### 3. VS Code Extension (`apps/dac-vsix`)
-* **npm package:** `dac-vsix`
-* **Role**: VS Code extension wrapper. Mounts the UI components in a Webview Panel, listens to saves/changes on `.json` detail files, and handles real-time bidirectional parameter synchronization back to the active text editor buffer.
-
----
-
-## CAD Geometry & Interactive Selection
-
-### 1. Cartesian Coordinate System (`+Y = UP`)
-Unlike standard web SVG/HTML coordinates where the Y-axis points down from the top-left, **DaC uses a standard CAD Cartesian coordinate system**:
-* **Origin `(0, 0)`:** Located at the **bottom-left** of the canvas or drawing sheet.
-* **Axes:** `+X` extends to the right; **`+Y` extends upwards**.
-* **Origin UCS Indicator:** In detail views, a red/cyan CAD coordinate axis icon (`X →`, `Y ↑`) is displayed at `(0, 0)` on the blueprint grid to provide visual orientation.
-
-### 2. Interactive Selection & Component Grouping
-Every geometry primitive in a drawing is **selectable and highlightable** in the interactive viewer by default:
-* **Explicit `componentId` (Grouping):** When one or more primitives share an explicit `componentId` (e.g., `"componentId": "anchor_bolt"` on 4 lines and a polygon), the solver groups them together into a single interactive assembly (`<g data-component-id="anchor_bolt">`). Clicking any line in the assembly highlights the entire anchor bolt.
-* **Implicit Auto-Indexing (Fallback):** If an element in `geometry` does not specify a `componentId`, `@aeckit/core-solver` automatically assigns an indexed fallback ID (`shape_0`, `shape_1`, etc.). This ensures **every element on the canvas is clickable and inspectable by default**.
+### Apps (`apps/`)
+* **`@aeckit/solid-playground`**: The end-user standalone browser application. Built with Vite and SolidJS, it provides an interactive web workspace to edit `.json` code and view real-time rendered CAD results.
+* **`dac-vsix`**: The VS Code extension. Embeds the `@aeckit/dac-solid` components in a Webview Panel, providing bidirectional real-time synchronization between the active text editor buffer and the visual canvas.
 
 ---
 
@@ -52,7 +26,7 @@ Every geometry primitive in a drawing is **selectable and highlightable** in the
 
 ### Prerequisites
 
-* Node.js $\ge 18$
+* Node.js >= 18
 * npm (bundled with Node)
 
 ### Setup & Compilation
@@ -70,18 +44,27 @@ Every geometry primitive in a drawing is **selectable and highlightable** in the
 
 3. Build all packages:
    ```bash
-   npm run compile
+   npm run build
    ```
 
 ---
 
 ## Local Development & Debugging
 
+### Running the Web Playground
+The easiest way to develop and test the engine is to run the standalone SolidJS playground.
+
+```bash
+npm run dev
+```
+Navigate to `http://localhost:5173` to open the Playground. Any new `.json` files dropped into `apps/solid-playground/src/demo/` will instantly appear in the sidebar upon resetting the workspace.
+
+### Running the VS Code Extension
 1. Open the root `dac/` directory in VS Code.
 2. Open the **Run and Debug** panel (`Ctrl+Shift+D` or `Cmd+Shift+D`).
 3. Select **Launch Extension** and press **`F5`**.
 4. An *Extension Development Host* window will open.
-5. In the host window, open a detail configuration file (like `detail-prototype.json`) and run the **DAC: Open Preview** command from the editor title bar menu (or right-click).
+5. In the host window, open any DaC JSON file and run the **DAC: Open Preview** command from the editor title bar menu (or right-click).
 
 ---
 
@@ -90,8 +73,7 @@ Every geometry primitive in a drawing is **selectable and highlightable** in the
 To package the VS Code extension for manual publication to the marketplace:
 
 ```bash
-cd apps/dac-vsix
-npx @vscode/vsce package --no-dependencies
+npm run package
 ```
 
-This will generate the installable `dac-vsix-0.0.1.vsix` package in that folder.
+This will run the Turborepo pipeline and generate the installable `dac-vsix-0.0.1.vsix` package inside `apps/dac-vsix/`.

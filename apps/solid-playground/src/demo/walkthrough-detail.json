@@ -1,0 +1,71 @@
+{
+  "type": "CAD::Detail",
+  "version": "1.0",
+  "scale": "1:1",
+  "geometry": [
+    {
+      "type": "CAD::Shape::Rectangle",
+      "x": 0,
+      "y": 0,
+      "width": 18,
+      "height": 10,
+      "fill": "auto",
+      "color": "auto",
+      "componentId": "walkthrough-bg"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": 1,
+      "y": 8.5,
+      "text": "QUICK START WALKTHROUGH",
+      "fontSize": 32,
+      "color": "auto",
+      "componentId": "walkthrough-title"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": 1,
+      "y": 6.5,
+      "text": "1. Tweak the numbers. Watch the geometry react.",
+      "fontSize": 24,
+      "color": "auto",
+      "componentId": "walkthrough-pt1"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": 1,
+      "y": 5,
+      "text": "2. Prefer code? Toggle to raw JSON. Try generating details with AI and LLMs.",
+      "fontSize": 24,
+      "color": "auto",
+      "componentId": "walkthrough-pt2"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": 1,
+      "y": 3.5,
+      "text": "3. Pan. Zoom. Inspect. All on this web tool.",
+      "fontSize": 24,
+      "color": "auto",
+      "componentId": "walkthrough-pt3"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "x": 1,
+      "y": 2,
+      "text": "4. Show others your detail by generating a URL and sharing the link.",
+      "fontSize": 24,
+      "color": "auto",
+      "componentId": "walkthrough-pt4"
+    },
+    {
+      "componentId": "text_1ba5c3bd-6909-4b10-b8db-176687a35dff",
+      "color": "auto",
+      "type": "CAD::Annotation::Text",
+      "x": 1,
+      "y": 0.5,
+      "text": "5. File a bug or leave feedback at https://github.com/aeckit/dac/issues",
+      "fontSize": 24
+    }
+  ]
+}
