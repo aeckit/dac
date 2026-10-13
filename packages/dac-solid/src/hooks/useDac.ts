@@ -56,10 +56,13 @@ export function useDac() {
 
       const findShape = (items: any[], prefix: string) => {
         let autoIndex = 0;
-        return items?.find((g: any) => {
+        for (const g of items || []) {
           const sid = g.componentId || `${prefix}${autoIndex++}`;
-          return sid === ids[0];
-        }) || null;
+          if (sid === ids[0]) {
+            return { ...g, componentId: sid };
+          }
+        }
+        return null;
       };
 
       if (targetDoc.geometry) {
