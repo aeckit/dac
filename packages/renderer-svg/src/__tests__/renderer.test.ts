@@ -4,7 +4,8 @@ import {
   renderSolvedGroups,
   drawLine,
   drawRectangle,
-  drawCircle
+  drawCircle,
+  drawLeader
 } from '../index';
 import type { SolvedDetailLayout, SolvedGroup } from '@aeckit/dac-json-solver';
 
@@ -66,5 +67,22 @@ describe('@aeckit/dac-renderer-svg pure SVG generation engine', () => {
     expect(svg).toContain('<svg xmlns="http://www.w3.org/2000/svg"');
     expect(svg).toContain('data-component-id="box-1"');
     expect(svg).toContain('viewBox="0 0 24 18"');
+  });
+
+  it('draws a leader annotation with hit area, marker, and text', () => {
+    const leaderShape = {
+      type: 'CAD::Annotation::Leader',
+      x: 2,
+      y: 2,
+      dx: 4,
+      dy: 3,
+      text: 'Test Note'
+    };
+
+    const svg = drawLeader(leaderShape, 1.0, 18);
+    expect(svg).toContain('class="cad-hit-area"');
+    expect(svg).toContain('class="leader-line dimension-line"');
+    expect(svg).toContain('marker-start="url(#arrow)"');
+    expect(svg).toContain('Test Note');
   });
 });

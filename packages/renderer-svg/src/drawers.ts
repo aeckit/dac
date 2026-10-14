@@ -206,12 +206,13 @@ export function drawLeader(shape: SolvedPrimitive, scale: number, canvasHeight =
   
   const strokeWidth = (1.5 / 72) / scale;
   const text = String(shape.text ?? '');
-  const color = shape.color || '#06b6d4';
+  const color = shape.color || 'var(--cad-dim-line, var(--cad-stroke, #06b6d4))';
 
-  return `
-    <line x1="${anchorX}" y1="${anchorY}" x2="${textX}" y2="${textY}" class="dimension-line" stroke="${color}" stroke-width="${strokeWidth}" marker-start="url(#arrow)" />
-    <text x="${textX + (offsetX > 0 ? (5 / 72) / scale : -(5 / 72) / scale)}" y="${textY + (3 / 72) / scale}" font-size="${fontSize}" fill="${color}" class="cad-text" text-anchor="${offsetX > 0 ? 'start' : 'end'}" dominant-baseline="middle">${text}</text>
-  `;
+  const hitTarget = `<line x1="${anchorX}" y1="${anchorY}" x2="${textX}" y2="${textY}" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />`;
+  const visibleLine = `<line x1="${anchorX}" y1="${anchorY}" x2="${textX}" y2="${textY}" class="leader-line dimension-line" stroke="${color}" stroke-width="${strokeWidth}" marker-start="url(#arrow)" />`;
+  const textNode = `<text x="${textX + (offsetX > 0 ? (5 / 72) / scale : -(5 / 72) / scale)}" y="${textY + (3 / 72) / scale}" font-size="${fontSize}" fill="${color}" class="cad-text" text-anchor="${offsetX > 0 ? 'start' : 'end'}" dominant-baseline="middle">${text}</text>`;
+
+  return `${hitTarget}\n${visibleLine}\n${textNode}`;
 }
 
 // Annotation: Image (Cartesian +Y = UP)
