@@ -76,4 +76,4 @@ To package the VS Code extension for manual publication to the marketplace:
 npm run package
 ```
 
-This will run the Turborepo pipeline and generate the installable `dac-vsix-0.0.1.vsix` package inside `apps/dac-vsix/`.
+This will run the Turborepo pipeline and generate the installable `.vsix` package inside `apps/dac-vsix/`.
