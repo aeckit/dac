@@ -3,7 +3,18 @@ import { useDac } from '../hooks/useDac';
 
 export function SelectionGizmo() {
   const { selectionIds, deleteShape, updateShape, selectedShape, zoom } = useDac();
-  const [box, setBox] = createSignal<{ left: number, top: number, right: number, bottom: number, isLine?: boolean, p1?: {x: number, y: number}, p2?: {x: number, y: number} } | null>(null);
+  const [box, setBox] = createSignal<{ 
+    left: number, 
+    top: number, 
+    right: number, 
+    bottom: number, 
+    isLine?: boolean, 
+    p1?: {x: number, y: number}, 
+    p2?: {x: number, y: number},
+    isLeader?: boolean,
+    pAnchor?: {x: number, y: number},
+    pLanding?: {x: number, y: number}
+  } | null>(null);
 
   let reqId: number;
 
@@ -18,9 +29,10 @@ export function SelectionGizmo() {
     if (!shape) return;
     const isCircleShape = shape.type === 'Circle' || shape.type === 'CAD::Shape::Circle';
     const initial = { 
-      x: shape.x, y: shape.y, w: shape.width, h: shape.height,
-      x1: shape.x1, y1: shape.y1, x2: shape.x2, y2: shape.y2,
-      cx: shape.cx, cy: shape.cy, r: shape.r,
+      x: Number(shape.x ?? 0), y: Number(shape.y ?? 0), w: Number(shape.width ?? 0), h: Number(shape.height ?? 0),
+      x1: Number(shape.x1 ?? 0), y1: Number(shape.y1 ?? 0), x2: Number(shape.x2 ?? 0), y2: Number(shape.y2 ?? 0),
+      cx: Number(shape.cx ?? 0), cy: Number(shape.cy ?? 0), r: Number(shape.r ?? 0),
+      dx: Number(shape.dx ?? 10), dy: Number(shape.dy ?? 10),
       cropX: shape.cropX, cropY: shape.cropY
     };
 
@@ -67,6 +79,18 @@ export function SelectionGizmo() {
         updateShape(shape.componentId, { x1: initial.x1 + dx, y1: initial.y1 - dy }, true);
       } else if (mode === 'line-end') {
         updateShape(shape.componentId, { x2: initial.x2 + dx, y2: initial.y2 - dy }, true);
+      } else if (mode === 'leader-anchor') {
+        updateShape(shape.componentId, { 
+          x: initial.x + dx, 
+          y: initial.y - dy,
+          dx: initial.dx - dx,
+          dy: initial.dy + dy
+        }, true);
+      } else if (mode === 'leader-landing') {
+        updateShape(shape.componentId, { 
+          dx: initial.dx + dx, 
+          dy: initial.dy - dy 
+        }, true);
       } else {
         if (isCircleShape) {
           let dr = 0;
@@ -171,6 +195,8 @@ export function SelectionGizmo() {
     
     let isLine = false;
     let p1, p2;
+    let isLeader = false;
+    let pAnchor, pLanding;
 
     ids.forEach(id => {
       const el = rootSvg.querySelector(`[data-component-id="${id}"]`) as SVGGraphicsElement;
@@ -190,6 +216,21 @@ export function SelectionGizmo() {
             const mPt2 = pt2.matrixTransform(screenCTM);
             p1 = { x: mPt1.x - containerRect.left, y: mPt1.y - containerRect.top };
             p2 = { x: mPt2.x - containerRect.left, y: mPt2.y - containerRect.top };
+          }
+        }
+      }
+
+      if (ids.length === 1 && (type === 'Leader' || type === 'CAD::Annotation::Leader')) {
+        isLeader = true;
+        const lineNode = (el.querySelector('.leader-line') || el.querySelector('line')) as SVGLineElement | null;
+        if (lineNode && screenCTM) {
+          const pt1 = rootSvg.createSVGPoint(); pt1.x = lineNode.x1.baseVal.value; pt1.y = lineNode.y1.baseVal.value;
+          const pt2 = rootSvg.createSVGPoint(); pt2.x = lineNode.x2.baseVal.value; pt2.y = lineNode.y2.baseVal.value;
+          if (typeof pt1.matrixTransform === 'function') {
+            const mPt1 = pt1.matrixTransform(screenCTM);
+            const mPt2 = pt2.matrixTransform(screenCTM);
+            pAnchor = { x: mPt1.x - containerRect.left, y: mPt1.y - containerRect.top };
+            pLanding = { x: mPt2.x - containerRect.left, y: mPt2.y - containerRect.top };
           }
         }
       }
@@ -229,7 +270,8 @@ export function SelectionGizmo() {
         top: minY - containerRect.top,
         right: maxX - containerRect.left,
         bottom: maxY - containerRect.top,
-        isLine, p1, p2
+        isLine, p1, p2,
+        isLeader, pAnchor, pLanding
       });
     } else {
       setBox(null);
@@ -291,8 +333,8 @@ export function SelectionGizmo() {
             </div>
           )}
 
-          {/* Bounding Box Border */}
-          {!b().isLine && (
+          {/* Bounding Box Border (only for standard 2D shapes) */}
+          {!b().isLine && !b().isLeader && (
             <div style={{
               position: 'absolute',
               left: `${b().left}px`,
@@ -303,8 +345,8 @@ export function SelectionGizmo() {
             }} />
           )}
 
-          {/* 8 Resize Handles or Line Handles */}
-          {!b().isLine ? ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
+          {/* 8 Resize Handles (only for standard 2D shapes) */}
+          {!b().isLine && !b().isLeader && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
             let hLeft = 0, hTop = 0;
             const cx = (b().left + b().right) / 2;
             const cy = (b().top + b().bottom) / 2;
@@ -334,11 +376,15 @@ export function SelectionGizmo() {
                 }} 
               />
             );
-          }) : (
+          })}
+
+          {/* Line Handles */}
+          {b().isLine && (
             <>
               {b().p1 && (
                 <div 
                   onPointerDown={(e) => handleDrag(e, 'line-start')}
+                  title="Line Start"
                   style={{
                     position: 'absolute', left: `${b().p1!.x}px`, top: `${b().p1!.y}px`, width: '8px', height: '8px',
                     background: 'white', border: '1px solid #3b82f6', transform: 'translate(-50%, -50%)',
@@ -349,10 +395,39 @@ export function SelectionGizmo() {
               {b().p2 && (
                 <div 
                   onPointerDown={(e) => handleDrag(e, 'line-end')}
+                  title="Line End"
                   style={{
                     position: 'absolute', left: `${b().p2!.x}px`, top: `${b().p2!.y}px`, width: '8px', height: '8px',
                     background: 'white', border: '1px solid #3b82f6', transform: 'translate(-50%, -50%)',
                     "pointer-events": 'auto', cursor: 'pointer'
+                  }} 
+                />
+              )}
+            </>
+          )}
+
+          {/* Leader Handles */}
+          {b().isLeader && (
+            <>
+              {b().pAnchor && (
+                <div 
+                  onPointerDown={(e) => handleDrag(e, 'leader-anchor')}
+                  title="Move Arrowhead"
+                  style={{
+                    position: 'absolute', left: `${b().pAnchor!.x}px`, top: `${b().pAnchor!.y}px`, width: '10px', height: '10px',
+                    background: '#3b82f6', border: '1.5px solid white', "border-radius": '50%', transform: 'translate(-50%, -50%)',
+                    "box-shadow": '0 2px 4px rgba(0,0,0,0.3)', "pointer-events": 'auto', cursor: 'crosshair'
+                  }} 
+                />
+              )}
+              {b().pLanding && (
+                <div 
+                  onPointerDown={(e) => handleDrag(e, 'leader-landing')}
+                  title="Move Note Landing"
+                  style={{
+                    position: 'absolute', left: `${b().pLanding!.x}px`, top: `${b().pLanding!.y}px`, width: '10px', height: '10px',
+                    background: 'white', border: '1.5px solid #3b82f6', "border-radius": '2px', transform: 'translate(-50%, -50%)',
+                    "box-shadow": '0 2px 4px rgba(0,0,0,0.3)', "pointer-events": 'auto', cursor: 'move'
                   }} 
                 />
               )}

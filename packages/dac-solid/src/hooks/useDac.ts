@@ -27,12 +27,13 @@ export function useDac() {
       case 'Line': newShape = b.addLine(options); break;
       case 'Circle': newShape = b.addCircle(options); break;
       case 'Text': newShape = b.addText(options); break;
+      case 'Leader': newShape = b.addLeader(options); break;
       default:
         newShape = b.addShapeToTarget({ type, ...options });
         break;
     }
     if (newShape) {
-      setSelectionIds([newShape.id]);
+      setSelectionIds([newShape.componentId || newShape.id]);
     }
   };
 
