@@ -192,8 +192,14 @@ export function drawLeader(shape: SolvedPrimitive, scale: number, canvasHeight =
   const offsetX = dx / scale;
   const offsetY = -(dy / scale);
 
-  const textX = anchorX + offsetX;
-  const textY = anchorY + offsetY;
+  const elbowX = anchorX + offsetX;
+  const elbowY = anchorY + offsetY;
+
+  const rawShoulderLength = shape.shoulderLength !== undefined ? Number(shape.shoulderLength) : 0.25;
+  const shoulderLen = rawShoulderLength / scale;
+  const dir = offsetX >= 0 ? 1 : -1;
+  const endX = elbowX + dir * shoulderLen;
+  const endY = elbowY;
 
   let parsedFontSize = 11;
   if (typeof shape.fontSize === 'string' && shape.fontSize.includes('/')) {
@@ -204,13 +210,32 @@ export function drawLeader(shape: SolvedPrimitive, scale: number, canvasHeight =
   }
   const fontSize = (parsedFontSize / 72) / scale;
   
-  const strokeWidth = (1.5 / 72) / scale;
+  const strokeWidth = ((Number(shape.strokeWidth) || 1.5) / 72) / scale;
+  const dashArray = shape.strokeDasharray && shape.strokeDasharray !== 'none'
+    ? ` stroke-dasharray="${shape.strokeDasharray}"`
+    : ' stroke-dasharray="none"';
   const text = String(shape.text ?? '');
   const color = shape.color || 'var(--cad-dim-line, var(--cad-stroke, #06b6d4))';
 
-  const hitTarget = `<line x1="${anchorX}" y1="${anchorY}" x2="${textX}" y2="${textY}" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />`;
-  const visibleLine = `<line x1="${anchorX}" y1="${anchorY}" x2="${textX}" y2="${textY}" class="leader-line dimension-line" stroke="${color}" stroke-width="${strokeWidth}" marker-start="url(#arrow)" />`;
-  const textNode = `<text x="${textX + (offsetX > 0 ? (5 / 72) / scale : -(5 / 72) / scale)}" y="${textY + (3 / 72) / scale}" font-size="${fontSize}" fill="${color}" class="cad-text" text-anchor="${offsetX > 0 ? 'start' : 'end'}" dominant-baseline="middle">${text}</text>`;
+  const textPadding = (5 / 72) / scale;
+  const textX = endX + dir * textPadding;
+  const textY = endY + (3 / 72) / scale;
+  const textAnchor = dir > 0 ? 'start' : 'end';
+
+  const lines = text.split('\n');
+  let textNode = '';
+  if (lines.length <= 1) {
+    textNode = `<text x="${textX}" y="${textY}" font-size="${fontSize}" fill="${color}" class="cad-text" text-anchor="${textAnchor}" dominant-baseline="middle">${text}</text>`;
+  } else {
+    const tspans = lines.map((line, index) => {
+      const dyOffset = index === 0 ? 0 : 1.2;
+      return `<tspan x="${textX}" dy="${dyOffset}em">${line}</tspan>`;
+    }).join('');
+    textNode = `<text x="${textX}" y="${textY}" font-size="${fontSize}" fill="${color}" class="cad-text" text-anchor="${textAnchor}" dominant-baseline="middle">${tspans}</text>`;
+  }
+
+  const hitTarget = `<polyline points="${anchorX},${anchorY} ${elbowX},${elbowY} ${endX},${endY}" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />`;
+  const visibleLine = `<polyline points="${anchorX},${anchorY} ${elbowX},${elbowY} ${endX},${endY}" class="leader-line" stroke="${color}" stroke-width="${strokeWidth}"${dashArray} marker-start="url(#arrow)" fill="none" stroke-linejoin="round" />`;
 
   return `${hitTarget}\n${visibleLine}\n${textNode}`;
 }

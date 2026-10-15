@@ -69,7 +69,7 @@ describe('@aeckit/dac-renderer-svg pure SVG generation engine', () => {
     expect(svg).toContain('viewBox="0 0 24 18"');
   });
 
-  it('draws a leader annotation with hit area, marker, and text', () => {
+  it('draws a leader annotation with hit area, marker, shoulder, and text', () => {
     const leaderShape = {
       type: 'CAD::Annotation::Leader',
       x: 2,
@@ -81,8 +81,29 @@ describe('@aeckit/dac-renderer-svg pure SVG generation engine', () => {
 
     const svg = drawLeader(leaderShape, 1.0, 18);
     expect(svg).toContain('class="cad-hit-area"');
-    expect(svg).toContain('class="leader-line dimension-line"');
+    expect(svg).toContain('class="leader-line"');
+    expect(svg).not.toContain('dimension-line');
+    expect(svg).toContain('stroke-dasharray="none"');
     expect(svg).toContain('marker-start="url(#arrow)"');
+    // Default shoulder length 0.25: anchor (2, 16) -> elbow (6, 13) -> shoulder (6.25, 13)
+    expect(svg).toContain('points="2,16 6,13 6.25,13"');
+    expect(svg).toContain('text-anchor="start"');
     expect(svg).toContain('Test Note');
+
+    // Negative dx should extend shoulder to the left and set text-anchor="end"
+    const leftLeader = {
+      type: 'CAD::Annotation::Leader',
+      x: 10,
+      y: 5,
+      dx: -4,
+      dy: 2,
+      strokeDasharray: '4 2',
+      text: 'Left Note'
+    };
+    const leftSvg = drawLeader(leftLeader, 1.0, 18);
+    // anchor (10, 13) -> elbow (6, 11) -> shoulder (5.75, 11)
+    expect(leftSvg).toContain('points="10,13 6,11 5.75,11"');
+    expect(leftSvg).toContain('stroke-dasharray="4 2"');
+    expect(leftSvg).toContain('text-anchor="end"');
   });
 });
