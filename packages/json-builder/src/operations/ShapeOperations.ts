@@ -60,9 +60,14 @@ export class ShapeOperations {
       componentId: this.engine.generateId('leader'),
       x: 0,
       y: 0,
-      dx: 10,
-      dy: 10,
-      text: 'Leader Note',
+      dx: 0.75,
+      dy: 0.5,
+      shoulderLength: 0.25,
+      strokeWidth: 1.5,
+      strokeDasharray: 'none',
+      color: 'auto',
+      fontSize: 11,
+      text: 'Note',
       ...options
     };
     return this.engine.addShapeToTarget(shape);

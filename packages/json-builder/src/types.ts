@@ -45,8 +45,12 @@ export interface TextOptions extends ShapeOptions {
 export interface LeaderOptions extends ShapeOptions {
   dx?: number;
   dy?: number;
+  shoulderLength?: number;
+  strokeWidth?: number | string;
+  strokeDasharray?: string;
+  color?: string;
   text?: string;
-  fontSize?: number;
+  fontSize?: number | string;
 }
 
 export interface CircleOptions extends ShapeOptions {
