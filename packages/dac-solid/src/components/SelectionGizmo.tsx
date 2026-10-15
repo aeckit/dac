@@ -222,10 +222,31 @@ export function SelectionGizmo() {
 
       if (ids.length === 1 && (type === 'Leader' || type === 'CAD::Annotation::Leader')) {
         isLeader = true;
-        const lineNode = (el.querySelector('.leader-line') || el.querySelector('line')) as SVGLineElement | null;
-        if (lineNode && screenCTM) {
-          const pt1 = rootSvg.createSVGPoint(); pt1.x = lineNode.x1.baseVal.value; pt1.y = lineNode.y1.baseVal.value;
-          const pt2 = rootSvg.createSVGPoint(); pt2.x = lineNode.x2.baseVal.value; pt2.y = lineNode.y2.baseVal.value;
+        const leaderNode = (el.querySelector('.leader-line') || el.querySelector('polyline') || el.querySelector('line')) as SVGGraphicsElement | null;
+        if (leaderNode && screenCTM) {
+          let x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+          const poly = leaderNode as unknown as SVGPolylineElement;
+          if (poly.points && poly.points.numberOfItems >= 2) {
+            x1 = poly.points.getItem(0).x;
+            y1 = poly.points.getItem(0).y;
+            x2 = poly.points.getItem(1).x;
+            y2 = poly.points.getItem(1).y;
+          } else {
+            const pointsAttr = leaderNode.getAttribute('points');
+            if (pointsAttr) {
+              const pts = pointsAttr.trim().split(/\s+/).map(pair => pair.split(',').map(Number));
+              if (pts.length >= 2) {
+                x1 = pts[0][0]; y1 = pts[0][1];
+                x2 = pts[1][0]; y2 = pts[1][1];
+              }
+            } else if ('x1' in (leaderNode as any)) {
+              const line = leaderNode as unknown as SVGLineElement;
+              x1 = line.x1.baseVal.value; y1 = line.y1.baseVal.value;
+              x2 = line.x2.baseVal.value; y2 = line.y2.baseVal.value;
+            }
+          }
+          const pt1 = rootSvg.createSVGPoint(); pt1.x = x1; pt1.y = y1;
+          const pt2 = rootSvg.createSVGPoint(); pt2.x = x2; pt2.y = y2;
           if (typeof pt1.matrixTransform === 'function') {
             const mPt1 = pt1.matrixTransform(screenCTM);
             const mPt2 = pt2.matrixTransform(screenCTM);
