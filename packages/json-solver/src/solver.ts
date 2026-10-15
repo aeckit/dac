@@ -161,6 +161,7 @@ function evaluatePrimitive(
   if (s.height !== undefined) result.height = evaluateExpression(s.height, params);
   if (s.dx !== undefined) result.dx = evaluateExpression(s.dx, params);
   if (s.dy !== undefined) result.dy = evaluateExpression(s.dy, params);
+  if (s.shoulderLength !== undefined) result.shoulderLength = evaluateExpression(s.shoulderLength, params);
   if (s.text !== undefined) result.text = String(evaluateExpression(s.text, params));
   if (s.fontSize !== undefined) result.fontSize = evaluateExpression(s.fontSize, params);
   if (s.rotation !== undefined) result.rotation = evaluateExpression(s.rotation, params);

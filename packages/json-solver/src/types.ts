@@ -35,6 +35,7 @@ export interface SolvedPrimitive {
   r?: number;
   dx?: number;
   dy?: number;
+  shoulderLength?: number;
   width?: number;
   height?: number;
   text?: string;
