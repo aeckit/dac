@@ -57,10 +57,14 @@ export const LeaderSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Annotation::Leader'), z.literal('Leader')]),
   x: z.number().default(0),
   y: z.number().default(0),
-  dx: z.number().default(10),
-  dy: z.number().default(10),
-  text: z.string().default('Leader Note'),
-  fontSize: z.union([z.number(), z.string()]).optional(),
+  dx: z.number().default(0.75),
+  dy: z.number().default(0.5),
+  shoulderLength: z.number().default(0.25).optional(),
+  strokeWidth: z.union([z.number(), z.string()]).default(1.5).optional(),
+  strokeDasharray: z.string().default('none').optional(),
+  color: z.string().default('auto').optional(),
+  fontSize: z.union([z.number(), z.string()]).default(11).optional(),
+  text: z.string().default('Note'),
 }).strict();
 
 export const ImageSchema = BaseShapeSchema.extend({
