@@ -60,7 +60,6 @@ function PropertyField(props: {
           <input 
             ref={inputRef}
             type="text"
-            value={val() ?? ''} 
             onInput={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
             placeholder={props.keyName === 'color' ? 'auto' : 'transparent'}
             style={{ flex: 1, padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "min-width": 0 }}
@@ -69,12 +68,12 @@ function PropertyField(props: {
       ) : (
         <input 
           ref={inputRef}
-          type={isNum() ? 'number' : 'text'}
-          value={val() ?? ''} 
+          type="text"
+          inputmode={isNum() ? 'decimal' : undefined}
           onInput={(e) => {
             const raw = e.currentTarget.value;
             if (isNum()) {
-              if (raw === '' || raw === '-' || raw.endsWith('.')) {
+              if (raw === '' || raw === '-' || raw.endsWith('.') || raw === '.') {
                 return;
               }
               const parsed = parseFloat(raw);
@@ -91,6 +90,12 @@ function PropertyField(props: {
               const finalVal = isNaN(parsed) ? 0 : parsed;
               e.currentTarget.value = String(finalVal);
               props.updateShape(props.currentId, { [props.keyName]: finalVal });
+            }
+          }}
+          onBlur={() => {
+            if (inputRef) {
+              const v = val();
+              inputRef.value = v !== undefined && v !== null ? String(v) : '';
             }
           }}
           style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "box-sizing": 'border-box' }}
@@ -130,12 +135,12 @@ function DocumentField(props: {
       ) : (
         <input 
           ref={inputRef}
-          type={isNum() ? 'number' : 'text'}
-          value={val() ?? ''} 
+          type="text"
+          inputmode={isNum() ? 'decimal' : undefined}
           onInput={(e) => {
             const raw = e.currentTarget.value;
             if (isNum()) {
-              if (raw === '' || raw === '-' || raw.endsWith('.')) {
+              if (raw === '' || raw === '-' || raw.endsWith('.') || raw === '.') {
                 return;
               }
               const parsed = parseFloat(raw);
@@ -152,6 +157,12 @@ function DocumentField(props: {
               const finalVal = isNaN(parsed) ? 0 : parsed;
               e.currentTarget.value = String(finalVal);
               props.builder().mutateDocument((d: any) => { d[props.keyName] = finalVal; });
+            }
+          }}
+          onBlur={() => {
+            if (inputRef) {
+              const v = val();
+              inputRef.value = v !== undefined && v !== null ? String(v) : '';
             }
           }}
           style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "box-sizing": 'border-box' }}
