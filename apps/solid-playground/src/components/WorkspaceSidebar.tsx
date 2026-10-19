@@ -1,22 +1,49 @@
-import { For, createSignal, createMemo, createEffect, onCleanup } from 'solid-js';
+import { For, Switch, Match, createSignal, createMemo, createEffect, onCleanup } from 'solid-js';
 
 function FileIcon(props: { type: string, color: string }) {
-  const iconProps = { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: props.color, "stroke-width": "2", "stroke-linecap": "round" as const, "stroke-linejoin": "round" as const };
-  
-  switch(props.type) {
-    case 'CAD::SheetConfiguration':
-      return <svg {...iconProps}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
-    case 'CAD::Detail':
-      return <svg {...iconProps}><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>;
-    case 'CAD::Project':
-      return <svg {...iconProps}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>;
-    case 'CAD::TitleBlock':
-      return <svg {...iconProps}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>;
-    case 'CAD::Construct':
-      return <svg {...iconProps}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>;
-    default:
-      return <svg {...iconProps}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>;
-  }
+  return (
+    <svg 
+      width="14" 
+      height="14" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke={props.color} 
+      stroke-width="2" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    >
+      <Switch>
+        <Match when={props.type === 'CAD::SheetConfiguration'}>
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="3" y1="9" x2="21" y2="9"></line>
+          <line x1="9" y1="21" x2="9" y2="9"></line>
+        </Match>
+        <Match when={props.type === 'CAD::Detail'}>
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="22" y1="12" x2="18" y2="12"></line>
+          <line x1="6" y1="12" x2="2" y2="12"></line>
+          <line x1="12" y1="6" x2="12" y2="2"></line>
+          <line x1="12" y1="22" x2="12" y2="18"></line>
+        </Match>
+        <Match when={props.type === 'CAD::Project'}>
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </Match>
+        <Match when={props.type === 'CAD::TitleBlock'}>
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+        </Match>
+        <Match when={props.type === 'CAD::Construct'}>
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </Match>
+        <Match when={true}>
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+          <polyline points="13 2 13 9 20 9"></polyline>
+        </Match>
+      </Switch>
+    </svg>
+  );
 }
 
 export function WorkspaceSidebar(props: {
@@ -149,32 +176,35 @@ export function WorkspaceSidebar(props: {
               return <div style={{ padding: '12px 8px 4px 8px', "font-size": '11px', "font-weight": 'bold', color: 'var(--app-text-muted)', "text-transform": 'uppercase', "letter-spacing": '0.5px' }}>{item.label}</div>;
             }
             const file = item.file;
-            const fileType = props.files[file]?.type || '';
-            const isActive = file === props.activeFileId;
-            const color = isActive ? '#ffffff' : 'inherit';
+            const fileType = () => props.files[file]?.type || '';
+            const isActive = () => file === props.activeFileId;
             return (
               <div 
+                onClick={() => props.onSelect(file)}
                 style={{
                   padding: '6px 8px',
                   cursor: 'pointer',
-                  "background-color": isActive ? 'var(--app-accent)' : 'transparent',
-                  "color": color,
+                  "background-color": isActive() ? 'var(--app-accent)' : 'transparent',
+                  "color": isActive() ? '#ffffff' : 'inherit',
                   "border-radius": '4px',
                   display: 'flex',
                   "align-items": 'center',
                   "justify-content": 'space-between',
                   "margin-bottom": '2px',
-                  "font-weight": isActive ? '500' : 'normal',
+                  "font-weight": isActive() ? '500' : 'normal',
                   "font-size": '13px'
                 }}
               >
-                <div onClick={() => props.onSelect(file)} style={{ display: 'flex', "align-items": 'center', gap: '8px', flex: 1, overflow: 'hidden' }}>
-                  <FileIcon type={fileType} color={isActive ? '#ffffff' : 'var(--app-text-muted)'} />
+                <div style={{ display: 'flex', "align-items": 'center', gap: '8px', flex: 1, overflow: 'hidden' }}>
+                  <FileIcon type={fileType()} color={isActive() ? '#ffffff' : 'var(--app-text-muted)'} />
                   <span style={{ "white-space": 'nowrap', "overflow": 'hidden', "text-overflow": 'ellipsis' }}>{file}</span>
                 </div>
                 <button 
-                  onClick={() => props.onDelete(file)}
-                  style={{ background: 'transparent', border: 'none', color: isActive ? '#ffcdd2' : '#ef4444', cursor: 'pointer', "font-size": '14px', padding: '0 4px', opacity: isActive ? 1 : 0.5 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    props.onDelete(file);
+                  }}
+                  style={{ background: 'transparent', border: 'none', color: isActive() ? '#ffcdd2' : '#ef4444', cursor: 'pointer', "font-size": '14px', padding: '0 4px', opacity: isActive() ? 1 : 0.5 }}
                 >×</button>
               </div>
             );
