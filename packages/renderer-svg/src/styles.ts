@@ -25,9 +25,12 @@ export function getStyles(theme: CadTheme = BlueprintTheme): string {
       .cad-outline { stroke: var(--cad-stroke); stroke-width: 0.025; stroke-linecap: round; stroke-linejoin: round; fill: none; }
       .cad-hatch { stroke: var(--cad-hatch); }
       .dimension-line { stroke: var(--cad-dim-line); stroke-dasharray: 0.04,0.04; }
-      .leader-line { stroke: var(--cad-dim-line); stroke-dasharray: none; fill: none; }
+      .dimension-main-line { stroke: var(--cad-dim-line); color: var(--cad-dim-line); }
+      .dimension-arrow { fill: currentColor; }
+      .leader-line { stroke: var(--cad-dim-line); color: var(--cad-dim-line); stroke-dasharray: none; fill: none; }
       .cad-text { fill: var(--cad-text); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; }
       .dim-text { fill: var(--cad-dim-text); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; text-anchor: middle; }
+      .dim-secondary-text { opacity: 0.85; }
       .pointer-cursor { cursor: pointer; }
       
       .interactive-component text {

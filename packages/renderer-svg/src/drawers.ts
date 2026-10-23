@@ -85,13 +85,38 @@ export function drawDimension(shape: SolvedPrimitive, scale: number, canvasHeigh
   const y2 = canvasHeight - Number(shape.y2 ?? 0);
   const rawOffset = ((Number(shape.offset) || 20) / 72) / scale;
   const offset = -rawOffset;
-  const text = String(shape.text ?? '');
 
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.hypot(dx, dy);
 
   if (len < 0.1) return '';
+
+  // 1. Calculate actual measurement from endpoints
+  let measuredValue = '';
+  if (shape.format === 'architectural' || (shape.format !== 'decimal' && len >= 12 && Math.abs(len % 12) < 0.001)) {
+    const feet = Math.floor(len / 12);
+    const inches = Math.round((len % 12) * 100) / 100;
+    measuredValue = `${feet}'-${inches}"`;
+  } else {
+    const cleanLen = Math.abs(len - Math.round(len)) < 0.001 
+      ? Math.round(len) 
+      : parseFloat(len.toFixed(2));
+    measuredValue = `${cleanLen}"`;
+  }
+
+  // 2. Resolve core text: textOverride takes highest precedence, then text (for backwards compatibility), otherwise measuredValue
+  let coreText = measuredValue;
+  if (shape.textOverride !== undefined && String(shape.textOverride).trim() !== '') {
+    coreText = String(shape.textOverride);
+  } else if (shape.text !== undefined && String(shape.text).trim() !== '') {
+    coreText = String(shape.text);
+  }
+
+  // 3. Apply optional prefix and suffix
+  const prefix = shape.prefix ? String(shape.prefix) : '';
+  const suffix = shape.suffix ? String(shape.suffix) : '';
+  const text = `${prefix}${coreText}${suffix}`;
 
   const ux = dx / len;
   const uy = dy / len;
@@ -116,12 +141,21 @@ export function drawDimension(shape: SolvedPrimitive, scale: number, canvasHeigh
   const ex2_end = x2 + nx * extEnd;
   const ey2_end = y2 + ny * extEnd;
 
-  const tx = (ox1 + ox2) / 2;
-  const ty = (oy1 + oy2) / 2;
+  const midX = (ox1 + ox2) / 2;
+  const midY = (oy1 + oy2) / 2;
 
-  const textOffset = rawOffset > 0 ? -(7 / 72) / scale : (10 / 72) / scale;
-  const textX = tx + nx * textOffset;
-  const textY = ty + ny * textOffset + (3 / 72) / scale;
+  // Calculate text rotation angle aligned with the primary dimension line
+  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  if (angle > 90) {
+    angle -= 180;
+  } else if (angle < -90) {
+    angle += 180;
+  }
+  // For vertical dimensions, text must read strictly from bottom to top (-90° in SVG)
+  if (Math.abs(Math.abs(angle) - 90) < 0.001) {
+    angle = -90;
+  }
+  angle = Math.abs(angle) < 0.0001 ? 0 : Math.round(angle * 1000) / 1000;
 
   const strokeWidth = (1.5 / 72) / scale;
   
@@ -135,15 +169,39 @@ export function drawDimension(shape: SolvedPrimitive, scale: number, canvasHeigh
   }
   
   const fontSize = (parsedFontSize / 72) / scale;
+  const secondaryFontSize = fontSize;
+  const gap = (3 / 72) / scale;
+
+  const isBelow = shape.textPosition === 'below';
+  const primaryY = isBelow ? gap : -gap;
+  const primaryBaseline = isBelow ? 'hanging' : 'alphabetic';
+
+  const hasCustomColor = shape.color && shape.color !== 'auto';
+  const lineColor = hasCustomColor ? shape.color : 'var(--cad-dim-line, #000000)';
+  const textColor = hasCustomColor ? shape.color : 'var(--cad-dim-text, #000000)';
+
+  let secondaryMarkup = '';
+  if (shape.secondaryText !== undefined && String(shape.secondaryText).trim() !== '') {
+    const secY = isBelow ? -gap : gap;
+    const secBaseline = isBelow ? 'alphabetic' : 'hanging';
+    secondaryMarkup = `\n      <text x="0" y="${secY}" font-size="${secondaryFontSize}" fill="${textColor}" style="fill: ${textColor};" dominant-baseline="${secBaseline}" text-anchor="middle" class="dim-text dim-secondary-text">${String(shape.secondaryText)}</text>`;
+  }
 
   return `
+    <!-- Hit targets -->
+    <line x1="${ox1}" y1="${oy1}" x2="${ox2}" y2="${oy2}" stroke="transparent" stroke-width="0.5" class="cad-hit-area" />
+    <line x1="${ex1_start}" y1="${ey1_start}" x2="${ex1_end}" y2="${ey1_end}" stroke="transparent" stroke-width="0.4" class="cad-hit-area" />
+    <line x1="${ex2_start}" y1="${ey2_start}" x2="${ex2_end}" y2="${ey2_end}" stroke="transparent" stroke-width="0.4" class="cad-hit-area" />
+
     <!-- Extension lines -->
-    <line x1="${ex1_start}" y1="${ey1_start}" x2="${ex1_end}" y2="${ey1_end}" class="dimension-line" stroke-width="${strokeWidth}" />
-    <line x1="${ex2_start}" y1="${ey2_start}" x2="${ex2_end}" y2="${ey2_end}" class="dimension-line" stroke-width="${strokeWidth}" />
+    <line x1="${ex1_start}" y1="${ey1_start}" x2="${ex1_end}" y2="${ey1_end}" class="dimension-line" stroke="${lineColor}" style="stroke: ${lineColor};" stroke-width="${strokeWidth}" />
+    <line x1="${ex2_start}" y1="${ey2_start}" x2="${ex2_end}" y2="${ey2_end}" class="dimension-line" stroke="${lineColor}" style="stroke: ${lineColor};" stroke-width="${strokeWidth}" />
     
     <!-- Dimension line -->
-    <line x1="${ox1}" y1="${oy1}" x2="${ox2}" y2="${oy2}" stroke="#06b6d4" stroke-width="${strokeWidth}" marker-start="url(#arrow)" marker-end="url(#arrow)" />
-    <text x="${textX}" y="${textY}" font-size="${fontSize}" class="dim-text">${text}</text>
+    <line x1="${ox1}" y1="${oy1}" x2="${ox2}" y2="${oy2}" class="dimension-main-line" data-x1="${x1}" data-y1="${y1}" data-x2="${x2}" data-y2="${y2}" data-scale="${scale}" stroke="${lineColor}" color="${lineColor}" style="stroke: ${lineColor}; color: ${lineColor};" stroke-width="${strokeWidth}" marker-start="url(#arrow)" marker-end="url(#arrow)" />
+    <g transform="translate(${midX}, ${midY}) rotate(${angle})">
+      <text x="0" y="${primaryY}" font-size="${fontSize}" fill="${textColor}" style="fill: ${textColor};" dominant-baseline="${primaryBaseline}" text-anchor="middle" class="dim-text">${text}</text>${secondaryMarkup}
+    </g>
   `;
 }
 
@@ -215,7 +273,8 @@ export function drawLeader(shape: SolvedPrimitive, scale: number, canvasHeight =
     ? ` stroke-dasharray="${shape.strokeDasharray}"`
     : ' stroke-dasharray="none"';
   const text = String(shape.text ?? '');
-  const color = shape.color || 'var(--cad-dim-line, var(--cad-stroke, #06b6d4))';
+  const hasCustomColor = shape.color && shape.color !== 'auto';
+  const color = hasCustomColor ? shape.color : 'var(--cad-dim-line, #000000)';
 
   const textPadding = (5 / 72) / scale;
   const textX = endX + dir * textPadding;
@@ -225,17 +284,17 @@ export function drawLeader(shape: SolvedPrimitive, scale: number, canvasHeight =
   const lines = text.split('\n');
   let textNode = '';
   if (lines.length <= 1) {
-    textNode = `<text x="${textX}" y="${textY}" font-size="${fontSize}" fill="${color}" class="cad-text" text-anchor="${textAnchor}" dominant-baseline="middle">${text}</text>`;
+    textNode = `<text x="${textX}" y="${textY}" font-size="${fontSize}" fill="${color}" style="fill: ${color};" class="cad-text" text-anchor="${textAnchor}" dominant-baseline="middle">${text}</text>`;
   } else {
     const tspans = lines.map((line, index) => {
       const dyOffset = index === 0 ? 0 : 1.2;
       return `<tspan x="${textX}" dy="${dyOffset}em">${line}</tspan>`;
     }).join('');
-    textNode = `<text x="${textX}" y="${textY}" font-size="${fontSize}" fill="${color}" class="cad-text" text-anchor="${textAnchor}" dominant-baseline="middle">${tspans}</text>`;
+    textNode = `<text x="${textX}" y="${textY}" font-size="${fontSize}" fill="${color}" style="fill: ${color};" class="cad-text" text-anchor="${textAnchor}" dominant-baseline="middle">${tspans}</text>`;
   }
 
   const hitTarget = `<polyline points="${anchorX},${anchorY} ${elbowX},${elbowY} ${endX},${endY}" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />`;
-  const visibleLine = `<polyline points="${anchorX},${anchorY} ${elbowX},${elbowY} ${endX},${endY}" class="leader-line" stroke="${color}" stroke-width="${strokeWidth}"${dashArray} marker-start="url(#arrow)" fill="none" stroke-linejoin="round" />`;
+  const visibleLine = `<polyline points="${anchorX},${anchorY} ${elbowX},${elbowY} ${endX},${endY}" class="leader-line" stroke="${color}" color="${color}" style="stroke: ${color}; color: ${color};" stroke-width="${strokeWidth}"${dashArray} marker-start="url(#arrow)" fill="none" stroke-linejoin="round" />`;
 
   return `${hitTarget}\n${visibleLine}\n${textNode}`;
 }
