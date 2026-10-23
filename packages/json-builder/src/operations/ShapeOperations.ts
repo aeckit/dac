@@ -1,5 +1,5 @@
 import { JsonBuilder } from '../JsonBuilder';
-import { RectangleOptions, LineOptions, TextOptions, ImageOptions, CircleOptions, LeaderOptions } from '../types';
+import { RectangleOptions, LineOptions, TextOptions, ImageOptions, CircleOptions, LeaderOptions, DimensionOptions } from '../types';
 
 export class ShapeOperations {
   constructor(private engine: JsonBuilder) {}
@@ -68,6 +68,21 @@ export class ShapeOperations {
       color: 'auto',
       fontSize: 11,
       text: 'Note',
+      ...options
+    };
+    return this.engine.addShapeToTarget(shape);
+  }
+
+  public addDimension(options?: DimensionOptions): any {
+    const shape = {
+      type: 'CAD::Annotation::Dimension',
+      componentId: this.engine.generateId('dim'),
+      x1: 0,
+      y1: 0,
+      x2: 4,
+      y2: 0,
+      offset: 20,
+      color: 'auto',
       ...options
     };
     return this.engine.addShapeToTarget(shape);

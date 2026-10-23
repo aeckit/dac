@@ -53,6 +53,25 @@ export interface LeaderOptions extends ShapeOptions {
   fontSize?: number | string;
 }
 
+export interface DimensionOptions extends ShapeOptions {
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
+  offset?: number | string;
+  text?: string;
+  textOverride?: string;
+  prefix?: string;
+  suffix?: string;
+  secondaryText?: string;
+  textPosition?: 'above' | 'below';
+  format?: 'decimal' | 'architectural';
+  fontSize?: number | string;
+  color?: string;
+  strokeWidth?: number | string;
+  strokeDasharray?: string;
+}
+
 export interface CircleOptions extends ShapeOptions {
   cx?: number;
   cy?: number;

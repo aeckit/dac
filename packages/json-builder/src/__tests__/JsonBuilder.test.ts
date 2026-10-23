@@ -29,7 +29,7 @@ describe('@aeckit/dac-json-builder mutation engine', () => {
     expect(updated.geometry[0].width).toBe(20);
   });
 
-  it('adds lines, texts, and leaders to document', () => {
+  it('adds lines, texts, leaders, and dimensions to document', () => {
     const doc: DetailDocument = {
       type: 'CAD::Detail',
       version: '1.0',
@@ -41,14 +41,20 @@ describe('@aeckit/dac-json-builder mutation engine', () => {
     builder.shapes.addLine({ x: 0, y: 0 });
     builder.shapes.addText({ text: 'Hello DaC' });
     builder.shapes.addLeader({ x: 5, y: 5, dx: 15, dy: -10, text: 'Point 1' });
+    const dim = builder.shapes.addDimension({ x1: 0, y1: 0, x2: 12, y2: 0, offset: 20, prefix: 'TYP. ', suffix: ' (O.C.)' });
 
     const updated = builder.getDocument() as DetailDocument;
-    expect(updated.geometry.length).toBe(3);
+    expect(updated.geometry.length).toBe(4);
     expect(updated.geometry[0].type).toBe('CAD::Shape::Line');
     expect(updated.geometry[1].type).toBe('CAD::Annotation::Text');
     expect(updated.geometry[2].type).toBe('CAD::Annotation::Leader');
+    expect(updated.geometry[3].type).toBe('CAD::Annotation::Dimension');
     expect((updated.geometry[2] as any).text).toBe('Point 1');
     expect((updated.geometry[2] as any).dx).toBe(15);
+    expect((updated.geometry[3] as any).x2).toBe(12);
+    expect((updated.geometry[3] as any).prefix).toBe('TYP. ');
+    expect((updated.geometry[3] as any).suffix).toBe(' (O.C.)');
+    expect(dim.componentId).toBeDefined();
   });
 
   it('updates and deletes components', () => {

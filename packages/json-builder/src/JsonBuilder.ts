@@ -1,4 +1,4 @@
-import { VisualizerDocument, RectangleOptions, LineOptions, TextOptions, ImageOptions, ViewportOptions, LeaderOptions } from './types';
+import { VisualizerDocument, RectangleOptions, LineOptions, TextOptions, ImageOptions, ViewportOptions, LeaderOptions, DimensionOptions } from './types';
 import { ShapeOperations } from './operations/ShapeOperations';
 import { ViewportOperations } from './operations/ViewportOperations';
 import { ComponentOperations } from './operations/ComponentOperations';
@@ -78,12 +78,18 @@ export class JsonBuilder extends EventTarget {
     const defaultOffset = targetDoc.geometry.length * 0.5;
     const isLine = shape.type === 'Line' || shape.type === 'CAD::Shape::Line';
     const isCircle = shape.type === 'Circle' || shape.type === 'CAD::Shape::Circle';
-    if (!isLine && !isCircle) {
+    const isDimension = shape.type === 'Dimension' || shape.type === 'CAD::Annotation::Dimension';
+    if (!isLine && !isCircle && !isDimension) {
       if (shape.x === undefined) shape.x = defaultOffset;
       if (shape.y === undefined) shape.y = defaultOffset;
     } else if (isCircle) {
       if (shape.cx === undefined) shape.cx = defaultOffset;
       if (shape.cy === undefined) shape.cy = defaultOffset;
+    } else if (isDimension) {
+      if (shape.x1 === undefined) shape.x1 = defaultOffset;
+      if (shape.y1 === undefined) shape.y1 = defaultOffset;
+      if (shape.x2 === undefined) shape.x2 = defaultOffset + 4;
+      if (shape.y2 === undefined) shape.y2 = defaultOffset;
     }
     
     // Parse through schema to strip invalid fields and inject defaults
@@ -100,6 +106,7 @@ export class JsonBuilder extends EventTarget {
   public addCircle(options?: any): any { return this.shapes.addCircle(options); }
   public addText(options?: TextOptions): any { return this.shapes.addText(options); }
   public addLeader(options?: LeaderOptions): any { return this.shapes.addLeader(options); }
+  public addDimension(options?: DimensionOptions): any { return this.shapes.addDimension(options); }
   public addImage(options?: ImageOptions): any { return this.shapes.addImage(options); }
   public addViewport(options?: ViewportOptions): any { return this.viewports.addViewport(options); }
   public updateComponent(id: string, properties: Partial<any>, isTransient = false): void { return this.components.updateComponent(id, properties, isTransient); }
