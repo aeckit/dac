@@ -1,5 +1,6 @@
 export function evaluateExpression(expr: any, params: Record<string, any>): any {
   if (typeof expr !== 'string') return expr;
+  if (expr.trim() === '') return expr;
 
   if (!expr.includes('{parameters.')) {
     const num = Number(expr);

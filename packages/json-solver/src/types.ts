@@ -39,6 +39,12 @@ export interface SolvedPrimitive {
   width?: number;
   height?: number;
   text?: string;
+  textOverride?: string;
+  prefix?: string;
+  suffix?: string;
+  secondaryText?: string;
+  textPosition?: 'above' | 'below';
+  format?: string;
   fontSize?: number | string;
   color?: string;
   fill?: string;

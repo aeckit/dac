@@ -162,7 +162,13 @@ function evaluatePrimitive(
   if (s.dx !== undefined) result.dx = evaluateExpression(s.dx, params);
   if (s.dy !== undefined) result.dy = evaluateExpression(s.dy, params);
   if (s.shoulderLength !== undefined) result.shoulderLength = evaluateExpression(s.shoulderLength, params);
-  if (s.text !== undefined) result.text = String(evaluateExpression(s.text, params));
+  if (s.text !== undefined) result.text = s.text === '' ? '' : String(evaluateExpression(s.text, params));
+  if (s.textOverride !== undefined) result.textOverride = s.textOverride === '' ? '' : String(evaluateExpression(s.textOverride, params));
+  if (s.prefix !== undefined) result.prefix = s.prefix === '' ? '' : String(evaluateExpression(s.prefix, params));
+  if (s.suffix !== undefined) result.suffix = s.suffix === '' ? '' : String(evaluateExpression(s.suffix, params));
+  if (s.secondaryText !== undefined) result.secondaryText = s.secondaryText === '' ? '' : String(evaluateExpression(s.secondaryText, params));
+  if (s.textPosition !== undefined) result.textPosition = evaluateExpression(s.textPosition, params);
+  if (s.format !== undefined) result.format = s.format === '' ? '' : String(evaluateExpression(s.format, params));
   if (s.fontSize !== undefined) result.fontSize = evaluateExpression(s.fontSize, params);
   if (s.rotation !== undefined) result.rotation = evaluateExpression(s.rotation, params);
   if (s.offset !== undefined) result.offset = evaluateExpression(s.offset, params);
