@@ -47,6 +47,38 @@ describe('@aeckit/dac-schema contract verification', () => {
     expect(parsed.viewports.length).toBe(1);
   });
 
+  it('validates CAD::Annotation::Dimension with prefix, suffix, and textOverride', () => {
+    const raw = {
+      type: 'CAD::Annotation::Dimension',
+      componentId: 'dim-1',
+      x1: 0,
+      y1: 0,
+      x2: 5.5,
+      y2: 0,
+      offset: 20,
+      prefix: 'TYP. ',
+      suffix: ' (2x6)',
+      textOverride: '5.5"',
+      secondaryText: '[140mm]',
+      textPosition: 'above',
+      fontSize: 12
+    };
+
+    const doc = validateDetailDocument({
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: [raw]
+    });
+    expect(doc.geometry[0].type).toBe('CAD::Annotation::Dimension');
+    expect((doc.geometry[0] as any).prefix).toBe('TYP. ');
+    expect((doc.geometry[0] as any).suffix).toBe(' (2x6)');
+    expect((doc.geometry[0] as any).textOverride).toBe('5.5"');
+    expect((doc.geometry[0] as any).secondaryText).toBe('[140mm]');
+    expect((doc.geometry[0] as any).textPosition).toBe('above');
+    expect((doc.geometry[0] as any).fontSize).toBe(12);
+  });
+
   it('exports standard JSON Schema for polyglot consumers (Python Pydantic models)', async () => {
     const { exportJsonSchema } = await import('./index');
     const jsonSchema = await exportJsonSchema();

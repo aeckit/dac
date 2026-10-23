@@ -51,6 +51,13 @@ export const DimensionSchema = BaseShapeSchema.extend({
   y2: z.number().default(0),
   offset: z.union([z.number(), z.string()]).default(20),
   text: z.string().optional(),
+  textOverride: z.string().optional(),
+  prefix: z.string().optional(),
+  suffix: z.string().optional(),
+  secondaryText: z.string().optional(),
+  textPosition: z.union([z.literal('above'), z.literal('below')]).default('above').optional(),
+  format: z.union([z.literal('decimal'), z.literal('architectural')]).optional(),
+  fontSize: z.union([z.number(), z.string()]).default(11).optional(),
 }).strict();
 
 export const LeaderSchema = BaseShapeSchema.extend({
