@@ -13,7 +13,11 @@ export function SelectionGizmo() {
     p2?: {x: number, y: number},
     isLeader?: boolean,
     pAnchor?: {x: number, y: number},
-    pLanding?: {x: number, y: number}
+    pLanding?: {x: number, y: number},
+    isDimension?: boolean,
+    pDim1?: {x: number, y: number},
+    pDim2?: {x: number, y: number},
+    pDimOffset?: {x: number, y: number}
   } | null>(null);
 
   let reqId: number;
@@ -33,6 +37,7 @@ export function SelectionGizmo() {
       x1: Number(shape.x1 ?? 0), y1: Number(shape.y1 ?? 0), x2: Number(shape.x2 ?? 0), y2: Number(shape.y2 ?? 0),
       cx: Number(shape.cx ?? 0), cy: Number(shape.cy ?? 0), r: Number(shape.r ?? 0),
       dx: Number(shape.dx ?? 10), dy: Number(shape.dy ?? 10),
+      offset: Number(shape.offset ?? 20),
       cropX: shape.cropX, cropY: shape.cropY
     };
 
@@ -61,9 +66,10 @@ export function SelectionGizmo() {
       const dy = svgCurrent.y - svgStart.y;
 
       const isLineShape = shape.type === 'Line' || shape.type === 'CAD::Shape::Line';
+      const isDimShape = shape.type === 'Dimension' || shape.type === 'CAD::Annotation::Dimension';
 
       if (mode === 'move') {
-        if (isLineShape) {
+        if (isLineShape || isDimShape) {
           updateShape(shape.componentId, { 
             x1: initial.x1 + dx, 
             y1: initial.y1 - dy,
@@ -79,6 +85,26 @@ export function SelectionGizmo() {
         updateShape(shape.componentId, { x1: initial.x1 + dx, y1: initial.y1 - dy }, true);
       } else if (mode === 'line-end') {
         updateShape(shape.componentId, { x2: initial.x2 + dx, y2: initial.y2 - dy }, true);
+      } else if (mode === 'dim-start') {
+        updateShape(shape.componentId, { x1: initial.x1 + dx, y1: initial.y1 - dy }, true);
+      } else if (mode === 'dim-end') {
+        updateShape(shape.componentId, { x2: initial.x2 + dx, y2: initial.y2 - dy }, true);
+      } else if (mode === 'dim-offset') {
+        const vX = initial.x2 - initial.x1;
+        const vY = initial.y2 - initial.y1;
+        const len = Math.hypot(vX, vY);
+        if (len > 0.001) {
+          const dimLine = selectedEl?.querySelector('.dimension-main-line') as SVGLineElement | null;
+          const scale = parseFloat(dimLine?.getAttribute('data-scale') || '1');
+          const ux = vX / len;
+          const uy = -vY / len;
+          const nx = -uy;
+          const ny = ux;
+          const proj = dx * (-nx) + dy * (-ny);
+          const deltaOffset = proj * 72 * scale;
+          const newOffset = Math.round(initial.offset + deltaOffset);
+          updateShape(shape.componentId, { offset: newOffset }, true);
+        }
       } else if (mode === 'leader-anchor') {
         updateShape(shape.componentId, { 
           x: initial.x + dx, 
@@ -197,6 +223,8 @@ export function SelectionGizmo() {
     let p1, p2;
     let isLeader = false;
     let pAnchor, pLanding;
+    let isDimension = false;
+    let pDim1, pDim2, pDimOffset;
 
     ids.forEach(id => {
       const el = rootSvg.querySelector(`[data-component-id="${id}"]`) as SVGGraphicsElement;
@@ -256,6 +284,36 @@ export function SelectionGizmo() {
         }
       }
 
+      if (ids.length === 1 && (type === 'Dimension' || type === 'CAD::Annotation::Dimension')) {
+        isDimension = true;
+        const dimLine = el.querySelector('.dimension-main-line') as SVGLineElement | null;
+        if (dimLine && screenCTM) {
+          const x1 = parseFloat(dimLine.getAttribute('data-x1') || '0');
+          const y1 = parseFloat(dimLine.getAttribute('data-y1') || '0');
+          const x2 = parseFloat(dimLine.getAttribute('data-x2') || '0');
+          const y2 = parseFloat(dimLine.getAttribute('data-y2') || '0');
+          const ox1 = dimLine.x1.baseVal.value;
+          const oy1 = dimLine.y1.baseVal.value;
+          const ox2 = dimLine.x2.baseVal.value;
+          const oy2 = dimLine.y2.baseVal.value;
+          const midX = (ox1 + ox2) / 2;
+          const midY = (oy1 + oy2) / 2;
+
+          const pt1 = rootSvg.createSVGPoint(); pt1.x = x1; pt1.y = y1;
+          const pt2 = rootSvg.createSVGPoint(); pt2.x = x2; pt2.y = y2;
+          const ptOffset = rootSvg.createSVGPoint(); ptOffset.x = midX; ptOffset.y = midY;
+
+          if (typeof pt1.matrixTransform === 'function') {
+            const mPt1 = pt1.matrixTransform(screenCTM);
+            const mPt2 = pt2.matrixTransform(screenCTM);
+            const mPtOffset = ptOffset.matrixTransform(screenCTM);
+            pDim1 = { x: mPt1.x - containerRect.left, y: mPt1.y - containerRect.top };
+            pDim2 = { x: mPt2.x - containerRect.left, y: mPt2.y - containerRect.top };
+            pDimOffset = { x: mPtOffset.x - containerRect.left, y: mPtOffset.y - containerRect.top };
+          }
+        }
+      }
+
       let targetEl = el;
       if (type === 'CAD::Viewport') {
         const boundaryNode = el.querySelector('.viewport-boundary') as SVGGraphicsElement;
@@ -292,7 +350,8 @@ export function SelectionGizmo() {
         right: maxX - containerRect.left,
         bottom: maxY - containerRect.top,
         isLine, p1, p2,
-        isLeader, pAnchor, pLanding
+        isLeader, pAnchor, pLanding,
+        isDimension, pDim1, pDim2, pDimOffset
       });
     } else {
       setBox(null);
@@ -321,7 +380,7 @@ export function SelectionGizmo() {
               }}
               style={{ background: '#ef4444', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
             </button>
           </div>
           
@@ -330,7 +389,7 @@ export function SelectionGizmo() {
               onPointerDown={(e) => handleDrag(e, 'move')}
               style={{ background: '#3b82f6', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'move', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
             </button>
           </div>
 
@@ -349,13 +408,13 @@ export function SelectionGizmo() {
                 }}
                 style={{ background: '#10b981', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
               </button>
             </div>
           )}
 
           {/* Bounding Box Border (only for standard 2D shapes) */}
-          {!b().isLine && !b().isLeader && (
+          {!b().isLine && !b().isLeader && !b().isDimension && (
             <div style={{
               position: 'absolute',
               left: `${b().left}px`,
@@ -367,7 +426,7 @@ export function SelectionGizmo() {
           )}
 
           {/* 8 Resize Handles (only for standard 2D shapes) */}
-          {!b().isLine && !b().isLeader && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
+          {!b().isLine && !b().isLeader && !b().isDimension && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
             let hLeft = 0, hTop = 0;
             const cx = (b().left + b().right) / 2;
             const cy = (b().top + b().bottom) / 2;
@@ -449,6 +508,45 @@ export function SelectionGizmo() {
                     position: 'absolute', left: `${b().pLanding!.x}px`, top: `${b().pLanding!.y}px`, width: '10px', height: '10px',
                     background: 'white', border: '1.5px solid #3b82f6', "border-radius": '2px', transform: 'translate(-50%, -50%)',
                     "box-shadow": '0 2px 4px rgba(0,0,0,0.3)', "pointer-events": 'auto', cursor: 'move'
+                  }} 
+                />
+              )}
+            </>
+          )}
+
+          {/* Dimension Handles */}
+          {b().isDimension && (
+            <>
+              {b().pDim1 && (
+                <div 
+                  onPointerDown={(e) => handleDrag(e, 'dim-start')}
+                  title="Dimension Start"
+                  style={{
+                    position: 'absolute', left: `${b().pDim1!.x}px`, top: `${b().pDim1!.y}px`, width: '8px', height: '8px',
+                    background: 'white', border: '1.5px solid #06b6d4', transform: 'translate(-50%, -50%)',
+                    "pointer-events": 'auto', cursor: 'crosshair', "box-shadow": '0 1px 3px rgba(0,0,0,0.3)'
+                  }} 
+                />
+              )}
+              {b().pDim2 && (
+                <div 
+                  onPointerDown={(e) => handleDrag(e, 'dim-end')}
+                  title="Dimension End"
+                  style={{
+                    position: 'absolute', left: `${b().pDim2!.x}px`, top: `${b().pDim2!.y}px`, width: '8px', height: '8px',
+                    background: 'white', border: '1.5px solid #06b6d4', transform: 'translate(-50%, -50%)',
+                    "pointer-events": 'auto', cursor: 'crosshair', "box-shadow": '0 1px 3px rgba(0,0,0,0.3)'
+                  }} 
+                />
+              )}
+              {b().pDimOffset && (
+                <div 
+                  onPointerDown={(e) => handleDrag(e, 'dim-offset')}
+                  title="Drag to Adjust Offset"
+                  style={{
+                    position: 'absolute', left: `${b().pDimOffset!.x}px`, top: `${b().pDimOffset!.y}px`, width: '10px', height: '10px',
+                    background: '#06b6d4', border: '1.5px solid white', transform: 'translate(-50%, -50%) rotate(45deg)',
+                    "pointer-events": 'auto', cursor: 'move', "box-shadow": '0 2px 4px rgba(0,0,0,0.3)'
                   }} 
                 />
               )}

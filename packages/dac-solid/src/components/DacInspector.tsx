@@ -39,6 +39,15 @@ function PropertyField(props: {
           onChange={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.checked })}
           style={{ "margin-bottom": '12px' }}
         />
+      ) : props.keyName === 'textPosition' ? (
+        <select
+          value={val() ?? 'above'}
+          onChange={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
+          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px' }}
+        >
+          <option value="above">Above</option>
+          <option value="below">Below</option>
+        </select>
       ) : isHatchKey ? (
         <select
           value={val() ?? ''}
@@ -265,7 +274,22 @@ export function DacInspector() {
         {(currentId) => {
           const shape = () => selectedShape();
           const warningsForShape = () => solverWarnings ? solverWarnings().filter(w => w.componentId === currentId) : [];
-          const keys = () => Object.keys(shape() || {}).filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && k !== 'componentType' && typeof (shape() as any)[k] !== 'object');
+          const keys = () => {
+            const s = shape();
+            if (!s) return [];
+            const rawKeys = Object.keys(s);
+            const t = s.type ? String(s.type.split('::').pop() || '') : '';
+            if (t === 'Dimension') {
+              ['x1', 'y1', 'x2', 'y2', 'offset', 'prefix', 'suffix', 'textOverride', 'secondaryText', 'textPosition', 'fontSize', 'color'].forEach(k => {
+                if (!rawKeys.includes(k)) rawKeys.push(k);
+              });
+            } else if (t === 'Leader') {
+              ['x', 'y', 'dx', 'dy', 'shoulderLength', 'text', 'fontSize', 'color'].forEach(k => {
+                if (!rawKeys.includes(k)) rawKeys.push(k);
+              });
+            }
+            return rawKeys.filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && k !== 'componentType' && typeof (s as any)[k] !== 'object');
+          };
 
           return (
             <div>

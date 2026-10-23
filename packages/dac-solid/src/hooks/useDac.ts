@@ -28,6 +28,7 @@ export function useDac() {
       case 'Circle': newShape = b.addCircle(options); break;
       case 'Text': newShape = b.addText(options); break;
       case 'Leader': newShape = b.addLeader(options); break;
+      case 'Dimension': newShape = b.addDimension(options); break;
       default:
         newShape = b.addShapeToTarget({ type, ...options });
         break;

@@ -34,6 +34,9 @@ export function DacToolbar() {
         <button style={buttonStyle} onClick={() => addShape('Leader', { x: 2, y: 2, dx: 0.75, dy: 0.5, text: 'Note' })} title="Leader">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19L14 9h7" /><path d="M9 18L4 19L5 14" /></svg>
         </button>
+        <button style={buttonStyle} onClick={() => addShape('Dimension', { x1: 2, y1: 2, x2: 6, y2: 2, offset: 20 })} title="Dimension">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="5" x2="3" y2="19" /><line x1="21" y1="5" x2="21" y2="19" /><line x1="3" y1="12" x2="21" y2="12" /><polyline points="7 9 3 12 7 15" /><polyline points="17 9 21 12 17 15" /></svg>
+        </button>
       </div>
     </div>
   );
