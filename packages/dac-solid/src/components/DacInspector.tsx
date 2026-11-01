@@ -1,5 +1,8 @@
 import { Show, For, createEffect } from 'solid-js';
 import { useDac } from '../hooks/useDac';
+import { resolveDocumentParameters } from '@aeckit/dac-json-solver';
+import { DocumentParametersInspector, ConstructReferenceInspector } from './ParametersInspector';
+import { PropertyField } from './PropertyField';
 
 const UI_CONFIG: Record<string, { hiddenFields: string[] }> = {
   'CAD::Detail': { hiddenFields: ['version'] },
@@ -7,112 +10,6 @@ const UI_CONFIG: Record<string, { hiddenFields: string[] }> = {
   'CAD::Project': { hiddenFields: ['version'] },
   'CAD::SheetConfiguration': { hiddenFields: ['version'] }
 };
-
-function PropertyField(props: {
-  keyName: string;
-  shape: () => any;
-  currentId: string;
-  updateShape: (id: string, properties: any) => void;
-}) {
-  const isColorKey = props.keyName === 'color' || props.keyName === 'fill';
-  const isHatchKey = props.keyName === 'hatch';
-  const val = () => props.shape()?.[props.keyName];
-  const isNum = () => typeof val() === 'number';
-  const isBool = () => typeof val() === 'boolean';
-
-  let inputRef!: HTMLInputElement;
-
-  createEffect(() => {
-    const v = val();
-    if (inputRef && document.activeElement !== inputRef) {
-      inputRef.value = v ?? '';
-    }
-  });
-
-  return (
-    <>
-      <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: 'var(--app-text-muted, #94a3b8)' }}>{props.keyName}</label>
-      {isBool() ? (
-        <input 
-          type="checkbox" 
-          checked={Boolean(val())} 
-          onChange={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.checked })}
-          style={{ "margin-bottom": '12px' }}
-        />
-      ) : props.keyName === 'textPosition' ? (
-        <select
-          value={val() ?? 'above'}
-          onChange={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
-          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px' }}
-        >
-          <option value="above">Above</option>
-          <option value="below">Below</option>
-        </select>
-      ) : isHatchKey ? (
-        <select
-          value={val() ?? ''}
-          onChange={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
-          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px' }}
-        >
-          <option value="">None</option>
-          <option value="Concrete">Concrete</option>
-          <option value="TimberCross">TimberCross</option>
-        </select>
-      ) : isColorKey ? (
-        <div style={{ display: 'flex', gap: '8px', "margin-bottom": '12px' }}>
-          <input 
-            type="color"
-            value={typeof val() === 'string' && val().startsWith('#') ? val().slice(0, 7) : '#000000'}
-            onInput={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
-            style={{ width: '32px', height: '32px', padding: '0', border: '1px solid var(--app-border, #475569)', background: 'var(--app-bg-main, #0f172a)', cursor: 'pointer', "border-radius": '4px' }}
-          />
-          <input 
-            ref={inputRef}
-            type="text"
-            onInput={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
-            placeholder={props.keyName === 'color' ? 'auto' : 'transparent'}
-            style={{ flex: 1, padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "min-width": 0 }}
-          />
-        </div>
-      ) : (
-        <input 
-          ref={inputRef}
-          type="text"
-          inputmode={isNum() ? 'decimal' : undefined}
-          onInput={(e) => {
-            const raw = e.currentTarget.value;
-            if (isNum()) {
-              if (raw === '' || raw === '-' || raw.endsWith('.') || raw === '.') {
-                return;
-              }
-              const parsed = parseFloat(raw);
-              if (!isNaN(parsed)) {
-                props.updateShape(props.currentId, { [props.keyName]: parsed });
-              }
-            } else {
-              props.updateShape(props.currentId, { [props.keyName]: raw });
-            }
-          }}
-          onChange={(e) => {
-            if (isNum()) {
-              const parsed = parseFloat(e.currentTarget.value);
-              const finalVal = isNaN(parsed) ? 0 : parsed;
-              e.currentTarget.value = String(finalVal);
-              props.updateShape(props.currentId, { [props.keyName]: finalVal });
-            }
-          }}
-          onBlur={() => {
-            if (inputRef) {
-              const v = val();
-              inputRef.value = v !== undefined && v !== null ? String(v) : '';
-            }
-          }}
-          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "box-sizing": 'border-box' }}
-        />
-      )}
-    </>
-  );
-}
 
 function DocumentField(props: {
   keyName: string;
@@ -182,7 +79,7 @@ function DocumentField(props: {
 }
 
 export function DacInspector() {
-  const { selectedShape, updateShape, activeSheetId, doc, selectShape, builder, solverWarnings, selectionIds } = useDac();
+  const { selectedShape, updateShape, activeSheetId, doc, selectShape, builder, solverWarnings, selectionIds, nestedDocs } = useDac();
 
   const selectedId = () => (selectionIds().length === 1 && selectedShape()) ? selectionIds()[0] : null;
 
@@ -212,6 +109,11 @@ export function DacInspector() {
                   )}
                 </For>
               </div>
+
+              <DocumentParametersInspector
+                parameters={() => doc()?.parameters}
+                builder={builder}
+              />
 
               <div style={{ "margin-top": '16px' }}>
                 <Show when={doc()?.geometry && doc().geometry.length > 0}>
@@ -291,6 +193,8 @@ export function DacInspector() {
             return rawKeys.filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && k !== 'componentType' && typeof (s as any)[k] !== 'object');
           };
 
+          const resolvedParams = () => resolveDocumentParameters(doc());
+
           return (
             <div>
               <Show when={warningsForShape().length > 0}>
@@ -313,10 +217,20 @@ export function DacInspector() {
                       shape={shape}
                       currentId={currentId}
                       updateShape={updateShape}
+                      resolvedParams={resolvedParams}
                     />
                   )}
                 </For>
               </div>
+
+              <Show when={shape()?.type === 'ConstructReference'}>
+                <ConstructReferenceInspector
+                  shape={shape}
+                  currentId={currentId}
+                  nestedDocs={nestedDocs}
+                  updateShape={updateShape}
+                />
+              </Show>
             </div>
           );
         }}

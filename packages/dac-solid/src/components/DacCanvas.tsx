@@ -76,6 +76,7 @@ export function DacCanvas() {
   createEffect(() => {
     const document = doc();
     if (!document) return;
+    const constructResolver = (id: string) => nestedDocs()?.get(id);
 
     try {
       if (document.type === 'CAD::Project') {
@@ -93,7 +94,7 @@ export function DacCanvas() {
              }
              const titleBlockDoc = sheet.titleBlockRef ? nestedDocs()?.get(sheet.titleBlockRef) : (document.defaultTitleBlockRef ? nestedDocs()?.get(document.defaultTitleBlockRef) : undefined);
              const paperSize = sheet.paperSize || document.defaultPaperSize || 'ARCH D';
-             const { svg, warnings } = renderSheet(sheet, document.titleBlockParameters, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
+             const { svg, warnings } = renderSheet(sheet, document.titleBlockParameters, viewportsMap, titleBlockDoc, 0, 0, paperSize, constructResolver, canvasTheme());
              setSvgContent(svg);
              if (setSolverWarnings) setSolverWarnings(warnings);
              return;
@@ -110,11 +111,11 @@ export function DacCanvas() {
         }
         const titleBlockDoc = document.titleBlockRef ? nestedDocs()?.get(document.titleBlockRef) : undefined;
         const paperSize = document.paperSize || 'ARCH D';
-        const { svg, warnings } = renderSheet(document, undefined, viewportsMap, titleBlockDoc, 0, 0, paperSize, undefined, canvasTheme());
+        const { svg, warnings } = renderSheet(document, undefined, viewportsMap, titleBlockDoc, 0, 0, paperSize, constructResolver, canvasTheme());
         setSvgContent(svg);
         if (setSolverWarnings) setSolverWarnings(warnings);
       } else {
-        const { svg, warnings } = renderDetail(document as any, 24, 18, (id) => nestedDocs()?.get(id), canvasTheme());
+        const { svg, warnings } = renderDetail(document as any, 24, 18, constructResolver, canvasTheme());
         setSvgContent(svg);
         if (setSolverWarnings) setSolverWarnings(warnings);
       }
