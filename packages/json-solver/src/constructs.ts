@@ -1,32 +1,65 @@
 import type { GeometryPrimitive, ConstructDocument } from './types';
 import { evaluateExpression } from './expressions';
 
-export function explodeConstruct(
-  shape: GeometryPrimitive, 
-  constructDoc: ConstructDocument, 
-  globalParams: Record<string, number | boolean> = {}
-): GeometryPrimitive[] {
-  const resolvedParams: Record<string, number | boolean> = { ...globalParams };
-  if (constructDoc.parameters) {
-    for (const [key, param] of Object.entries(constructDoc.parameters)) {
+export function resolveDocumentParameters(
+  doc?: { parameters?: Record<string, any> } | null,
+  initialParams: Record<string, any> = {}
+): Record<string, any> {
+  const resolved: Record<string, any> = { ...initialParams };
+  if (!doc?.parameters) return resolved;
+
+  for (const [key, param] of Object.entries(doc.parameters)) {
+    if (resolved[key] === undefined) {
       const val = param.value !== undefined ? param.value : param.default;
-      resolvedParams[key] = val;
+      resolved[key] = val;
+
       if (param.options) {
         const selectedOpt = param.options.find((opt: any) => opt.value === val);
         if (selectedOpt && selectedOpt.variables) {
           for (const [vKey, vVal] of Object.entries(selectedOpt.variables)) {
-            resolvedParams[`${key}.${vKey}`] = vVal as any;
+            resolved[`${key}.${vKey}`] = vVal;
           }
         }
       }
     }
   }
-  const s: any = shape;
-  if (s.parameterOverrides) {
-    for (const [key, val] of Object.entries(s.parameterOverrides)) {
-      resolvedParams[key] = evaluateExpression(val as any, globalParams);
+
+  return resolved;
+}
+
+export function resolveConstructParameters(
+  constructDoc: ConstructDocument,
+  overrides?: Record<string, any>,
+  globalParams: Record<string, any> = {}
+): Record<string, any> {
+  const resolvedParams = resolveDocumentParameters(constructDoc, globalParams);
+
+  if (overrides) {
+    for (const [key, val] of Object.entries(overrides)) {
+      const resolvedVal = evaluateExpression(val as any, globalParams);
+      resolvedParams[key] = resolvedVal;
+      const paramDef = constructDoc.parameters?.[key];
+      if (paramDef?.options) {
+        const selectedOpt = paramDef.options.find((opt: any) => opt.value === resolvedVal);
+        if (selectedOpt && selectedOpt.variables) {
+          for (const [vKey, vVal] of Object.entries(selectedOpt.variables)) {
+            resolvedParams[`${key}.${vKey}`] = vVal;
+          }
+        }
+      }
     }
   }
+
+  return resolvedParams;
+}
+
+export function resolveConstructGeometry(
+  shape: GeometryPrimitive, 
+  constructDoc: ConstructDocument, 
+  globalParams: Record<string, any> = {}
+): GeometryPrimitive[] {
+  const s: any = shape;
+  const resolvedParams = resolveConstructParameters(constructDoc, s.parameterOverrides, globalParams);
 
   const refX = evaluateExpression(s.x || 0, globalParams);
   const refY = evaluateExpression(s.y || 0, globalParams);
@@ -108,3 +141,9 @@ export function explodeConstruct(
 
   return results;
 }
+
+/**
+ * @deprecated Use `resolveConstructGeometry` instead.
+ */
+export const explodeConstruct = resolveConstructGeometry;
+

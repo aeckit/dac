@@ -12,7 +12,7 @@ import type {
 } from './types';
 import { evaluateExpression } from './expressions';
 import { resolveScaleMultiplier } from './scale';
-import { explodeConstruct } from './constructs';
+import { resolveConstructGeometry, resolveDocumentParameters } from './constructs';
 import { getPaperDimensions } from './paper';
 import { 
   RectangleSchema, LineSchema, CircleSchema, TextSchema, 
@@ -29,74 +29,46 @@ export function solveDocumentGeometry(
   canvasHeight = 18,
   constructResolver?: (id: string) => ConstructDocument | undefined
 ): SolvedGroup[] {
-  const resolvedParams: Record<string, any> = { ...globalParams };
-
-  if (doc.parameters) {
-    for (const [key, param] of Object.entries(doc.parameters)) {
-      if (resolvedParams[key] === undefined) {
-        const val = param.value !== undefined ? param.value : param.default;
-        resolvedParams[key] = val;
-
-        if (param.options) {
-          const selectedOpt = param.options.find((opt: any) => opt.value === val);
-          if (selectedOpt && selectedOpt.variables) {
-            for (const [vKey, vVal] of Object.entries(selectedOpt.variables)) {
-              resolvedParams[`${key}.${vKey}`] = vVal as any;
-            }
-          }
-        }
-      }
-    }
-  }
+  const resolvedParams = resolveDocumentParameters(doc, globalParams);
 
   const groups: Record<string, { type: string; shapes: SolvedPrimitive[]; warnings: import('./types').DiagnosticWarning[] }> = {};
   let autoIndex = 0;
 
   for (const shape of doc.geometry) {
-    // Validate schema
-    let validationResult: any = { success: true };
-    const t = shape.type ? String(shape.type.split('::').pop() || '') : '';
-    switch (t) {
-      case 'Rectangle': validationResult = RectangleSchema.safeParse(shape); break;
-      case 'Line': validationResult = LineSchema.safeParse(shape); break;
-      case 'Circle': validationResult = CircleSchema.safeParse(shape); break;
-      case 'Text': validationResult = TextSchema.safeParse(shape); break;
-      case 'Dimension': validationResult = DimensionSchema.safeParse(shape); break;
-      case 'Leader': validationResult = LeaderSchema.safeParse(shape); break;
-      case 'Image': validationResult = ImageSchema.safeParse(shape); break;
-      case 'ConstructReference': validationResult = ConstructReferenceSchema.safeParse(shape); break;
-    }
-
     const shapeWarnings: import('./types').DiagnosticWarning[] = [];
     if (!shape.componentId) {
       shapeWarnings.push({ message: 'Missing componentId. Interactivity may be unstable.' });
     }
-    if (!validationResult.success) {
-      for (const err of validationResult.error.issues) {
-        shapeWarnings.push({ message: `${err.path.join('.')}: ${err.message}` });
+
+    if (shape.type === 'ConstructReference') {
+      const validationResult = ConstructReferenceSchema.safeParse(shape);
+      if (!validationResult.success) {
+        for (const err of validationResult.error.issues) {
+          shapeWarnings.push({ message: `${err.path.join('.')}: ${err.message}` });
+        }
       }
-    }
 
-    if (shape.type === 'ConstructReference' && constructResolver) {
-      const constructDoc = constructResolver((shape as any).constructId!);
-      if (constructDoc) {
-        const exploded = explodeConstruct(shape, constructDoc, resolvedParams);
-        const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
-        const ctype: string = 'ConstructReference';
-        
-        if (!groups[cid]) groups[cid] = { type: ctype, shapes: [], warnings: shapeWarnings.map(w => ({...w, componentId: cid})) };
+      if (constructResolver) {
+        const constructDoc = constructResolver((shape as any).constructId!);
+        if (constructDoc) {
+          const resolvedShapes = resolveConstructGeometry(shape, constructDoc, resolvedParams);
+          const cid: string = String(shape.componentId || `shape_${autoIndex++}`);
+          const ctype: string = 'ConstructReference';
+          
+          if (!groups[cid]) groups[cid] = { type: ctype, shapes: [], warnings: shapeWarnings.map(w => ({...w, componentId: cid})) };
 
-        for (const childShape of exploded) {
-          if (childShape.visible !== undefined) {
-            const isVisible = evaluateExpression(childShape.visible, {});
-            if (isVisible === false || isVisible === 'false' || isVisible === 0) continue;
-          }
+          for (const childShape of resolvedShapes) {
+            if (childShape.visible !== undefined) {
+              const isVisible = evaluateExpression(childShape.visible, {});
+              if (isVisible === false || isVisible === 'false' || isVisible === 0) continue;
+            }
 
-          try {
-            const solved = evaluatePrimitive(childShape, resolvedParams, scaleMultiplier, canvasHeight);
-            groups[cid].shapes.push(solved);
-          } catch (err) {
-            console.warn('Skipped malformed construct child in solver:', err);
+            try {
+              const solved = evaluatePrimitive(childShape, resolvedParams, scaleMultiplier, canvasHeight);
+              groups[cid].shapes.push(solved);
+            } catch (err) {
+              console.warn('Skipped malformed construct child in solver:', err);
+            }
           }
         }
       }
@@ -113,6 +85,9 @@ export function solveDocumentGeometry(
       const ctype: string = shape.type ? String(shape.type.split('::').pop() || 'Shape') : 'Unknown';
 
       const solved = evaluatePrimitive(shape, resolvedParams, scaleMultiplier, canvasHeight);
+      const validationWarnings = validateSolvedPrimitive(solved, ctype);
+      shapeWarnings.push(...validationWarnings);
+
       if (!groups[cid]) groups[cid] = { type: ctype, shapes: [], warnings: shapeWarnings.map(w => ({...w, componentId: cid})) };
       groups[cid].shapes.push(solved);
     } catch (err) {
@@ -126,6 +101,31 @@ export function solveDocumentGeometry(
     shapes: group.shapes,
     warnings: group.warnings
   }));
+}
+
+/**
+ * Validates a solved primitive against its corresponding Zod schema.
+ */
+function validateSolvedPrimitive(
+  solved: SolvedPrimitive,
+  ctype: string
+): import('./types').DiagnosticWarning[] {
+  let validationResult: any = { success: true };
+  switch (ctype) {
+    case 'Rectangle': validationResult = RectangleSchema.safeParse(solved); break;
+    case 'Line': validationResult = LineSchema.safeParse(solved); break;
+    case 'Circle': validationResult = CircleSchema.safeParse(solved); break;
+    case 'Text': validationResult = TextSchema.safeParse(solved); break;
+    case 'Dimension': validationResult = DimensionSchema.safeParse(solved); break;
+    case 'Leader': validationResult = LeaderSchema.safeParse(solved); break;
+    case 'Image': validationResult = ImageSchema.safeParse(solved); break;
+  }
+  if (!validationResult.success) {
+    return validationResult.error.issues.map((err: any) => ({
+      message: `${err.path.join('.')}: ${err.message}`
+    }));
+  }
+  return [];
 }
 
 /**

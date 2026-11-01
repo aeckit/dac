@@ -3,7 +3,11 @@ import {
   resolveScaleMultiplier,
   evaluateExpression,
   solveDetailDocument,
-  DetailDocument
+  resolveConstructParameters,
+  resolveConstructGeometry,
+  resolveDocumentParameters,
+  DetailDocument,
+  ConstructDocument
 } from '../index';
 
 describe('@aeckit/dac-json-solver parametric math and layout engine', () => {
@@ -109,5 +113,114 @@ describe('@aeckit/dac-json-solver parametric math and layout engine', () => {
     const solvedDim = layout.groups[0].shapes[0];
     expect(solvedDim.secondaryText).toBe('[100 mm]');
     expect(solvedDim.textPosition).toBe('below');
+  });
+
+  it('unpacks construct parameter option variables for defaults and overrides', () => {
+    const constructDoc: ConstructDocument = {
+      type: 'CAD::Construct',
+      version: '1.0',
+      parameters: {
+        lumberSize: {
+          type: 'string',
+          default: '2x4',
+          options: [
+            { label: '2x4', value: '2x4', variables: { width: 3.5, height: 1.5 } },
+            { label: '2x6', value: '2x6', variables: { width: 5.5, height: 1.5 } }
+          ]
+        }
+      },
+      geometry: [
+        {
+          type: 'CAD::Shape::Rectangle',
+          componentId: 'stud',
+          x: 0,
+          y: 0,
+          width: '{parameters.lumberSize.width}',
+          height: '{parameters.lumberSize.height}'
+        }
+      ]
+    };
+
+    // 1. Default resolution (2x4)
+    const defaultParams = resolveConstructParameters(constructDoc);
+    expect(defaultParams['lumberSize']).toBe('2x4');
+    expect(defaultParams['lumberSize.width']).toBe(3.5);
+    expect(defaultParams['lumberSize.height']).toBe(1.5);
+
+    // 2. Overridden resolution (2x6)
+    const overriddenParams = resolveConstructParameters(constructDoc, { lumberSize: '2x6' });
+    expect(overriddenParams['lumberSize']).toBe('2x6');
+    expect(overriddenParams['lumberSize.width']).toBe(5.5);
+    expect(overriddenParams['lumberSize.height']).toBe(1.5);
+
+    // 3. Geometry resolution with rotation and offset
+    const refShape: any = {
+      type: 'ConstructReference',
+      componentId: 'ref_1',
+      x: 10,
+      y: 20,
+      rotation: 90,
+      parameterOverrides: { lumberSize: '2x6' }
+    };
+    const resolvedShapes: any[] = resolveConstructGeometry(refShape, constructDoc);
+    expect(resolvedShapes.length).toBe(1);
+    expect(resolvedShapes[0].componentId).toBe('ref_1_stud');
+    expect(resolvedShapes[0].width).toBe(5.5);
+    expect(resolvedShapes[0].height).toBe(1.5);
+    expect(resolvedShapes[0].rotation).toBe(90);
+  });
+
+  it('solves construct references inside a DetailDocument without schema warnings', () => {
+    const constructDoc: ConstructDocument = {
+      type: 'CAD::Construct',
+      version: '1.0',
+      parameters: {
+        lumberSize: {
+          type: 'string',
+          default: '2x4',
+          options: [
+            { label: '2x4', value: '2x4', variables: { width: 3.5, height: 1.5 } },
+            { label: '2x6', value: '2x6', variables: { width: 5.5, height: 1.5 } }
+          ]
+        }
+      },
+      geometry: [
+        {
+          type: 'CAD::Shape::Rectangle',
+          componentId: 'body',
+          x: 0,
+          y: 0,
+          width: '{parameters.lumberSize.width}',
+          height: '{parameters.lumberSize.height}'
+        }
+      ]
+    };
+
+    const detailDoc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: [
+        {
+          type: 'ConstructReference',
+          componentId: 'stud_instance',
+          constructId: 'wood-stud',
+          x: 5,
+          y: 10,
+          parameterOverrides: { lumberSize: '2x6' }
+        }
+      ]
+    };
+
+    const resolver = (id: string) => id === 'wood-stud' ? constructDoc : undefined;
+    const layout = solveDetailDocument(detailDoc, 24, 18, resolver);
+
+    expect(layout.groups.length).toBe(1);
+    const group = layout.groups[0];
+    expect(group.componentId).toBe('stud_instance');
+    expect(group.warnings).toEqual([]); // Zero schema warnings!
+    expect(group.shapes.length).toBe(1);
+    expect(group.shapes[0].width).toBe(5.5);
+    expect(group.shapes[0].height).toBe(1.5);
   });
 });
