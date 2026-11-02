@@ -1,6 +1,6 @@
 {
   "name": "@aeckit/dac-json-builder",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Programmatic builder and mutation API for Drawing-as-Code documents",
   "type": "module",
   "main": "./dist/index.cjs",
