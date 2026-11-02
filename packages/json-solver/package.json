@@ -1,5 +1,6 @@
 {
   "name": "@aeckit/dac-json-solver",
+  "private": true,
   "version": "0.1.0",
   "description": "Parametric layout, constraint, and geometric solver engine for Drawing-as-Code",
   "type": "module",

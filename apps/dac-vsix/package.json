@@ -1,5 +1,6 @@
 {
   "name": "dac-vsix",
+  "private": true,
   "displayName": "aeckit DaC",
   "description": "IDE extension for real-time visualization of parametric CAD details.",
   "version": "0.1.0",

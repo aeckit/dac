@@ -1,5 +1,6 @@
 {
   "name": "@aeckit/dac-renderer-svg",
+  "private": true,
   "version": "0.1.0",
   "description": "Pure framework-agnostic SVG rendering engine for Drawing-as-Code Intermediate Representation",
   "type": "module",
