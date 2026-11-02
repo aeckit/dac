@@ -16,13 +16,20 @@
     "watch": "turbo run watch",
     "build": "turbo run build",
     "package": "turbo run package",
-    "lint:dac": "node packages/cli/dist/cli.js check"
+    "lint:dac": "node packages/cli/dist/cli.js check",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.1",
     "happy-dom": "^20.11.1",
     "jsdom": "^27.0.1",
     "turbo": "^2.10.12",
     "typescript": "^5.3.3",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "human-id": "4.1.1"
   }
 }
