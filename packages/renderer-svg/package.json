@@ -1,6 +1,5 @@
 {
   "name": "@aeckit/dac-renderer-svg",
-  "private": true,
   "version": "0.1.0",
   "description": "Pure framework-agnostic SVG rendering engine for Drawing-as-Code Intermediate Representation",
   "type": "module",
@@ -20,11 +19,24 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aeckit/dac-schema": "*",
-    "@aeckit/dac-json-solver": "*"
+    "@aeckit/dac-schema": "^0.2.0",
+    "@aeckit/dac-json-solver": "^0.1.0"
   },
   "devDependencies": {
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aeckit/dac.git",
+    "directory": "packages/renderer-svg"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }
