@@ -9,10 +9,6 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@aeckit/solid-playground",
-    "@aeckit/dac-json-solver",
-    "@aeckit/dac-json-builder",
-    "@aeckit/dac-renderer-svg",
-    "@aeckit/dac-solid",
     "@aeckit/dac-cli",
     "dac-vsix"
   ]
