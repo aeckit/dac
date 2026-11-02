@@ -25,5 +25,18 @@
   "devDependencies": {
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aeckit/dac.git",
+    "directory": "packages/schema"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }
