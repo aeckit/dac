@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
-import { DacProvider, DacCanvas, useDac } from '../../dist/index.js';
+import { DacProvider, DacCanvas, useDac } from '../index';
 import type { DetailDocument } from '@aeckit/dac-schema';
 
 describe('@aeckit/dac-solid DacCanvas unit tests', () => {

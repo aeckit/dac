@@ -1,7 +1,30 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
+import babel from '@babel/core';
+import solidPreset from 'babel-preset-solid';
+import tsPreset from '@babel/preset-typescript';
+
+function solidTransformPlugin() {
+  return {
+    name: 'solid-transform',
+    enforce: 'pre' as const,
+    async transform(code: string, id: string) {
+      if (/\.[jt]sx$/.test(id)) {
+        const result = await babel.transformAsync(code, {
+          filename: id,
+          presets: [
+            [tsPreset],
+            [solidPreset, { generate: 'dom', hydratable: false }]
+          ],
+        });
+        return { code: result?.code || '', map: result?.map };
+      }
+    },
+  };
+}
 
 export default defineConfig({
+  plugins: [solidTransformPlugin()],
   test: {
     environment: 'happy-dom',
     include: ['packages/**/*.test.{ts,tsx}', 'apps/**/*.test.{ts,tsx}'],
