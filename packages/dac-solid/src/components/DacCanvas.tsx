@@ -3,11 +3,23 @@ import { useDac } from '../hooks/useDac';
 import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
 import { SelectionGizmo } from './SelectionGizmo';
 
-export function DacCanvas() {
-  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, canvasTheme, triggerFitView, setSolverWarnings } = useDac();
+export interface DacCanvasProps {
+  autoFit?: boolean;
+}
+
+export function DacCanvas(props?: DacCanvasProps) {
+  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, canvasTheme, triggerFitView, fitView, setSolverWarnings } = useDac();
   const [svgContent, setSvgContent] = createSignal('');
   let containerRef!: HTMLDivElement;
   let contentRef!: HTMLDivElement;
+
+  createEffect(() => {
+    if (props?.autoFit) {
+      const _ = doc();
+      setTimeout(() => fitView(), 50);
+      setTimeout(() => fitView(), 200);
+    }
+  });
 
   createEffect(() => {
     // Dependency on triggerFitView so it runs when triggered
