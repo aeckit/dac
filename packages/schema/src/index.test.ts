@@ -79,6 +79,28 @@ describe('@aeckit/dac-schema contract verification', () => {
     expect((doc.geometry[0] as any).fontSize).toBe(12);
   });
 
+  it('validates document with optional metadata and transforms single string note to array', () => {
+    const raw = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      metadata: {
+        id: 'joist-detail',
+        title: 'Floor Joist Assembly',
+        category: 'Framing',
+        tags: ['timber', 'framing'],
+        notes: 'Field verify dimensions before fabrication.'
+      },
+      geometry: []
+    };
+
+    const doc = validateDetailDocument(raw);
+    expect(doc.metadata?.title).toBe('Floor Joist Assembly');
+    expect(doc.metadata?.category).toBe('Framing');
+    expect(doc.metadata?.tags).toEqual(['timber', 'framing']);
+    expect(doc.metadata?.notes).toEqual(['Field verify dimensions before fabrication.']);
+  });
+
   it('exports standard JSON Schema for polyglot consumers (Python Pydantic models)', async () => {
     const { exportJsonSchema } = await import('./index');
     const jsonSchema = await exportJsonSchema();
