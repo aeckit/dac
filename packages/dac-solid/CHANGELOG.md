@@ -1,5 +1,19 @@
 # @aeckit/dac-solid
 
+## 0.2.0
+
+### Minor Changes
+
+- aa4cc9c: Add DocumentMetadataSchema to dac-schema, computeBoundingBox and renderThumbnailSvg to renderer-svg, and autoFit prop to DacCanvas in dac-solid.
+
+### Patch Changes
+
+- Updated dependencies [aa4cc9c]
+  - @aeckit/dac-schema@0.3.0
+  - @aeckit/dac-renderer-svg@0.2.0
+  - @aeckit/dac-json-builder@0.1.2
+  - @aeckit/dac-json-solver@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
