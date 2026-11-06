@@ -62,7 +62,7 @@ export class JsonBuilder extends EventTarget {
       return sheet;
     }
     
-    if (this.document.type !== 'CAD::Detail' && this.document.type !== 'CAD::TitleBlock' && this.document.type !== 'CAD::SheetConfiguration') {
+    if (this.document.type !== 'CAD::Detail' && this.document.type !== 'CAD::TitleBlock' && this.document.type !== 'CAD::SheetConfiguration' && this.document.type !== 'CAD::Construct') {
       throw new Error(`Cannot add shape to document of type ${this.document.type}`);
     }
 

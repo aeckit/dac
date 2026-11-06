@@ -93,4 +93,21 @@ describe('@aeckit/dac-json-builder mutation engine', () => {
     builder.shapes.addRectangle();
     expect(listener).toHaveBeenCalled();
   });
+
+  it('supports mutating CAD::Construct documents', () => {
+    const doc = {
+      type: 'CAD::Construct',
+      version: '1.0',
+      parameters: { width: 5.5 },
+      geometry: [
+        { type: 'CAD::Shape::Rectangle', componentId: 'wood-section', width: 5.5, height: 1.5 }
+      ]
+    };
+
+    builder.setDocument(doc as any);
+    builder.components.updateComponent('wood-section', { width: 7.25 });
+
+    const updated = builder.getDocument() as any;
+    expect(updated.geometry[0].width).toBe(7.25);
+  });
 });
