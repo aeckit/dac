@@ -5,6 +5,7 @@ import { SelectionGizmo } from './SelectionGizmo';
 
 export interface DacCanvasProps {
   autoFit?: boolean;
+  showGizmoActions?: boolean;
 }
 
 export function DacCanvas(props?: DacCanvasProps) {
@@ -371,7 +372,7 @@ export function DacCanvas(props?: DacCanvasProps) {
           }
         `}
       </style>
-      <SelectionGizmo />
+      <SelectionGizmo showActions={props?.showGizmoActions} />
     </div>
   );
 }

@@ -5,5 +5,5 @@ export { DacInspector } from './components/DacInspector';
 export { DocumentParametersInspector, ConstructReferenceInspector } from './components/ParametersInspector';
 export { DacToolbar } from './components/DacToolbar';
 export { DacZoomControls } from './components/DacZoomControls';
-export { SelectionGizmo } from './components/SelectionGizmo';
+export { SelectionGizmo, type SelectionGizmoProps } from './components/SelectionGizmo';
 export { useDac } from './hooks/useDac';

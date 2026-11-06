@@ -31,8 +31,8 @@ export interface DacProviderProps {
 }
 
 export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
-  const [docSignal, setDocSignal] = createSignal<any>(props.doc);
-  const [nestedDocsSignal, setNestedDocsSignal] = createSignal<Map<string, any> | undefined>(props.nestedDocs);
+  const [docSignal, setDocSignal] = createSignal<any>(props.doc, { equals: false });
+  const [nestedDocsSignal, setNestedDocsSignal] = createSignal<Map<string, any> | undefined>(props.nestedDocs, { equals: false });
   const [canvasThemeSignal, setCanvasThemeSignal] = createSignal<CadTheme | undefined>(props.canvasTheme);
   const [builderSignal] = createSignal<JsonBuilder>(new JsonBuilder());
   const [selectionIds, setSelectionIds] = createSignal<string[]>([]);
@@ -59,8 +59,8 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
   createEffect(() => {
     const b = builderSignal();
     const handleChanged = (e: any) => {
-      setDocSignal(e.detail.document);
-      setNestedDocsSignal(e.detail.nestedDocs);
+      setDocSignal({ ...e.detail.document });
+      setNestedDocsSignal(e.detail.nestedDocs ? new Map<string, any>(e.detail.nestedDocs) : undefined);
       if (props.onChange) {
         props.onChange(e.detail.document, e.detail.nestedDocs, e.detail.isTransient);
       }

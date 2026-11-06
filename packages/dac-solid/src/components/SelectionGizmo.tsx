@@ -1,8 +1,13 @@
 import { createSignal, onMount, onCleanup, Show } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 
-export function SelectionGizmo() {
+export interface SelectionGizmoProps {
+  showActions?: boolean;
+}
+
+export function SelectionGizmo(props?: SelectionGizmoProps) {
   const { selectionIds, deleteShape, updateShape, selectedShape, zoom } = useDac();
+  const showActions = () => props?.showActions !== false;
   const [box, setBox] = createSignal<{ 
     left: number, 
     top: number, 
@@ -373,45 +378,55 @@ export function SelectionGizmo() {
       {(b) => (
         <div data-selection-gizmo="true" style={{ position: 'absolute', "pointer-events": 'none', "z-index": 100, left: 0, top: 0, width: '100%', height: '100%' }}>
           {/* Action Buttons */}
-          <div style={{ position: 'absolute', left: `${b().right - 24}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
-            <button 
-              onClick={() => {
-                selectionIds().forEach(id => deleteShape(id));
-              }}
-              style={{ background: '#ef4444', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-            </button>
-          </div>
-          
-          <div style={{ position: 'absolute', left: `${b().right - 52}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
-             <button 
-              onPointerDown={(e) => handleDrag(e, 'move')}
-              style={{ background: '#3b82f6', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'move', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
-            </button>
-          </div>
+          <Show when={showActions()}>
+            <div data-gizmo-actions="true">
+              <div style={{ position: 'absolute', left: `${b().right - 24}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
+                <button 
+                  data-gizmo-action="delete"
+                  onClick={() => {
+                    selectionIds().forEach(id => deleteShape(id));
+                  }}
+                  style={{ background: '#ef4444', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
+                  title="Delete shape"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                </button>
+              </div>
+              
+              <div style={{ position: 'absolute', left: `${b().right - 52}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
+                 <button 
+                  data-gizmo-action="move"
+                  onPointerDown={(e) => handleDrag(e, 'move')}
+                  style={{ background: '#3b82f6', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'move', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
+                  title="Move shape"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
+                </button>
+              </div>
 
-          {selectedShape()?.type === 'CAD::Viewport' && (
-            <div style={{ position: 'absolute', left: `${b().right - 80}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
-              <button 
-                onClick={() => {
-                  const shape = selectedShape();
-                  if (shape && typeof shape.detail === 'string') {
-                    let filename = shape.detail;
-                    if (filename.startsWith('../')) filename = filename.substring(3);
-                    if (filename !== 'inline-detail') {
-                      window.dispatchEvent(new CustomEvent('dac-open-file', { detail: { filename } }));
-                    }
-                  }
-                }}
-                style={{ background: '#10b981', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-              </button>
+              {selectedShape()?.type === 'CAD::Viewport' && (
+                <div style={{ position: 'absolute', left: `${b().right - 80}px`, top: `${b().top - 36}px`, "pointer-events": 'auto' }}>
+                  <button 
+                    data-gizmo-action="open-detail"
+                    onClick={() => {
+                      const shape = selectedShape();
+                      if (shape && typeof shape.detail === 'string') {
+                        let filename = shape.detail;
+                        if (filename.startsWith('../')) filename = filename.substring(3);
+                        if (filename !== 'inline-detail') {
+                          window.dispatchEvent(new CustomEvent('dac-open-file', { detail: { filename } }));
+                        }
+                      }
+                    }}
+                    style={{ background: '#10b981', color: 'white', border: 'none', "border-radius": '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', "align-items": 'center', "justify-content": 'center' }}
+                    title="Open Detail"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </Show>
 
           {/* Bounding Box Border (only for standard 2D shapes) */}
           {!b().isLine && !b().isLeader && !b().isDimension && (
