@@ -3,6 +3,7 @@ import { useDac } from '../hooks/useDac';
 import { resolveDocumentParameters } from '@aeckit/dac-json-solver';
 import { DocumentParametersInspector, ConstructReferenceInspector } from './ParametersInspector';
 import { PropertyField } from './PropertyField';
+import { inspectorStyles } from './inspectorStyles';
 
 const UI_CONFIG: Record<string, { hiddenFields: string[] }> = {
   'CAD::Detail': { hiddenFields: ['version'] },
@@ -30,7 +31,7 @@ function DocumentField(props: {
 
   return (
     <>
-      <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: 'var(--app-text-muted, #94a3b8)' }}>{props.keyName}</label>
+      <label style={inspectorStyles.label}>{props.keyName}</label>
       {isBool() ? (
         <input 
           type="checkbox" 
@@ -71,7 +72,7 @@ function DocumentField(props: {
               inputRef.value = v !== undefined && v !== null ? String(v) : '';
             }
           }}
-          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "box-sizing": 'border-box' }}
+          style={{ ...inspectorStyles.input, "margin-bottom": '12px' }}
         />
       )}
     </>
@@ -84,14 +85,17 @@ export function DacInspector() {
   const selectedId = () => (selectionIds().length === 1 && selectedShape()) ? selectionIds()[0] : null;
 
   return (
-    <div style={{ width: '100%', height: '100%', "background-color": 'var(--app-bg-panel, #1e293b)', color: 'var(--app-text, #f8fafc)', padding: '16px', "box-sizing": 'border-box', "overflow-y": 'auto' }}>
+    <div style={inspectorStyles.container}>
       <Show
         when={selectedId()}
         keyed
         fallback={
           <Show when={activeSheetId()} fallback={
             <div>
-              <p><strong>View Type:</strong> {doc()?.type}</p>
+              <div style={inspectorStyles.metaRow}>
+                <span style={inspectorStyles.metaLabel}>View Type</span>
+                <span style={inspectorStyles.metaValue}>{doc()?.type}</span>
+              </div>
               
               <div style={{ "margin-top": '16px', "margin-bottom": '16px' }}>
                 <For each={Object.keys(doc() || {}).filter(k => {
@@ -117,7 +121,7 @@ export function DacInspector() {
 
               <div style={{ "margin-top": '16px' }}>
                 <Show when={doc()?.geometry && doc().geometry.length > 0}>
-                  <p><strong>Geometries:</strong></p>
+                  <p style={inspectorStyles.sectionTitle}>Geometries</p>
                   <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px', "margin-bottom": '16px' }}>
                     <For each={doc()?.geometry || []}>
                       {(geom: any, index) => {
@@ -125,9 +129,9 @@ export function DacInspector() {
                         return (
                           <div 
                             onClick={() => selectShape(id)}
-                            style={{ padding: '8px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', "border-radius": '4px', cursor: 'pointer' }}
+                            style={inspectorStyles.cardItem}
                           >
-                            <div style={{ "font-size": '12px', "font-weight": 'bold' }}>{geom.type}</div>
+                            <div style={{ "font-size": '11px', "font-weight": '600', color: 'var(--app-text, inherit)' }}>{geom.type}</div>
                             <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{id}</div>
                           </div>
                         );
@@ -137,7 +141,7 @@ export function DacInspector() {
                 </Show>
 
                 <Show when={doc()?.viewports && doc().viewports.length > 0}>
-                  <p><strong>Viewports:</strong></p>
+                  <p style={inspectorStyles.sectionTitle}>Viewports</p>
                   <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px', "margin-bottom": '16px' }}>
                     <For each={doc()?.viewports || []}>
                       {(vp: any, index) => {
@@ -145,9 +149,9 @@ export function DacInspector() {
                         return (
                           <div 
                             onClick={() => selectShape(id)}
-                            style={{ padding: '8px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', "border-radius": '4px', cursor: 'pointer' }}
+                            style={inspectorStyles.cardItem}
                           >
-                            <div style={{ "font-size": '12px', "font-weight": 'bold' }}>{vp.title || 'Viewport'}</div>
+                            <div style={{ "font-size": '11px', "font-weight": '600', color: 'var(--app-text, inherit)' }}>{vp.title || 'Viewport'}</div>
                             <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{vp.detail}</div>
                           </div>
                         );
@@ -157,9 +161,9 @@ export function DacInspector() {
                 </Show>
 
                 <Show when={doc()?.titleBlockRef}>
-                  <p><strong>Title Block:</strong></p>
-                  <div style={{ padding: '8px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', "border-radius": '4px', "margin-bottom": '16px' }}>
-                    <div style={{ "font-size": '12px', "font-weight": 'bold' }}>Reference</div>
+                  <p style={inspectorStyles.sectionTitle}>Title Block</p>
+                  <div style={{ ...inspectorStyles.cardItem, "margin-bottom": '16px', cursor: 'default' }}>
+                    <div style={{ "font-size": '11px', "font-weight": '600', color: 'var(--app-text, inherit)' }}>Reference</div>
                     <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{doc()?.titleBlockRef}</div>
                   </div>
                 </Show>
@@ -167,8 +171,11 @@ export function DacInspector() {
             </div>
           }>
             <div>
-              <p><strong>Sheet Inspector</strong></p>
-              <p>Sheet ID: {activeSheetId()}</p>
+              <p style={inspectorStyles.sectionTitle}>Sheet Inspector</p>
+              <div style={inspectorStyles.metaRow}>
+                <span style={inspectorStyles.metaLabel}>Sheet ID</span>
+                <span style={inspectorStyles.metaValue}>{activeSheetId()}</span>
+              </div>
             </div>
           </Show>
         }
@@ -198,7 +205,7 @@ export function DacInspector() {
           return (
             <div>
               <Show when={warningsForShape().length > 0}>
-                <div style={{ "background-color": 'rgba(234, 88, 12, 0.1)', border: '1px solid #ea580c', color: '#fed7aa', padding: '12px', "border-radius": '4px', "margin-bottom": '16px', "font-size": '12px' }}>
+                <div style={{ "background-color": 'rgba(234, 88, 12, 0.1)', border: '1px solid #ea580c', color: '#fed7aa', padding: '10px 12px', "border-radius": '6px', "margin-bottom": '16px', "font-size": '11px', "font-family": inspectorStyles.sectionTitle["font-family"] }}>
                   <strong style={{ display: 'block', "margin-bottom": '4px', color: '#fdba74' }}>⚠️ Schema Warnings</strong>
                   <ul style={{ margin: 0, "padding-left": '20px' }}>
                     <For each={warningsForShape()}>
@@ -207,8 +214,14 @@ export function DacInspector() {
                   </ul>
                 </div>
               </Show>
-              <p><strong>Type:</strong> {shape()?.type}</p>
-              <p><strong>ID:</strong> {currentId}</p>
+              <div style={inspectorStyles.metaRow}>
+                <span style={inspectorStyles.metaLabel}>Type</span>
+                <span style={inspectorStyles.metaValue}>{shape()?.type}</span>
+              </div>
+              <div style={{ ...inspectorStyles.metaRow, "margin-bottom": '16px' }}>
+                <span style={inspectorStyles.metaLabel}>ID</span>
+                <span style={inspectorStyles.metaValue}>{currentId}</span>
+              </div>
               <div style={{ "margin-top": '16px' }}>
                 <For each={keys()}>
                   {(key) => (

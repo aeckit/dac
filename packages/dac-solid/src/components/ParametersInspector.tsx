@@ -1,4 +1,5 @@
 import { For, Show } from 'solid-js';
+import { inspectorStyles } from './inspectorStyles';
 
 export function DocumentParametersInspector(props: {
   parameters: () => Record<string, any> | undefined;
@@ -9,18 +10,21 @@ export function DocumentParametersInspector(props: {
   return (
     <Show when={paramEntries().length > 0}>
       <div style={{ "margin-top": '16px', "border-top": '1px solid var(--app-border, #475569)', "padding-top": '12px' }}>
-        <p style={{ "font-size": '12px', "font-weight": 'bold', "margin-bottom": '12px', color: 'var(--app-text, white)' }}>
+        <p style={inspectorStyles.sectionTitle}>
           Parameters
         </p>
         <For each={paramEntries()}>
           {([key, param]) => {
             const label = param.label || key;
-            const currentValue = () => param.value !== undefined ? param.value : param.default;
+            const currentValue = () => {
+              const currentParam = props.parameters()?.[key];
+              return currentParam?.value !== undefined ? currentParam?.value : currentParam?.default;
+            };
             const options = param.options;
 
             return (
               <div style={{ "margin-bottom": '12px' }}>
-                <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: 'var(--app-text-muted, #94a3b8)' }}>
+                <label style={inspectorStyles.label}>
                   {label}
                 </label>
                 {options && options.length > 0 ? (
@@ -34,15 +38,7 @@ export function DocumentParametersInspector(props: {
                         d.parameters[key].value = val;
                       });
                     }}
-                    style={{
-                      width: '100%',
-                      padding: '6px',
-                      background: 'var(--app-bg-main, #0f172a)',
-                      border: '1px solid var(--app-border, #475569)',
-                      color: 'var(--app-text, white)',
-                      "border-radius": '4px',
-                      "box-sizing": 'border-box'
-                    }}
+                    style={inspectorStyles.input}
                   >
                     <For each={options}>
                       {(opt: any) => (
@@ -77,15 +73,7 @@ export function DocumentParametersInspector(props: {
                         d.parameters[key].value = val;
                       });
                     }}
-                    style={{
-                      width: '100%',
-                      padding: '6px',
-                      background: 'var(--app-bg-main, #0f172a)',
-                      border: '1px solid var(--app-border, #475569)',
-                      color: 'var(--app-text, white)',
-                      "border-radius": '4px',
-                      "box-sizing": 'border-box'
-                    }}
+                    style={inspectorStyles.input}
                   />
                 )}
               </div>
@@ -117,10 +105,10 @@ export function ConstructReferenceInspector(props: {
   return (
     <Show when={constructParams().length > 0}>
       <div style={{ "margin-top": '16px', "border-top": '1px solid var(--app-border, #475569)', "padding-top": '12px' }}>
-        <p style={{ "font-size": '12px', "font-weight": 'bold', "margin-bottom": '4px', color: 'var(--app-text, white)' }}>
+        <p style={inspectorStyles.sectionTitle}>
           Construct Parameters
         </p>
-        <p style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)', "margin-bottom": '12px' }}>
+        <p style={{ "font-family": inspectorStyles.sectionTitle["font-family"], "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)', "margin-bottom": '12px' }}>
           Reference: {props.shape()?.constructId}
         </p>
 
@@ -136,7 +124,7 @@ export function ConstructReferenceInspector(props: {
 
             return (
               <div style={{ "margin-bottom": '12px' }}>
-                <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: 'var(--app-text-muted, #94a3b8)' }}>
+                <label style={inspectorStyles.label}>
                   {label}
                 </label>
                 {options && options.length > 0 ? (
@@ -152,15 +140,7 @@ export function ConstructReferenceInspector(props: {
                         }
                       });
                     }}
-                    style={{
-                      width: '100%',
-                      padding: '6px',
-                      background: 'var(--app-bg-main, #0f172a)',
-                      border: '1px solid var(--app-border, #475569)',
-                      color: 'var(--app-text, white)',
-                      "border-radius": '4px',
-                      "box-sizing": 'border-box'
-                    }}
+                    style={inspectorStyles.input}
                   >
                     <For each={options}>
                       {(opt: any) => (
@@ -199,15 +179,7 @@ export function ConstructReferenceInspector(props: {
                         }
                       });
                     }}
-                    style={{
-                      width: '100%',
-                      padding: '6px',
-                      background: 'var(--app-bg-main, #0f172a)',
-                      border: '1px solid var(--app-border, #475569)',
-                      color: 'var(--app-text, white)',
-                      "border-radius": '4px',
-                      "box-sizing": 'border-box'
-                    }}
+                    style={inspectorStyles.input}
                   />
                 )}
               </div>

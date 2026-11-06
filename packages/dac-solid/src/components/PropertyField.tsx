@@ -1,5 +1,6 @@
 import { createEffect } from 'solid-js';
 import { evaluateExpression } from '@aeckit/dac-json-solver';
+import { inspectorStyles } from './inspectorStyles';
 
 export function PropertyField(props: {
   keyName: string;
@@ -34,7 +35,7 @@ export function PropertyField(props: {
 
   return (
     <>
-      <label style={{ display: 'block', "margin-bottom": '4px', "font-size": '12px', color: 'var(--app-text-muted, #94a3b8)' }}>{props.keyName}</label>
+      <label style={inspectorStyles.label}>{props.keyName}</label>
       {isBool() ? (
         <input 
           type="checkbox" 
@@ -46,7 +47,7 @@ export function PropertyField(props: {
         <select
           value={val() ?? 'above'}
           onChange={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
-          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px' }}
+          style={{ ...inspectorStyles.input, "margin-bottom": '12px' }}
         >
           <option value="above">Above</option>
           <option value="below">Below</option>
@@ -55,7 +56,7 @@ export function PropertyField(props: {
         <select
           value={val() ?? ''}
           onChange={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
-          style={{ width: '100%', "margin-bottom": '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px' }}
+          style={{ ...inspectorStyles.input, "margin-bottom": '12px' }}
         >
           <option value="">None</option>
           <option value="Concrete">Concrete</option>
@@ -67,14 +68,14 @@ export function PropertyField(props: {
             type="color"
             value={typeof val() === 'string' && val().startsWith('#') ? val().slice(0, 7) : '#000000'}
             onInput={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
-            style={{ width: '32px', height: '32px', padding: '0', border: '1px solid var(--app-border, #475569)', background: 'var(--app-bg-main, #0f172a)', cursor: 'pointer', "border-radius": '4px' }}
+            style={{ width: '32px', height: '32px', padding: '0', border: '1px solid var(--app-border, #475569)', background: 'var(--app-bg-main, #0f172a)', cursor: 'pointer', "border-radius": '6px' }}
           />
           <input 
             ref={inputRef}
             type="text"
             onInput={(e) => props.updateShape(props.currentId, { [props.keyName]: e.currentTarget.value })}
             placeholder={props.keyName === 'color' ? 'auto' : 'transparent'}
-            style={{ flex: 1, padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "min-width": 0 }}
+            style={{ ...inspectorStyles.input, flex: 1, "min-width": 0 }}
           />
         </div>
       ) : (
@@ -111,7 +112,7 @@ export function PropertyField(props: {
                 inputRef.value = v !== undefined && v !== null ? String(v) : '';
               }
             }}
-            style={{ width: '100%', "margin-bottom": isExpr() ? '4px' : '12px', padding: '6px', background: 'var(--app-bg-main, #0f172a)', border: '1px solid var(--app-border, #475569)', color: 'var(--app-text, white)', "border-radius": '4px', "box-sizing": 'border-box' }}
+            style={{ ...inspectorStyles.input, "margin-bottom": isExpr() ? '4px' : '12px' }}
           />
           {isExpr() && (
             <div style={{
@@ -120,14 +121,15 @@ export function PropertyField(props: {
               gap: '6px',
               "margin-bottom": '12px',
               "font-size": '11px',
+              "font-family": inspectorStyles.sectionTitle["font-family"],
               color: 'var(--app-accent, #38bdf8)',
               background: 'rgba(56, 189, 248, 0.08)',
               padding: '4px 8px',
-              "border-radius": '4px',
+              "border-radius": '6px',
               border: '1px solid rgba(56, 189, 248, 0.2)'
             }}>
               <span style={{ opacity: 0.75 }}>↳ Resolved:</span>
-              <span style={{ "font-family": 'monospace', "font-weight": 'bold' }}>
+              <span style={{ "font-family": 'inherit', "font-weight": '600' }}>
                 {String(resolvedVal() ?? '')}
               </span>
             </div>
