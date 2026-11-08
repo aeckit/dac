@@ -1,5 +1,6 @@
 import { createSignal, onMount, onCleanup, Show } from 'solid-js';
 import { useDac } from '../hooks/useDac';
+import { PolylineGrips } from './PolylineGrips';
 
 export interface SelectionGizmoProps {
   showActions?: boolean;
@@ -22,7 +23,10 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     isDimension?: boolean,
     pDim1?: {x: number, y: number},
     pDim2?: {x: number, y: number},
-    pDimOffset?: {x: number, y: number}
+    pDimOffset?: {x: number, y: number},
+    isPolyline?: boolean,
+    polyPoints?: { x: number; y: number; index: number }[],
+    polyMidpoints?: { x: number; y: number; index: number }[]
   } | null>(null);
 
   let reqId: number;
@@ -37,13 +41,15 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     const shape = selectedShape();
     if (!shape) return;
     const isCircleShape = shape.type === 'Circle' || shape.type === 'CAD::Shape::Circle';
+    const isPolylineShape = shape.type === 'Polyline' || shape.type === 'CAD::Shape::Polyline';
     const initial = { 
       x: Number(shape.x ?? 0), y: Number(shape.y ?? 0), w: Number(shape.width ?? 0), h: Number(shape.height ?? 0),
       x1: Number(shape.x1 ?? 0), y1: Number(shape.y1 ?? 0), x2: Number(shape.x2 ?? 0), y2: Number(shape.y2 ?? 0),
       cx: Number(shape.cx ?? 0), cy: Number(shape.cy ?? 0), r: Number(shape.r ?? 0),
       dx: Number(shape.dx ?? 10), dy: Number(shape.dy ?? 10),
       offset: Number(shape.offset ?? 20),
-      cropX: shape.cropX, cropY: shape.cropY
+      cropX: shape.cropX, cropY: shape.cropY,
+      points: Array.isArray(shape.points) ? JSON.parse(JSON.stringify(shape.points)) : []
     };
 
     const container = document.querySelector('[data-canvas-container]') as HTMLElement;
@@ -83,6 +89,13 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
           }, true);
         } else if (isCircleShape) {
           updateShape(shape.componentId, { cx: initial.cx + dx, cy: initial.cy - dy }, true);
+        } else if (isPolylineShape) {
+          const newPoints = initial.points.map((pt: any) => {
+            const px = typeof pt[0] === 'number' ? pt[0] + dx : pt[0];
+            const py = typeof pt[1] === 'number' ? pt[1] - dy : pt[1];
+            return [px, py];
+          });
+          updateShape(shape.componentId, { points: newPoints }, true);
         } else {
           updateShape(shape.componentId, { x: initial.x + dx, y: initial.y - dy }, true);
         }
@@ -94,6 +107,33 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
         updateShape(shape.componentId, { x1: initial.x1 + dx, y1: initial.y1 - dy }, true);
       } else if (mode === 'dim-end') {
         updateShape(shape.componentId, { x2: initial.x2 + dx, y2: initial.y2 - dy }, true);
+      } else if (mode.startsWith('poly-vertex-')) {
+        const vIdx = parseInt(mode.replace('poly-vertex-', ''), 10);
+        if (!isNaN(vIdx) && initial.points[vIdx]) {
+          const newPoints = initial.points.map((pt: any, i: number) => {
+            if (i === vIdx) {
+              const px = typeof pt[0] === 'number' ? pt[0] + dx : pt[0];
+              const py = typeof pt[1] === 'number' ? pt[1] - dy : pt[1];
+              return [Math.round(px * 100) / 100, Math.round(py * 100) / 100];
+            }
+            return pt;
+          });
+          updateShape(shape.componentId, { points: newPoints }, true);
+        }
+      } else if (mode.startsWith('poly-midpoint-')) {
+        const segIdx = parseInt(mode.replace('poly-midpoint-', ''), 10);
+        if (!isNaN(segIdx) && initial.points[segIdx]) {
+          const pA = initial.points[segIdx];
+          const nextIdx = (segIdx + 1) % initial.points.length;
+          const pB = initial.points[nextIdx];
+          const mx = (Number(pA[0]) + Number(pB[0])) / 2;
+          const my = (Number(pA[1]) + Number(pB[1])) / 2;
+          
+          const insertedIdx = segIdx + 1;
+          const clonedPts = [...initial.points];
+          clonedPts.splice(insertedIdx, 0, [Math.round((mx + dx) * 100) / 100, Math.round((my - dy) * 100) / 100]);
+          updateShape(shape.componentId, { points: clonedPts }, true);
+        }
       } else if (mode === 'dim-offset') {
         const vX = initial.x2 - initial.x1;
         const vY = initial.y2 - initial.y1;
@@ -206,6 +246,15 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     document.addEventListener('pointerup', onUp);
   };
 
+  const handleDeleteVertex = (e: MouseEvent, index: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const shape = selectedShape();
+    if (!shape || !Array.isArray(shape.points) || shape.points.length <= 2) return;
+    const newPoints = shape.points.filter((_: any, i: number) => i !== index);
+    updateShape(shape.componentId, { points: newPoints }, false);
+  };
+
   const updateBounds = () => {
     const ids = selectionIds();
     if (ids.length === 0) {
@@ -230,6 +279,9 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     let pAnchor, pLanding;
     let isDimension = false;
     let pDim1, pDim2, pDimOffset;
+    let isPolyline = false;
+    let polyPoints: { x: number; y: number; index: number }[] = [];
+    let polyMidpoints: { x: number; y: number; index: number }[] = [];
 
     ids.forEach(id => {
       const el = rootSvg.querySelector(`[data-component-id="${id}"]`) as SVGGraphicsElement;
@@ -237,6 +289,48 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
       
       const type = el.getAttribute('data-component-type');
       const screenCTM = el.getScreenCTM();
+
+      if (ids.length === 1 && (type === 'Polyline' || type === 'CAD::Shape::Polyline')) {
+        isPolyline = true;
+        const polyNode = (el.querySelector('polyline:not(.cad-hit-area), polygon:not(.cad-hit-area)') || el.querySelector('polyline, polygon')) as SVGPolylineElement | null;
+        if (polyNode) {
+          const nodeCTM = polyNode.getScreenCTM() || screenCTM;
+          const pointsAttr = polyNode.getAttribute('points');
+          if (pointsAttr && nodeCTM) {
+            const rawPairs = pointsAttr.trim().split(/\s+/).map(pair => pair.split(',').map(Number));
+            const isClosed = polyNode.tagName.toLowerCase() === 'polygon';
+            const screenPts: { x: number, y: number }[] = [];
+
+            rawPairs.forEach((pair, idx) => {
+              if (pair.length >= 2 && !isNaN(pair[0]) && !isNaN(pair[1])) {
+                const pt = rootSvg.createSVGPoint();
+                pt.x = pair[0];
+                pt.y = pair[1];
+                if (typeof pt.matrixTransform === 'function') {
+                  const mPt = pt.matrixTransform(nodeCTM);
+                  const sX = mPt.x - containerRect.left;
+                  const sY = mPt.y - containerRect.top;
+                  polyPoints.push({ x: sX, y: sY, index: idx });
+                  screenPts.push({ x: sX, y: sY });
+                }
+              }
+            });
+
+            const numSegments = isClosed ? screenPts.length : screenPts.length - 1;
+            for (let i = 0; i < numSegments; i++) {
+              const pA = screenPts[i];
+              const pB = screenPts[(i + 1) % screenPts.length];
+              if (pA && pB) {
+                polyMidpoints.push({
+                  x: (pA.x + pB.x) / 2,
+                  y: (pA.y + pB.y) / 2,
+                  index: i
+                });
+              }
+            }
+          }
+        }
+      }
 
       if (ids.length === 1 && (type === 'Line' || type === 'CAD::Shape::Line')) {
         isLine = true;
@@ -356,7 +450,10 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
         bottom: maxY - containerRect.top,
         isLine, p1, p2,
         isLeader, pAnchor, pLanding,
-        isDimension, pDim1, pDim2, pDimOffset
+        isDimension, pDim1, pDim2, pDimOffset,
+        isPolyline,
+        polyPoints,
+        polyMidpoints
       });
     } else {
       setBox(null);
@@ -441,7 +538,7 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
           )}
 
           {/* 8 Resize Handles (only for standard 2D shapes) */}
-          {!b().isLine && !b().isLeader && !b().isDimension && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
+          {!b().isLine && !b().isLeader && !b().isDimension && !b().isPolyline && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
             let hLeft = 0, hTop = 0;
             const cx = (b().left + b().right) / 2;
             const cy = (b().top + b().bottom) / 2;
@@ -566,6 +663,17 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
                 />
               )}
             </>
+          )}
+
+          {/* Polyline Vertex & Midpoint Handles */}
+          {b().isPolyline && b().polyPoints && b().polyPoints!.length > 0 && (
+            <PolylineGrips
+              points={b().polyPoints!}
+              midpoints={b().polyMidpoints || []}
+              onDragVertex={(e, idx) => handleDrag(e, `poly-vertex-${idx}`)}
+              onDragMidpoint={(e, idx) => handleDrag(e, `poly-midpoint-${idx}`)}
+              onDeleteVertex={handleDeleteVertex}
+            />
           )}
         </div>
       )}
