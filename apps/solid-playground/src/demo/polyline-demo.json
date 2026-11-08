@@ -1,0 +1,100 @@
+{
+  "type": "CAD::Detail",
+  "version": "1.0",
+  "scale": "1:1",
+  "parameters": {
+    "span": {
+      "type": "number",
+      "default": 14,
+      "description": "Building span width"
+    },
+    "roofPitch": {
+      "type": "number",
+      "default": 4,
+      "description": "Roof peak height"
+    }
+  },
+  "geometry": [
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "demo-title",
+      "x": 0,
+      "y": 14.5,
+      "text": "POLYLINE GEOMETRY PRIMITIVE DEMO",
+      "fontSize": 26,
+      "color": "auto"
+    },
+    {
+      "type": "CAD::Annotation::Text",
+      "componentId": "demo-subtitle",
+      "x": 0,
+      "y": 13.2,
+      "text": "Supports open paths, closed polygons with fill, expressions, and viewport integration.",
+      "fontSize": 14,
+      "color": "var(--app-text-muted, #94a3b8)"
+    },
+    {
+      "type": "CAD::Shape::Polyline",
+      "componentId": "top-cord",
+      "points": [
+        [-1.5, 6],
+        ["{parameters.span} / 2", "6 + {parameters.roofPitch}"],
+        ["{parameters.span} + 1.5", 6],
+        ["{parameters.span}", 6],
+        ["{parameters.span} / 2", "5.25 + {parameters.roofPitch}"],
+        [0, 6]
+      ],
+      "closed": true,
+      "fill": "rgba(59, 130, 246, 0.15)",
+      "color": "#2563eb",
+      "strokeWidth": 2
+    },
+    {
+      "type": "CAD::Shape::Polyline",
+      "componentId": "bottom-cord",
+      "points": [
+        [0, 6],
+        ["{parameters.span} / 2", 7.5],
+        ["{parameters.span}", 6]
+      ],
+      "closed": false,
+      "color": "#1d4ed8",
+      "strokeWidth": 1.5,
+      "strokeDasharray": "none"
+    },
+    {
+      "type": "CAD::Shape::Polyline",
+      "componentId": "grade-profile",
+      "points": [
+        [-3, 0],
+        [0, 0.4],
+        [7, 0.2],
+        [14, 0.6],
+        [18, 0]
+      ],
+      "closed": false,
+      "color": "#64748b",
+      "strokeWidth": 2.5,
+      "strokeDasharray": "none"
+    },
+    {
+      "type": "CAD::Annotation::Dimension",
+      "componentId": "span-dim",
+      "x1": 0,
+      "y1": 6,
+      "x2": 14,
+      "y2": 6,
+      "offset": 24,
+      "prefix": "SPAN: "
+    },
+    {
+      "type": "CAD::Annotation::Leader",
+      "componentId": "truss-note",
+      "x": 7,
+      "y": 10,
+      "dx": 3,
+      "dy": 2,
+      "text": "Parametric Roof Peak"
+    }
+  ]
+}
