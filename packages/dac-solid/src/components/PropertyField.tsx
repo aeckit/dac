@@ -1,6 +1,7 @@
 import { createEffect } from 'solid-js';
 import { evaluateExpression } from '@aeckit/dac-json-solver';
 import { inspectorStyles } from './inspectorStyles';
+import { PointsField } from './PointsField';
 
 export function PropertyField(props: {
   keyName: string;
@@ -11,6 +12,7 @@ export function PropertyField(props: {
 }) {
   const isColorKey = props.keyName === 'color' || props.keyName === 'fill';
   const isHatchKey = props.keyName === 'hatch';
+  const isPointsKey = props.keyName === 'points';
   const val = () => props.shape()?.[props.keyName];
   const isNum = () => typeof val() === 'number';
   const isBool = () => typeof val() === 'boolean';
@@ -35,7 +37,7 @@ export function PropertyField(props: {
 
   return (
     <>
-      <label style={inspectorStyles.label}>{props.keyName}</label>
+      {!isPointsKey && <label style={inspectorStyles.label}>{props.keyName}</label>}
       {isBool() ? (
         <input 
           type="checkbox" 
@@ -78,6 +80,12 @@ export function PropertyField(props: {
             style={{ ...inspectorStyles.input, flex: 1, "min-width": 0 }}
           />
         </div>
+      ) : isPointsKey ? (
+        <PointsField
+          points={() => Array.isArray(val()) ? val() : []}
+          currentId={props.currentId}
+          updateShape={props.updateShape}
+        />
       ) : (
         <>
           <input 

@@ -196,8 +196,12 @@ export function DacInspector() {
               ['x', 'y', 'dx', 'dy', 'shoulderLength', 'text', 'fontSize', 'color'].forEach(k => {
                 if (!rawKeys.includes(k)) rawKeys.push(k);
               });
+            } else if (t === 'Polyline') {
+              ['points', 'closed', 'fill', 'color', 'strokeWidth', 'strokeDasharray', 'rotation'].forEach(k => {
+                if (!rawKeys.includes(k)) rawKeys.push(k);
+              });
             }
-            return rawKeys.filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && k !== 'componentType' && typeof (s as any)[k] !== 'object');
+            return rawKeys.filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && k !== 'componentType' && (k === 'points' || typeof (s as any)[k] !== 'object'));
           };
 
           const resolvedParams = () => resolveDocumentParameters(doc());
