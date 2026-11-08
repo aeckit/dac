@@ -223,4 +223,93 @@ describe('@aeckit/dac-json-solver parametric math and layout engine', () => {
     expect(group.shapes[0].width).toBe(5.5);
     expect(group.shapes[0].height).toBe(1.5);
   });
+
+  it('solves a DetailDocument with a parametric Polyline', () => {
+    const doc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      parameters: {
+        span: { type: 'number', default: 12 },
+        rise: { type: 'number', default: 4 }
+      },
+      geometry: [
+        {
+          type: 'CAD::Shape::Polyline',
+          componentId: 'truss',
+          points: [
+            [0, 0],
+            ['{parameters.span} / 2', '{parameters.rise}'],
+            ['{parameters.span}', 0]
+          ],
+          closed: true,
+          fill: '#3b82f6'
+        }
+      ]
+    };
+
+    const layout = solveDetailDocument(doc);
+    expect(layout.groups.length).toBe(1);
+    const group = layout.groups[0];
+    expect(group.componentId).toBe('truss');
+    expect(group.warnings).toEqual([]);
+    expect(group.shapes.length).toBe(1);
+
+    const poly = group.shapes[0];
+    expect(poly.type).toBe('CAD::Shape::Polyline');
+    expect(poly.points).toEqual([
+      [0, 0],
+      [6, 4],
+      [12, 0]
+    ]);
+    expect(poly.closed).toBe(true);
+    expect(poly.fill).toBe('#3b82f6');
+  });
+
+  it('resolves child polylines inside constructs with translation and rotation', () => {
+    const constructDoc: ConstructDocument = {
+      type: 'CAD::Construct',
+      version: '1.0',
+      parameters: {
+        len: { type: 'number', default: 10 }
+      },
+      geometry: [
+        {
+          type: 'CAD::Shape::Polyline',
+          componentId: 'path',
+          points: [
+            [0, 0],
+            ['{parameters.len}', 0],
+            ['{parameters.len}', 5]
+          ],
+          closed: false
+        }
+      ]
+    };
+
+    const refShape: any = {
+      type: 'ConstructReference',
+      componentId: 'inst',
+      x: 5,
+      y: 10,
+      rotation: 90,
+      parameterOverrides: { len: 10 }
+    };
+
+    const resolved = resolveConstructGeometry(refShape, constructDoc);
+    expect(resolved.length).toBe(1);
+    expect(resolved[0].componentId).toBe('inst_path');
+
+    const pts = resolved[0].points;
+    expect(pts).toHaveLength(3);
+    // [0, 0] rotated 90 around (0,0) -> [0, 0] + (5, 10) = [5, 10]
+    expect(pts[0][0]).toBeCloseTo(5);
+    expect(pts[0][1]).toBeCloseTo(10);
+    // [10, 0] rotated 90 around (0,0) -> [0, 10] + (5, 10) = [5, 20]
+    expect(pts[1][0]).toBeCloseTo(5);
+    expect(pts[1][1]).toBeCloseTo(20);
+    // [10, 5] rotated 90 around (0,0) -> [-5, 10] + (5, 10) = [0, 20]
+    expect(pts[2][0]).toBeCloseTo(0);
+    expect(pts[2][1]).toBeCloseTo(20);
+  });
 });
