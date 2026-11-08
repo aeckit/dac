@@ -18,6 +18,8 @@
     "package": "turbo run package",
     "lint:dac": "node packages/cli/dist/cli.js check",
     "changeset": "changeset",
+    "check:changeset": "changeset status",
+    "verify": "npm run test && npm run build && npm run check:changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"
   },
