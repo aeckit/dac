@@ -57,6 +57,49 @@ describe('@aeckit/dac-json-builder mutation engine', () => {
     expect(dim.componentId).toBeDefined();
   });
 
+  it('adds open and closed polylines using shapes.addPolyline', () => {
+    const doc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: []
+    };
+
+    builder.setDocument(doc);
+    const poly1 = builder.shapes.addPolyline(
+      [
+        [0, 0],
+        [10, 5],
+        [20, 0]
+      ],
+      { color: '#ef4444', strokeWidth: 2 }
+    );
+
+    expect(poly1).toBeDefined();
+    expect(poly1.type).toBe('CAD::Shape::Polyline');
+    expect(poly1.componentId).toMatch(/^polyline_/);
+    expect(poly1.points).toHaveLength(3);
+    expect(poly1.closed).toBe(false);
+    expect(poly1.color).toBe('#ef4444');
+
+    const poly2 = builder.addPolyline(
+      [
+        [0, 0],
+        [5, 10],
+        [10, 0]
+      ],
+      { closed: true, fill: '#3b82f6' }
+    );
+
+    expect(poly2.closed).toBe(true);
+    expect(poly2.fill).toBe('#3b82f6');
+
+    const updated = builder.getDocument() as DetailDocument;
+    expect(updated.geometry.length).toBe(2);
+    expect((updated.geometry[0] as any).points).toEqual([[0, 0], [10, 5], [20, 0]]);
+    expect((updated.geometry[1] as any).closed).toBe(true);
+  });
+
   it('updates and deletes components', () => {
     const doc: DetailDocument = {
       type: 'CAD::Detail',
