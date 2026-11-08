@@ -29,6 +29,7 @@ export function useDac() {
       case 'Text': newShape = b.addText(options); break;
       case 'Leader': newShape = b.addLeader(options); break;
       case 'Dimension': newShape = b.addDimension(options); break;
+      case 'Polyline': newShape = b.addPolyline(options?.points || [[0, 0], [4, 0], [4, 2]], options); break;
       default:
         newShape = b.addShapeToTarget({ type, ...options });
         break;

@@ -25,6 +25,15 @@ export function DacToolbar() {
         <button style={buttonStyle} onClick={() => addShape('Line', { x2: 4, y2: 2 })} title="Line">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"></line></svg>
         </button>
+        <button style={buttonStyle} onClick={() => addShape('Polyline', { points: [[0, 0], [4, 0], [4, 2], [8, 2]], closed: false })} title="Polyline">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 17 9 7 15 15 21 9"></polyline>
+            <circle cx="3" cy="17" r="1.5"></circle>
+            <circle cx="9" cy="7" r="1.5"></circle>
+            <circle cx="15" cy="15" r="1.5"></circle>
+            <circle cx="21" cy="9" r="1.5"></circle>
+          </svg>
+        </button>
         <button style={buttonStyle} onClick={() => addShape('Circle', { cx: 2, cy: 2, r: 2 })} title="Circle">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>
         </button>
