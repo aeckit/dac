@@ -1,4 +1,4 @@
-import { VisualizerDocument, RectangleOptions, LineOptions, TextOptions, ImageOptions, ViewportOptions, LeaderOptions, DimensionOptions } from './types';
+import { VisualizerDocument, RectangleOptions, LineOptions, TextOptions, ImageOptions, ViewportOptions, LeaderOptions, DimensionOptions, PolylineOptions } from './types';
 import { ShapeOperations } from './operations/ShapeOperations';
 import { ViewportOperations } from './operations/ViewportOperations';
 import { ComponentOperations } from './operations/ComponentOperations';
@@ -79,7 +79,8 @@ export class JsonBuilder extends EventTarget {
     const isLine = shape.type === 'Line' || shape.type === 'CAD::Shape::Line';
     const isCircle = shape.type === 'Circle' || shape.type === 'CAD::Shape::Circle';
     const isDimension = shape.type === 'Dimension' || shape.type === 'CAD::Annotation::Dimension';
-    if (!isLine && !isCircle && !isDimension) {
+    const isPolyline = shape.type === 'Polyline' || shape.type === 'CAD::Shape::Polyline';
+    if (!isLine && !isCircle && !isDimension && !isPolyline) {
       if (shape.x === undefined) shape.x = defaultOffset;
       if (shape.y === undefined) shape.y = defaultOffset;
     } else if (isCircle) {
@@ -108,6 +109,7 @@ export class JsonBuilder extends EventTarget {
   public addLeader(options?: LeaderOptions): any { return this.shapes.addLeader(options); }
   public addDimension(options?: DimensionOptions): any { return this.shapes.addDimension(options); }
   public addImage(options?: ImageOptions): any { return this.shapes.addImage(options); }
+  public addPolyline(points: [number, number][], options?: PolylineOptions): any { return this.shapes.addPolyline(points, options); }
   public addViewport(options?: ViewportOptions): any { return this.viewports.addViewport(options); }
   public updateComponent(id: string, properties: Partial<any>, isTransient = false): void { return this.components.updateComponent(id, properties, isTransient); }
   public deleteComponent(id: string): void { return this.components.deleteComponent(id); }
