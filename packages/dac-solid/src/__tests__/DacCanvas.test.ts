@@ -378,4 +378,70 @@ describe('@aeckit/dac-solid DacCanvas unit tests', () => {
     dispose();
     container.remove();
   });
+
+  it('renders and supports polyline geometry in DacCanvas', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const doc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: [
+        {
+          type: 'CAD::Shape::Polyline',
+          componentId: 'my-poly',
+          points: [
+            [0, 0],
+            [10, 5],
+            [20, 0]
+          ],
+          closed: false
+        }
+      ]
+    };
+
+    let addPolylineFn: any;
+    function Helper() {
+      const { addShape } = useDac();
+      addPolylineFn = addShape;
+      return null;
+    }
+
+    const dispose = render(() =>
+      createComponent(DacProvider, {
+        doc,
+        get children() {
+          return [
+            createComponent(DacCanvas, {}),
+            createComponent(Helper, {})
+          ];
+        }
+      }), container
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Verify existing polyline rendered
+    const polyEl = container.querySelector('[data-component-id="my-poly"] polyline.cad-hit-area');
+    expect(polyEl).toBeDefined();
+    expect(polyEl?.getAttribute('points')).toBe('0,18 10,13 20,18');
+
+    // Add closed polyline using addShape('Polyline', ...)
+    addPolylineFn('Polyline', {
+      componentId: 'closed-poly',
+      points: [[0, 0], [5, 5], [10, 0]],
+      closed: true,
+      fill: '#ff0000'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const closedEl = container.querySelector('[data-component-id="closed-poly"] polygon:last-child');
+    expect(closedEl).toBeDefined();
+    expect(closedEl?.getAttribute('fill')).toBe('#ff0000');
+
+    dispose();
+    container.remove();
+  });
 });
