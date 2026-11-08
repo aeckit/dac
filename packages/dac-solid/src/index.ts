@@ -6,4 +6,6 @@ export { DocumentParametersInspector, ConstructReferenceInspector } from './comp
 export { DacToolbar } from './components/DacToolbar';
 export { DacZoomControls } from './components/DacZoomControls';
 export { SelectionGizmo, type SelectionGizmoProps } from './components/SelectionGizmo';
+export { PolylineGrips, type PolylineGripsProps } from './components/PolylineGrips';
+export { PointsField, type PointsFieldProps } from './components/PointsField';
 export { useDac } from './hooks/useDac';
