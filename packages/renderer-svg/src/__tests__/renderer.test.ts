@@ -7,6 +7,7 @@ import {
   drawCircle,
   drawLeader,
   drawDimension,
+  drawPolyline,
   getDefs
 } from '../index';
 import type { SolvedDetailLayout, SolvedGroup } from '@aeckit/dac-json-solver';
@@ -345,5 +346,67 @@ describe('@aeckit/dac-renderer-svg pure SVG generation engine', () => {
   it('defines arrowhead marker with refX="10" so the tip aligns flush with endpoints', () => {
     const defs = getDefs();
     expect(defs).toContain('<marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5"');
+  });
+
+  it('draws an open SVG polyline with Cartesian +Y inversion and hit area', () => {
+    const shape = {
+      type: 'CAD::Shape::Polyline',
+      points: [
+        [0, 0],
+        [10, 5],
+        [20, 0]
+      ],
+      color: '#3b82f6',
+      strokeWidth: 2
+    };
+
+    const svg = drawPolyline(shape, 1.0, 18);
+    // Cartesian (0, 0) -> (0, 18), (10, 5) -> (10, 13), (20, 0) -> (20, 18)
+    expect(svg).toContain('<polyline points="0,18 10,13 20,18"');
+    expect(svg).toContain('class="cad-hit-area"');
+    expect(svg).toContain('stroke="#3b82f6"');
+    expect(svg).toContain('fill="none"');
+    expect(svg).toContain('stroke-linecap="round"');
+    expect(svg).toContain('stroke-linejoin="round"');
+  });
+
+  it('draws a closed SVG polyline as a polygon with fill and dasharray', () => {
+    const shape = {
+      type: 'Polyline',
+      points: [
+        [0, 0],
+        [10, 0],
+        [10, 10],
+        [0, 10]
+      ],
+      closed: true,
+      fill: 'rgba(59, 130, 246, 0.5)',
+      strokeDasharray: '4 2',
+      color: '#1d4ed8'
+    };
+
+    const svg = drawPolyline(shape, 1.0, 18);
+    expect(svg).toContain('<polygon points="0,18 10,18 10,8 0,8"');
+    expect(svg).toContain('fill="rgba(59, 130, 246, 0.5)"');
+    expect(svg).toContain('stroke="#1d4ed8"');
+    expect(svg).toContain('stroke-dasharray="4 2"');
+    expect(svg).toContain('stroke-linecap="round"');
+    expect(svg).toContain('stroke-linejoin="round"');
+    expect(svg).toContain('<polygon points="0,18 10,18 10,8 0,8" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />');
+  });
+
+  it('supports rotation transform on polyline', () => {
+    const shape = {
+      type: 'CAD::Shape::Polyline',
+      points: [
+        [2, 3],
+        [8, 3]
+      ],
+      rotation: 30
+    };
+
+    const svg = drawPolyline(shape, 1.0, 18);
+    // Origin is points[0] = (2, 18 - 3) = (2, 15)
+    expect(svg).toContain('<g transform="rotate(-30, 2, 15)">');
   });
 });
