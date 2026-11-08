@@ -1,5 +1,6 @@
 import type {
   GeometryPrimitive,
+  PolylinePrimitive,
   DetailDocument,
   ConstructDocument,
   TitleBlockDocument,
@@ -12,6 +13,7 @@ import type {
 
 export type {
   GeometryPrimitive,
+  PolylinePrimitive,
   DetailDocument,
   ConstructDocument,
   TitleBlockDocument,
@@ -22,7 +24,22 @@ export type {
   ParameterDefinition
 };
 
-export interface SolvedPrimitive {
+export interface SolvedPolyline {
+  type: 'CAD::Shape::Polyline' | 'Polyline' | string;
+  componentId?: string;
+  componentType?: string;
+  points: [number, number][];
+  closed?: boolean;
+  fill?: string;
+  color?: string;
+  strokeWidth?: number | string;
+  strokeDasharray?: string;
+  rotation?: number | string;
+  visible?: boolean;
+  [key: string]: any;
+}
+
+export interface BaseSolvedPrimitive {
   type: string;
   x?: number;
   y?: number;
@@ -38,6 +55,8 @@ export interface SolvedPrimitive {
   shoulderLength?: number;
   width?: number;
   height?: number;
+  points?: [number, number][];
+  closed?: boolean;
   text?: string;
   textOverride?: string;
   prefix?: string;
@@ -64,6 +83,8 @@ export interface SolvedPrimitive {
   rotation?: number | string;
   [key: string]: any;
 }
+
+export type SolvedPrimitive = BaseSolvedPrimitive | SolvedPolyline;
 
 export interface DiagnosticWarning {
   componentId?: string;

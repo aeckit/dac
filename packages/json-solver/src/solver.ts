@@ -15,7 +15,7 @@ import { resolveScaleMultiplier } from './scale';
 import { resolveConstructGeometry, resolveDocumentParameters } from './constructs';
 import { getPaperDimensions } from './paper';
 import { 
-  RectangleSchema, LineSchema, CircleSchema, TextSchema, 
+  RectangleSchema, LineSchema, CircleSchema, PolylineSchema, TextSchema, 
   DimensionSchema, LeaderSchema, ImageSchema, ConstructReferenceSchema 
 } from '@aeckit/dac-schema';
 
@@ -115,6 +115,7 @@ function validateSolvedPrimitive(
     case 'Rectangle': validationResult = RectangleSchema.safeParse(solved); break;
     case 'Line': validationResult = LineSchema.safeParse(solved); break;
     case 'Circle': validationResult = CircleSchema.safeParse(solved); break;
+    case 'Polyline': validationResult = PolylineSchema.safeParse(solved); break;
     case 'Text': validationResult = TextSchema.safeParse(solved); break;
     case 'Dimension': validationResult = DimensionSchema.safeParse(solved); break;
     case 'Leader': validationResult = LeaderSchema.safeParse(solved); break;
@@ -150,6 +151,15 @@ function evaluatePrimitive(
 
   if (s.x !== undefined) result.x = evaluateExpression(s.x, params);
   if (s.y !== undefined) result.y = evaluateExpression(s.y, params);
+  if (Array.isArray(s.points)) {
+    result.points = s.points.map((pt: any) => [
+      evaluateExpression(pt[0], params),
+      evaluateExpression(pt[1], params)
+    ]);
+  }
+  if (s.closed !== undefined) {
+    result.closed = typeof s.closed === 'boolean' ? s.closed : evaluateExpression(s.closed, params);
+  }
   if (s.x1 !== undefined) result.x1 = evaluateExpression(s.x1, params);
   if (s.y1 !== undefined) result.y1 = evaluateExpression(s.y1, params);
   if (s.x2 !== undefined) result.x2 = evaluateExpression(s.x2, params);
