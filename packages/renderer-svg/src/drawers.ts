@@ -36,6 +36,34 @@ export function drawCircle(shape: SolvedPrimitive, scale: number, canvasHeight =
   return `${hitTarget}\n${visibleShape}`;
 }
 
+// SVG Polyline / Polygon Drawer (Cartesian +Y = UP)
+export function drawPolyline(shape: SolvedPrimitive, scale: number, canvasHeight = 18): string {
+  const points = (shape.points || []) as [number, number][];
+  const svgCoords = points.map(([x, y]) => `${Number(x)},${canvasHeight - Number(y)}`);
+  const pointsStr = svgCoords.join(' ');
+  const strokeColor = shape.color || 'var(--cad-stroke)';
+  const strokeWidth = ((Number(shape.strokeWidth) || 2) / 72) / scale;
+  const dashAttr = shape.strokeDasharray ? ` stroke-dasharray="${shape.strokeDasharray}"` : '';
+  const fillColor = shape.fill || 'none';
+  const tagName = shape.closed ? 'polygon' : 'polyline';
+
+  const rot = Number(shape.rotation || 0);
+  let transform = '';
+  if (rot && points.length > 0) {
+    const originX = Number(points[0][0]);
+    const originY = canvasHeight - Number(points[0][1]);
+    transform = ` transform="rotate(${-rot}, ${originX}, ${originY})"`;
+  }
+
+  const hitTarget = `<${tagName} points="${pointsStr}" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />`;
+  const visibleShape = `<${tagName} points="${pointsStr}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}"${dashAttr} stroke-linecap="round" stroke-linejoin="round" />`;
+
+  if (transform) {
+    return `<g${transform}>\n${hitTarget}\n${visibleShape}\n</g>`;
+  }
+  return `${hitTarget}\n${visibleShape}`;
+}
+
 // SVG Rectangle and Hatching Drawer (Cartesian +Y = UP)
 export function drawRectangle(shape: SolvedPrimitive, scale: number, canvasHeight = 18): string {
   const x = Number(shape.x ?? 0);
@@ -343,6 +371,7 @@ export const L1_REGISTRY: Record<string, ShapeDrawer> = {
   "CAD::Shape::Line": drawLine,
   "CAD::Shape::Circle": drawCircle,
   "CAD::Shape::Rectangle": drawRectangle,
+  "CAD::Shape::Polyline": drawPolyline,
   "CAD::Annotation::Dimension": drawDimension,
   "CAD::Annotation::Text": drawText,
   "CAD::Annotation::Leader": drawLeader,
@@ -352,6 +381,7 @@ export const L1_REGISTRY: Record<string, ShapeDrawer> = {
   "Line": drawLine,
   "Circle": drawCircle,
   "Rectangle": drawRectangle,
+  "Polyline": drawPolyline,
   "Dimension": drawDimension,
   "Text": drawText,
   "Leader": drawLeader,
