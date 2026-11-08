@@ -1,5 +1,5 @@
 import { JsonBuilder } from '../JsonBuilder';
-import { RectangleOptions, LineOptions, TextOptions, ImageOptions, CircleOptions, LeaderOptions, DimensionOptions } from '../types';
+import { RectangleOptions, LineOptions, TextOptions, ImageOptions, CircleOptions, LeaderOptions, DimensionOptions, PolylineOptions } from '../types';
 
 export class ShapeOperations {
   constructor(private engine: JsonBuilder) {}
@@ -92,6 +92,20 @@ export class ShapeOperations {
     const shape = {
       type: 'CAD::Shape::Image',
       componentId: this.engine.generateId('img'),
+      ...options
+    };
+    return this.engine.addShapeToTarget(shape);
+  }
+
+  public addPolyline(points: [number, number][], options?: PolylineOptions): any {
+    const shape = {
+      type: 'CAD::Shape::Polyline',
+      componentId: this.engine.generateId('polyline'),
+      points,
+      closed: false,
+      color: 'auto',
+      strokeWidth: 1,
+      strokeDasharray: 'none',
       ...options
     };
     return this.engine.addShapeToTarget(shape);

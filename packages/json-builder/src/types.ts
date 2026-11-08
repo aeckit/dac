@@ -78,6 +78,15 @@ export interface CircleOptions extends ShapeOptions {
   r?: number;
 }
 
+export interface PolylineOptions extends ShapeOptions {
+  closed?: boolean;
+  strokeWidth?: number | string;
+  strokeDasharray?: string;
+  color?: string;
+  rotation?: number | string;
+  visible?: any;
+}
+
 export interface ImageOptions extends ShapeOptions {
   url?: string;
   width?: number;
