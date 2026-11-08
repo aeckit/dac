@@ -48,9 +48,7 @@ export function renderThumbnailSvg(
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="${vbX} ${vbY} ${vbW} ${vbH}" class="w-full h-full pointer-events-none select-none">
   ${getDefs()}
-  <g transform="scale(1, -1)">
-    ${geometries}
-  </g>
+  ${geometries}
   ${getStyles(resolvedTheme)}
 </svg>
   `.trim();

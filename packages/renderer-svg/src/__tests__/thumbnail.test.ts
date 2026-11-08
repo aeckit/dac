@@ -46,6 +46,8 @@ describe('@aeckit/dac-renderer-svg bounds and thumbnail tests', () => {
     expect(svg).toContain('<svg xmlns="http://www.w3.org/2000/svg"');
     expect(svg).toContain('viewBox=');
     expect(svg).toContain('data-component-id="stud"');
+    // Ensure geometries are not double-inverted with scale(1, -1)
+    expect(svg).not.toContain('transform="scale(1, -1)"');
   });
 
   it('handles empty or malformed geometry gracefully', () => {
