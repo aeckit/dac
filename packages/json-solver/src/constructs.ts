@@ -126,7 +126,23 @@ export function resolveConstructGeometry(
     if (cloned.r !== undefined) cloned.r = evaluateExpression(cloned.r, resolvedParams);
     if (cloned.fontSize !== undefined) cloned.fontSize = evaluateExpression(cloned.fontSize, resolvedParams);
     
-    if (refRot !== 0) {
+    if (Array.isArray(cloned.points)) {
+      cloned.points = cloned.points.map((pt: any) => {
+        const valX = evaluateExpression(pt[0], resolvedParams);
+        const valY = evaluateExpression(pt[1], resolvedParams);
+        if (refRot !== 0) {
+          const rad = refRot * Math.PI / 180;
+          const rx = valX * Math.cos(rad) - valY * Math.sin(rad);
+          const ry = valX * Math.sin(rad) + valY * Math.cos(rad);
+          return [rx + refX, ry + refY];
+        } else {
+          return [valX + refX, valY + refY];
+        }
+      });
+      if (cloned.rotation !== undefined) {
+        cloned.rotation = evaluateExpression(cloned.rotation, resolvedParams);
+      }
+    } else if (refRot !== 0) {
       cloned.rotation = (evaluateExpression(cloned.rotation || 0, resolvedParams)) + refRot;
     }
 
