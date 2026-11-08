@@ -88,6 +88,13 @@ export const ImageSchema = BaseShapeSchema.extend({
   lockAspectRatio: z.boolean().optional(),
 }).strict();
 
+export const PolylineSchema = BaseShapeSchema.extend({
+  type: z.union([z.literal('CAD::Shape::Polyline'), z.literal('Polyline')]),
+  points: z.array(z.tuple([z.union([z.number(), z.string()]), z.union([z.number(), z.string()])])).min(2),
+  closed: z.boolean().default(false).optional(),
+  fill: z.string().optional(),
+}).strict();
+
 export const ConstructReferenceSchema = BaseShapeSchema.extend({
   type: z.literal('ConstructReference'),
   x: z.number().default(0),
@@ -100,10 +107,13 @@ const AnyOtherSchema = z.object({
   type: z.string(),
 }).passthrough();
 
+export type PolylinePrimitive = z.infer<typeof PolylineSchema>;
+
 export type GeometryPrimitive = 
   | z.infer<typeof RectangleSchema>
   | z.infer<typeof LineSchema>
   | z.infer<typeof CircleSchema>
+  | z.infer<typeof PolylineSchema>
   | z.infer<typeof TextSchema>
   | z.infer<typeof DimensionSchema>
   | z.infer<typeof LeaderSchema>
@@ -115,6 +125,7 @@ export const GeometryPrimitiveSchema: z.ZodType<GeometryPrimitive> = z.union([
   RectangleSchema,
   LineSchema,
   CircleSchema,
+  PolylineSchema,
   TextSchema,
   DimensionSchema,
   LeaderSchema,
