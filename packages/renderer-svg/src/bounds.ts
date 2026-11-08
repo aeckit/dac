@@ -47,6 +47,14 @@ export function computeBoundingBox(groups: SolvedGroup[]): BoundingBox {
         const r = shape.radius || shape.r || 1;
         include(shape.cx - r, shape.cy - r);
         include(shape.cx + r, shape.cy + r);
+      } else if (shape.type === 'CAD::Shape::Polyline' || shape.type === 'Polyline') {
+        if (Array.isArray(shape.points)) {
+          for (const pt of shape.points) {
+            if (Array.isArray(pt) && pt.length >= 2) {
+              include(Number(pt[0]), Number(pt[1]));
+            }
+          }
+        }
       } else if (shape.type === 'CAD::Annotation::Text' || shape.type === 'Text') {
         include(shape.x, shape.y);
       } else if (shape.type === 'CAD::Annotation::Leader' || shape.type === 'Leader') {
