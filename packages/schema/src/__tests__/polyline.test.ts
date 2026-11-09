@@ -135,4 +135,42 @@ describe('PolylineSchema validation', () => {
     expect(validated.geometry).toHaveLength(1);
     expect(validated.geometry[0].type).toBe('CAD::Shape::Polyline');
   });
+
+  it('validates numeric and expression cornerRadius', () => {
+    const numericCorner = {
+      type: 'CAD::Shape::Polyline',
+      points: [
+        [0, 0],
+        [10, 0],
+        [10, 10]
+      ],
+      cornerRadius: 1.5
+    };
+    const parsed1 = PolylineSchema.parse(numericCorner);
+    expect(parsed1.cornerRadius).toBe(1.5);
+
+    const exprCorner = {
+      type: 'Polyline',
+      points: [
+        [0, 0],
+        [10, 0],
+        [10, 10]
+      ],
+      cornerRadius: '{parameters.rebarSize.bendRadius}'
+    };
+    const parsed2 = PolylineSchema.parse(exprCorner);
+    expect(parsed2.cornerRadius).toBe('{parameters.rebarSize.bendRadius}');
+  });
+
+  it('rejects invalid cornerRadius types', () => {
+    const invalidCorner = {
+      type: 'CAD::Shape::Polyline',
+      points: [
+        [0, 0],
+        [10, 0]
+      ],
+      cornerRadius: true as any
+    };
+    expect(() => PolylineSchema.parse(invalidCorner)).toThrow();
+  });
 });
