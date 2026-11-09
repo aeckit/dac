@@ -80,6 +80,7 @@ export interface CircleOptions extends ShapeOptions {
 
 export interface PolylineOptions extends ShapeOptions {
   closed?: boolean;
+  cornerRadius?: number | string;
   strokeWidth?: number | string;
   strokeDasharray?: string;
   color?: string;
