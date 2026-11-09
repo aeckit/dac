@@ -92,6 +92,7 @@ export const PolylineSchema = BaseShapeSchema.extend({
   type: z.union([z.literal('CAD::Shape::Polyline'), z.literal('Polyline')]),
   points: z.array(z.tuple([z.union([z.number(), z.string()]), z.union([z.number(), z.string()])])).min(2),
   closed: z.boolean().default(false).optional(),
+  cornerRadius: z.union([z.number(), z.string()]).optional(),
   fill: z.string().optional(),
   hatch: z.string().optional(),
 }).strict();
