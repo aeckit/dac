@@ -85,6 +85,7 @@ export interface PolylineOptions extends ShapeOptions {
   color?: string;
   rotation?: number | string;
   visible?: any;
+  hatch?: string;
 }
 
 export interface ImageOptions extends ShapeOptions {
