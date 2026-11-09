@@ -450,4 +450,121 @@ describe('@aeckit/dac-renderer-svg pure SVG generation engine', () => {
     expect(svg).not.toContain('<pattern');
     expect(svg).toContain('fill="none"');
   });
+
+  describe('cornerRadius (fillet) support', () => {
+    it('maintains backwards compatibility when cornerRadius is 0 or negative', () => {
+      const openZero = {
+        type: 'CAD::Shape::Polyline',
+        points: [[0, 0], [10, 0], [10, 10]],
+        cornerRadius: 0
+      };
+      const openSvg = drawPolyline(openZero, 1.0, 18);
+      expect(openSvg).toContain('<polyline');
+      expect(openSvg).not.toContain('<path');
+
+      const closedNeg = {
+        type: 'CAD::Shape::Polyline',
+        points: [[0, 0], [10, 0], [10, 10], [0, 10]],
+        closed: true,
+        cornerRadius: -1
+      };
+      const closedSvg = drawPolyline(closedNeg, 1.0, 18);
+      expect(closedSvg).toContain('<polygon');
+      expect(closedSvg).not.toContain('<path');
+    });
+
+    it('renders an open polyline with 90-degree fillet as an SVG path with circular arc', () => {
+      // Cartesian: (0, 0) -> (0, 10) -> (10, 10), canvasHeight = 18
+      // SVG: (0, 18) -> (0, 8) -> (10, 8), corner at (0, 8), r = 2
+      // Tangent points: A = (0, 10), B = (2, 8)
+      const shape = {
+        type: 'CAD::Shape::Polyline',
+        points: [
+          [0, 0],
+          [0, 10],
+          [10, 10]
+        ],
+        cornerRadius: 2,
+        color: '#ff0000',
+        strokeWidth: 3
+      };
+
+      const svg = drawPolyline(shape, 1.0, 18);
+      expect(svg).toContain('<path d="M 0 18 L 0 10 A 2 2 0 0 1 2 8 L 10 8"');
+      expect(svg).toContain('class="cad-hit-area"');
+      expect(svg).toContain('stroke="#ff0000"');
+      expect(svg).toContain('stroke-linecap="round"');
+      expect(svg).toContain('stroke-linejoin="round"');
+    });
+
+    it('renders a closed polyline (stirrup / rectangle) with all 4 corners filleted including wrap-around', () => {
+      // Cartesian: (0, 0) -> (10, 0) -> (10, 10) -> (0, 10), canvasHeight = 18
+      // SVG: (0, 18) -> (10, 18) -> (10, 8) -> (0, 8)
+      // Radius = 2
+      const shape = {
+        type: 'CAD::Shape::Polyline',
+        points: [
+          [0, 0],
+          [10, 0],
+          [10, 10],
+          [0, 10]
+        ],
+        closed: true,
+        cornerRadius: 2,
+        fill: 'rgba(0, 255, 0, 0.2)'
+      };
+
+      const svg = drawPolyline(shape, 1.0, 18);
+      // Path must have 4 arcs and end with Z
+      const pathD = svg.match(/d="([^"]+)"/)?.[1];
+      expect(pathD).toBeDefined();
+      const arcMatches = pathD!.match(/ A 2 2 0 0 \d /g);
+      expect(arcMatches).toHaveLength(4);
+      expect(svg).toContain(' Z"');
+      expect(svg).toContain('fill="rgba(0, 255, 0, 0.2)"');
+      // Hit target and visible path share the exact same path string
+      expect(svg).toContain(`<path d="${pathD}" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />`);
+    });
+
+    it('clamps corner radius on short legs to half the adjacent segment length', () => {
+      // Short leg of length 2 between (0, 10) and (2, 10)
+      // Requested radius 5 must be clamped to half of 2 = 1
+      const shape = {
+        type: 'CAD::Shape::Polyline',
+        points: [
+          [0, 0],
+          [0, 10],
+          [2, 10],
+          [2, 20]
+        ],
+        cornerRadius: 5
+      };
+
+      const svg = drawPolyline(shape, 1.0, 18);
+      expect(svg).toContain('<path');
+      // Clamped radius should be 1
+      expect(svg).toContain('A 1 1 0 0');
+    });
+
+    it('handles collinear points without producing invalid arcs', () => {
+      const shape = {
+        type: 'CAD::Shape::Polyline',
+        points: [
+          [0, 0],
+          [5, 0],
+          [10, 0],
+          [10, 10]
+        ],
+        cornerRadius: 2
+      };
+
+      const svg = drawPolyline(shape, 1.0, 18);
+      expect(svg).toContain('<path');
+      // Only the corner at (10, 0) is non-collinear and should have an arc
+      const pathD = svg.match(/d="([^"]+)"/)?.[1];
+      expect(pathD).toBeDefined();
+      const arcMatches = pathD!.match(/ A 2 2 0 0 \d /g);
+      expect(arcMatches).toHaveLength(1);
+    });
+  });
 });
