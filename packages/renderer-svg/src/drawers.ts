@@ -1,4 +1,5 @@
 import type { SolvedPrimitive } from '@aeckit/dac-json-solver';
+import { computeFilletedPolylinePath } from './polylinePath';
 
 export type ShapeDrawer = (
   shape: SolvedPrimitive,
@@ -39,13 +40,11 @@ export function drawCircle(shape: SolvedPrimitive, scale: number, canvasHeight =
 // SVG Polyline / Polygon Drawer (Cartesian +Y = UP)
 export function drawPolyline(shape: SolvedPrimitive, scale: number, canvasHeight = 18): string {
   const points = (shape.points || []) as [number, number][];
-  const svgCoords = points.map(([x, y]) => `${Number(x)},${canvasHeight - Number(y)}`);
-  const pointsStr = svgCoords.join(' ');
   const strokeColor = shape.color || 'var(--cad-stroke)';
   const strokeWidth = ((Number(shape.strokeWidth) || 2) / 72) / scale;
   const dashAttr = shape.strokeDasharray ? ` stroke-dasharray="${shape.strokeDasharray}"` : '';
   const isClosed = Boolean(shape.closed);
-  const tagName = isClosed ? 'polygon' : 'polyline';
+  const cornerRadius = Number(shape.cornerRadius || 0);
 
   let fillStr = shape.fill ? `fill="${shape.fill}"` : 'fill="none"';
   let extraGraphics = '';
@@ -64,8 +63,20 @@ export function drawPolyline(shape: SolvedPrimitive, scale: number, canvasHeight
     transform = ` transform="rotate(${-rot}, ${originX}, ${originY})"`;
   }
 
-  const hitTarget = `<${tagName} points="${pointsStr}" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />`;
-  const visibleShape = `<${tagName} points="${pointsStr}" ${fillStr} stroke="${strokeColor}" stroke-width="${strokeWidth}"${dashAttr} stroke-linecap="round" stroke-linejoin="round" />`;
+  let hitTarget = '';
+  let visibleShape = '';
+
+  if (cornerRadius > 0 && points.length >= 2) {
+    const pathD = computeFilletedPolylinePath(points, cornerRadius, isClosed, canvasHeight);
+    hitTarget = `<path d="${pathD}" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />`;
+    visibleShape = `<path d="${pathD}" ${fillStr} stroke="${strokeColor}" stroke-width="${strokeWidth}"${dashAttr} stroke-linecap="round" stroke-linejoin="round" />`;
+  } else {
+    const tagName = isClosed ? 'polygon' : 'polyline';
+    const svgCoords = points.map(([x, y]) => `${Number(x)},${canvasHeight - Number(y)}`);
+    const pointsStr = svgCoords.join(' ');
+    hitTarget = `<${tagName} points="${pointsStr}" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />`;
+    visibleShape = `<${tagName} points="${pointsStr}" ${fillStr} stroke="${strokeColor}" stroke-width="${strokeWidth}"${dashAttr} stroke-linecap="round" stroke-linejoin="round" />`;
+  }
 
   const content = extraGraphics
     ? `${hitTarget}\n${visibleShape}\n${extraGraphics}`

@@ -5,3 +5,4 @@ export * from './renderer';
 export * from './theme';
 export * from './bounds';
 export * from './thumbnail';
+export * from './polylinePath';
