@@ -266,6 +266,42 @@ describe('@aeckit/dac-json-solver parametric math and layout engine', () => {
     expect(poly.fill).toBe('#3b82f6');
   });
 
+  it('solves a DetailDocument with a parametric cornerRadius on Polyline', () => {
+    const doc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      parameters: {
+        rebarSize: {
+          type: 'select',
+          default: '#4',
+          options: [
+            { label: '#4', value: '#4', variables: { bendRadius: 1.5 } },
+            { label: '#5', value: '#5', variables: { bendRadius: 2.0 } }
+          ]
+        }
+      },
+      geometry: [
+        {
+          type: 'CAD::Shape::Polyline',
+          componentId: 'stirrup',
+          points: [
+            [0, 0],
+            [10, 0],
+            [10, 10],
+            [0, 10]
+          ],
+          closed: true,
+          cornerRadius: '{parameters.rebarSize.bendRadius}'
+        }
+      ]
+    };
+
+    const layout = solveDetailDocument(doc);
+    expect(layout.groups.length).toBe(1);
+    expect(layout.groups[0].shapes[0].cornerRadius).toBe(1.5);
+  });
+
   it('resolves child polylines inside constructs with translation and rotation', () => {
     const constructDoc: ConstructDocument = {
       type: 'CAD::Construct',
