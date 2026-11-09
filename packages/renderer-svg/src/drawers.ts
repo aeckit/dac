@@ -46,14 +46,7 @@ export function drawPolyline(shape: SolvedPrimitive, scale: number, canvasHeight
   const isClosed = Boolean(shape.closed);
   const cornerRadius = Number(shape.cornerRadius || 0);
 
-  let fillStr = shape.fill ? `fill="${shape.fill}"` : 'fill="none"';
-  let extraGraphics = '';
-
-  if (isClosed && shape.hatch === 'Concrete') {
-    const hatchId = `concrete-hatch-${shape.componentId || Math.random().toString(36).substring(2, 9)}`;
-    fillStr = `fill="url(#${hatchId})"`;
-    extraGraphics = `<pattern id="${hatchId}" href="#concrete-hatch" patternTransform="scale(${1 / scale})" />`;
-  }
+  const fillStr = shape.fill ? `fill="${shape.fill}"` : 'fill="none"';
 
   const rot = Number(shape.rotation || 0);
   let transform = '';
@@ -78,9 +71,7 @@ export function drawPolyline(shape: SolvedPrimitive, scale: number, canvasHeight
     visibleShape = `<${tagName} points="${pointsStr}" ${fillStr} stroke="${strokeColor}" stroke-width="${strokeWidth}"${dashAttr} stroke-linecap="round" stroke-linejoin="round" />`;
   }
 
-  const content = extraGraphics
-    ? `${hitTarget}\n${visibleShape}\n${extraGraphics}`
-    : `${hitTarget}\n${visibleShape}`;
+  const content = `${hitTarget}\n${visibleShape}`;
 
   if (transform) {
     return `<g${transform}>\n${content}\n</g>`;
@@ -100,11 +91,7 @@ export function drawRectangle(shape: SolvedPrimitive, scale: number, canvasHeigh
   let fillStr = 'fill="none"';
   let extraGraphics = '';
 
-  if (hatch === 'Concrete') {
-    const hatchId = `concrete-hatch-${shape.componentId || Math.random().toString(36).substring(2, 9)}`;
-    fillStr = `fill="url(#${hatchId})"`;
-    extraGraphics = `<pattern id="${hatchId}" href="#concrete-hatch" patternTransform="scale(${1 / scale})" />`;
-  } else if (hatch === 'TimberCross') {
+  if (hatch === 'TimberCross') {
     fillStr = shape.fill && shape.fill !== 'transparent' ? `fill="${shape.fill}"` : 'fill="none"';
     extraGraphics = `
       <line x1="${x}" y1="${canvasHeight - rawY}" x2="${x + w}" y2="${canvasHeight - (rawY + h)}" class="cad-hatch" stroke-width="${(1.5 / 72) / scale}" />
