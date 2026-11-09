@@ -95,6 +95,25 @@ describe('PolylineSchema validation', () => {
     expect(() => PolylineSchema.parse(nonNumericOrString)).toThrow();
   });
 
+  it('validates a polyline with hatch property', () => {
+    const raw = {
+      type: 'CAD::Shape::Polyline',
+      componentId: 'poly-hatch',
+      points: [
+        [0, 0],
+        [10, 0],
+        [10, 10],
+        [0, 10]
+      ],
+      closed: true,
+      hatch: 'Concrete'
+    };
+
+    const parsed = PolylineSchema.parse(raw);
+    expect(parsed.hatch).toBe('Concrete');
+    expect(parsed.closed).toBe(true);
+  });
+
   it('validates polyline inside DetailDocument through validateDetailDocument', () => {
     const doc = {
       type: 'CAD::Detail',

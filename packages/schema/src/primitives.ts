@@ -93,6 +93,7 @@ export const PolylineSchema = BaseShapeSchema.extend({
   points: z.array(z.tuple([z.union([z.number(), z.string()]), z.union([z.number(), z.string()])])).min(2),
   closed: z.boolean().default(false).optional(),
   fill: z.string().optional(),
+  hatch: z.string().optional(),
 }).strict();
 
 export const ConstructReferenceSchema = BaseShapeSchema.extend({
