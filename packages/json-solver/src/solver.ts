@@ -160,6 +160,9 @@ function evaluatePrimitive(
   if (s.closed !== undefined) {
     result.closed = typeof s.closed === 'boolean' ? s.closed : evaluateExpression(s.closed, params);
   }
+  if (s.cornerRadius !== undefined) {
+    result.cornerRadius = evaluateExpression(s.cornerRadius, params);
+  }
   if (s.x1 !== undefined) result.x1 = evaluateExpression(s.x1, params);
   if (s.y1 !== undefined) result.y1 = evaluateExpression(s.y1, params);
   if (s.x2 !== undefined) result.x2 = evaluateExpression(s.x2, params);

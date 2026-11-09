@@ -30,6 +30,7 @@ export interface SolvedPolyline {
   componentType?: string;
   points: [number, number][];
   closed?: boolean;
+  cornerRadius?: number;
   fill?: string;
   hatch?: string;
   color?: string;
@@ -58,6 +59,7 @@ export interface BaseSolvedPrimitive {
   height?: number;
   points?: [number, number][];
   closed?: boolean;
+  cornerRadius?: number;
   text?: string;
   textOverride?: string;
   prefix?: string;
