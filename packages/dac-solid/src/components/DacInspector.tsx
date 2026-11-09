@@ -197,7 +197,7 @@ export function DacInspector() {
                 if (!rawKeys.includes(k)) rawKeys.push(k);
               });
             } else if (t === 'Polyline') {
-              ['points', 'closed', 'cornerRadius', 'fill', 'hatch', 'color', 'strokeWidth', 'strokeDasharray', 'rotation'].forEach(k => {
+              ['points', 'closed', 'cornerRadius', 'fill', 'color', 'strokeWidth', 'strokeDasharray', 'rotation'].forEach(k => {
                 if (!rawKeys.includes(k)) rawKeys.push(k);
               });
             }

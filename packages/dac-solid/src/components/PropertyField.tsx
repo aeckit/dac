@@ -61,7 +61,6 @@ export function PropertyField(props: {
           style={{ ...inspectorStyles.input, "margin-bottom": '12px' }}
         >
           <option value="">None</option>
-          <option value="Concrete">Concrete</option>
           <option value="TimberCross">TimberCross</option>
         </select>
       ) : isColorKey ? (
