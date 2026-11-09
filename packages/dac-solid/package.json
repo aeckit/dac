@@ -1,6 +1,6 @@
 {
   "name": "@aeckit/dac-solid",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SolidJS UI components for Drawing-as-Code",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -22,10 +22,10 @@
     "solid-js": "^1.8.0"
   },
   "dependencies": {
-    "@aeckit/dac-json-builder": "^0.2.0",
-    "@aeckit/dac-json-solver": "^0.2.0",
-    "@aeckit/dac-renderer-svg": "^0.2.0",
-    "@aeckit/dac-schema": "^0.3.0",
+    "@aeckit/dac-json-builder": "^0.3.0",
+    "@aeckit/dac-json-solver": "^0.3.0",
+    "@aeckit/dac-renderer-svg": "^0.3.0",
+    "@aeckit/dac-schema": "^0.4.0",
     "lucide-solid": "^0.378.0"
   },
   "devDependencies": {

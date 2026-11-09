@@ -1,5 +1,11 @@
 # @aeckit/dac-schema
 
+## 0.4.0
+
+### Minor Changes
+
+- 527e8bd: Add parametric `cornerRadius` (fillet) support for `Polyline` primitives across schema, json-solver, renderer-svg, json-builder, and dac-solid inspector, and remove legacy concrete hatch pattern in favor of clean material fills.
+
 ## 0.3.0
 
 ### Minor Changes
