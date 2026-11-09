@@ -409,4 +409,45 @@ describe('@aeckit/dac-renderer-svg pure SVG generation engine', () => {
     // Origin is points[0] = (2, 18 - 3) = (2, 15)
     expect(svg).toContain('<g transform="rotate(-30, 2, 15)">');
   });
+
+  it('renders annotative concrete hatch when polyline is closed', () => {
+    const shape = {
+      type: 'CAD::Shape::Polyline',
+      componentId: 'slab-1',
+      points: [
+        [0, 0],
+        [12, 0],
+        [12, 6],
+        [0, 6]
+      ],
+      closed: true,
+      hatch: 'Concrete'
+    };
+
+    const svg = drawPolyline(shape, 0.5, 18);
+    expect(svg).toContain('<polygon points="0,18 12,18 12,12 0,12"');
+    expect(svg).toContain('fill="url(#concrete-hatch-slab-1)"');
+    // Scale = 0.5 -> patternTransform scale(1 / 0.5) = scale(2)
+    expect(svg).toContain('<pattern id="concrete-hatch-slab-1" href="#concrete-hatch" patternTransform="scale(2)" />');
+  });
+
+  it('does NOT render hatch when polyline is open, even if hatch is specified', () => {
+    const shape = {
+      type: 'CAD::Shape::Polyline',
+      componentId: 'path-1',
+      points: [
+        [0, 0],
+        [10, 5],
+        [20, 0]
+      ],
+      closed: false,
+      hatch: 'Concrete'
+    };
+
+    const svg = drawPolyline(shape, 1.0, 18);
+    expect(svg).toContain('<polyline points="0,18 10,13 20,18"');
+    expect(svg).not.toContain('concrete-hatch');
+    expect(svg).not.toContain('<pattern');
+    expect(svg).toContain('fill="none"');
+  });
 });

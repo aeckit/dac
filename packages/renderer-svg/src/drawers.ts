@@ -44,8 +44,17 @@ export function drawPolyline(shape: SolvedPrimitive, scale: number, canvasHeight
   const strokeColor = shape.color || 'var(--cad-stroke)';
   const strokeWidth = ((Number(shape.strokeWidth) || 2) / 72) / scale;
   const dashAttr = shape.strokeDasharray ? ` stroke-dasharray="${shape.strokeDasharray}"` : '';
-  const fillColor = shape.fill || 'none';
-  const tagName = shape.closed ? 'polygon' : 'polyline';
+  const isClosed = Boolean(shape.closed);
+  const tagName = isClosed ? 'polygon' : 'polyline';
+
+  let fillStr = shape.fill ? `fill="${shape.fill}"` : 'fill="none"';
+  let extraGraphics = '';
+
+  if (isClosed && shape.hatch === 'Concrete') {
+    const hatchId = `concrete-hatch-${shape.componentId || Math.random().toString(36).substring(2, 9)}`;
+    fillStr = `fill="url(#${hatchId})"`;
+    extraGraphics = `<pattern id="${hatchId}" href="#concrete-hatch" patternTransform="scale(${1 / scale})" />`;
+  }
 
   const rot = Number(shape.rotation || 0);
   let transform = '';
@@ -56,12 +65,16 @@ export function drawPolyline(shape: SolvedPrimitive, scale: number, canvasHeight
   }
 
   const hitTarget = `<${tagName} points="${pointsStr}" stroke="transparent" stroke-width="0.5" fill="none" class="cad-hit-area" />`;
-  const visibleShape = `<${tagName} points="${pointsStr}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}"${dashAttr} stroke-linecap="round" stroke-linejoin="round" />`;
+  const visibleShape = `<${tagName} points="${pointsStr}" ${fillStr} stroke="${strokeColor}" stroke-width="${strokeWidth}"${dashAttr} stroke-linecap="round" stroke-linejoin="round" />`;
+
+  const content = extraGraphics
+    ? `${hitTarget}\n${visibleShape}\n${extraGraphics}`
+    : `${hitTarget}\n${visibleShape}`;
 
   if (transform) {
-    return `<g${transform}>\n${hitTarget}\n${visibleShape}\n</g>`;
+    return `<g${transform}>\n${content}\n</g>`;
   }
-  return `${hitTarget}\n${visibleShape}`;
+  return content;
 }
 
 // SVG Rectangle and Hatching Drawer (Cartesian +Y = UP)
