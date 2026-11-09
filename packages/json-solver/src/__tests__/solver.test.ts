@@ -312,4 +312,36 @@ describe('@aeckit/dac-json-solver parametric math and layout engine', () => {
     expect(pts[2][0]).toBeCloseTo(0);
     expect(pts[2][1]).toBeCloseTo(20);
   });
+
+  it('solves a DetailDocument with a hatched closed polyline without warnings', () => {
+    const doc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: [
+        {
+          type: 'CAD::Shape::Polyline',
+          componentId: 'concrete_slab',
+          points: [
+            [0, 0],
+            [24, 0],
+            [24, 12],
+            [0, 12]
+          ],
+          closed: true,
+          hatch: 'Concrete'
+        }
+      ]
+    };
+
+    const layout = solveDetailDocument(doc);
+    expect(layout.groups).toHaveLength(1);
+    const group = layout.groups[0];
+    expect(group.componentId).toBe('concrete_slab');
+    expect(group.warnings).toEqual([]);
+    expect(group.shapes).toHaveLength(1);
+    const shape = group.shapes[0];
+    expect(shape.closed).toBe(true);
+    expect(shape.hatch).toBe('Concrete');
+  });
 });

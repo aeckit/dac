@@ -31,6 +31,7 @@ export interface SolvedPolyline {
   points: [number, number][];
   closed?: boolean;
   fill?: string;
+  hatch?: string;
   color?: string;
   strokeWidth?: number | string;
   strokeDasharray?: string;
