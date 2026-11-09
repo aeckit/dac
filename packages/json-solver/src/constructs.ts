@@ -124,6 +124,7 @@ export function resolveConstructGeometry(
     if (cloned.width !== undefined) cloned.width = evaluateExpression(cloned.width, resolvedParams);
     if (cloned.height !== undefined) cloned.height = evaluateExpression(cloned.height, resolvedParams);
     if (cloned.r !== undefined) cloned.r = evaluateExpression(cloned.r, resolvedParams);
+    if (cloned.cornerRadius !== undefined) cloned.cornerRadius = evaluateExpression(cloned.cornerRadius, resolvedParams);
     if (cloned.fontSize !== undefined) cloned.fontSize = evaluateExpression(cloned.fontSize, resolvedParams);
     
     if (Array.isArray(cloned.points)) {
