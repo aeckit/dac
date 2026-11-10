@@ -4,11 +4,15 @@ import { PolylineGrips } from './PolylineGrips';
 
 export interface SelectionGizmoProps {
   showActions?: boolean;
+  showHandles?: boolean;
+  showBounds?: boolean;
 }
 
 export function SelectionGizmo(props?: SelectionGizmoProps) {
   const { selectionIds, deleteShape, updateShape, selectedShape, zoom } = useDac();
   const showActions = () => props?.showActions !== false;
+  const showHandles = () => props?.showHandles !== false;
+  const showBounds = () => props?.showBounds !== false;
   const [box, setBox] = createSignal<{ 
     left: number, 
     top: number, 
@@ -526,155 +530,168 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
           </Show>
 
           {/* Bounding Box Border (only for standard 2D shapes) */}
-          {!b().isLine && !b().isLeader && !b().isDimension && (
-            <div style={{
-              position: 'absolute',
-              left: `${b().left}px`,
-              top: `${b().top}px`,
-              width: `${b().right - b().left}px`,
-              height: `${b().bottom - b().top}px`,
-              border: '2px solid #3b82f6',
-            }} />
-          )}
-
-          {/* 8 Resize Handles (only for standard 2D shapes) */}
-          {!b().isLine && !b().isLeader && !b().isDimension && !b().isPolyline && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
-            let hLeft = 0, hTop = 0;
-            const cx = (b().left + b().right) / 2;
-            const cy = (b().top + b().bottom) / 2;
-            
-            if (dir.includes('w')) hLeft = b().left;
-            else if (dir.includes('e')) hLeft = b().right;
-            else hLeft = cx;
-
-            if (dir.includes('n')) hTop = b().top;
-            else if (dir.includes('s')) hTop = b().bottom;
-            else hTop = cy;
-
-            return (
-              <div 
-                onPointerDown={(e) => handleDrag(e, dir)}
-                style={{
-                  position: 'absolute',
-                  left: `${hLeft}px`,
-                  top: `${hTop}px`,
-                  width: '8px',
-                  height: '8px',
-                  background: 'white',
-                  border: '1px solid #3b82f6',
-                  transform: 'translate(-50%, -50%)',
-                  "pointer-events": 'auto',
-                  cursor: `${dir}-resize`
-                }} 
-              />
-            );
-          })}
-
-          {/* Line Handles */}
-          {b().isLine && (
-            <>
-              {b().p1 && (
-                <div 
-                  onPointerDown={(e) => handleDrag(e, 'line-start')}
-                  title="Line Start"
-                  style={{
-                    position: 'absolute', left: `${b().p1!.x}px`, top: `${b().p1!.y}px`, width: '8px', height: '8px',
-                    background: 'white', border: '1px solid #3b82f6', transform: 'translate(-50%, -50%)',
-                    "pointer-events": 'auto', cursor: 'pointer'
-                  }} 
-                />
-              )}
-              {b().p2 && (
-                <div 
-                  onPointerDown={(e) => handleDrag(e, 'line-end')}
-                  title="Line End"
-                  style={{
-                    position: 'absolute', left: `${b().p2!.x}px`, top: `${b().p2!.y}px`, width: '8px', height: '8px',
-                    background: 'white', border: '1px solid #3b82f6', transform: 'translate(-50%, -50%)',
-                    "pointer-events": 'auto', cursor: 'pointer'
-                  }} 
-                />
-              )}
-            </>
-          )}
-
-          {/* Leader Handles */}
-          {b().isLeader && (
-            <>
-              {b().pAnchor && (
-                <div 
-                  onPointerDown={(e) => handleDrag(e, 'leader-anchor')}
-                  title="Move Arrowhead"
-                  style={{
-                    position: 'absolute', left: `${b().pAnchor!.x}px`, top: `${b().pAnchor!.y}px`, width: '10px', height: '10px',
-                    background: '#3b82f6', border: '1.5px solid white', "border-radius": '50%', transform: 'translate(-50%, -50%)',
-                    "box-shadow": '0 2px 4px rgba(0,0,0,0.3)', "pointer-events": 'auto', cursor: 'crosshair'
-                  }} 
-                />
-              )}
-              {b().pLanding && (
-                <div 
-                  onPointerDown={(e) => handleDrag(e, 'leader-landing')}
-                  title="Move Note Landing"
-                  style={{
-                    position: 'absolute', left: `${b().pLanding!.x}px`, top: `${b().pLanding!.y}px`, width: '10px', height: '10px',
-                    background: 'white', border: '1.5px solid #3b82f6', "border-radius": '2px', transform: 'translate(-50%, -50%)',
-                    "box-shadow": '0 2px 4px rgba(0,0,0,0.3)', "pointer-events": 'auto', cursor: 'move'
-                  }} 
-                />
-              )}
-            </>
-          )}
-
-          {/* Dimension Handles */}
-          {b().isDimension && (
-            <>
-              {b().pDim1 && (
-                <div 
-                  onPointerDown={(e) => handleDrag(e, 'dim-start')}
-                  title="Dimension Start"
-                  style={{
-                    position: 'absolute', left: `${b().pDim1!.x}px`, top: `${b().pDim1!.y}px`, width: '8px', height: '8px',
-                    background: 'white', border: '1.5px solid #06b6d4', transform: 'translate(-50%, -50%)',
-                    "pointer-events": 'auto', cursor: 'crosshair', "box-shadow": '0 1px 3px rgba(0,0,0,0.3)'
-                  }} 
-                />
-              )}
-              {b().pDim2 && (
-                <div 
-                  onPointerDown={(e) => handleDrag(e, 'dim-end')}
-                  title="Dimension End"
-                  style={{
-                    position: 'absolute', left: `${b().pDim2!.x}px`, top: `${b().pDim2!.y}px`, width: '8px', height: '8px',
-                    background: 'white', border: '1.5px solid #06b6d4', transform: 'translate(-50%, -50%)',
-                    "pointer-events": 'auto', cursor: 'crosshair', "box-shadow": '0 1px 3px rgba(0,0,0,0.3)'
-                  }} 
-                />
-              )}
-              {b().pDimOffset && (
-                <div 
-                  onPointerDown={(e) => handleDrag(e, 'dim-offset')}
-                  title="Drag to Adjust Offset"
-                  style={{
-                    position: 'absolute', left: `${b().pDimOffset!.x}px`, top: `${b().pDimOffset!.y}px`, width: '10px', height: '10px',
-                    background: '#06b6d4', border: '1.5px solid white', transform: 'translate(-50%, -50%) rotate(45deg)',
-                    "pointer-events": 'auto', cursor: 'move', "box-shadow": '0 2px 4px rgba(0,0,0,0.3)'
-                  }} 
-                />
-              )}
-            </>
-          )}
-
-          {/* Polyline Vertex & Midpoint Handles */}
-          {b().isPolyline && b().polyPoints && b().polyPoints!.length > 0 && (
-            <PolylineGrips
-              points={b().polyPoints!}
-              midpoints={b().polyMidpoints || []}
-              onDragVertex={(e, idx) => handleDrag(e, `poly-vertex-${idx}`)}
-              onDragMidpoint={(e, idx) => handleDrag(e, `poly-midpoint-${idx}`)}
-              onDeleteVertex={handleDeleteVertex}
+          <Show when={showBounds() && !b().isLine && !b().isLeader && !b().isDimension}>
+            <div
+              data-gizmo-bounds="true"
+              style={{
+                position: 'absolute',
+                left: `${b().left}px`,
+                top: `${b().top}px`,
+                width: `${b().right - b().left}px`,
+                height: `${b().bottom - b().top}px`,
+                border: '2px solid #3b82f6',
+              }}
             />
-          )}
+          </Show>
+
+          <Show when={showHandles()}>
+            {/* 8 Resize Handles (only for standard 2D shapes) */}
+            {!b().isLine && !b().isLeader && !b().isDimension && !b().isPolyline && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
+              let hLeft = 0, hTop = 0;
+              const cx = (b().left + b().right) / 2;
+              const cy = (b().top + b().bottom) / 2;
+              
+              if (dir.includes('w')) hLeft = b().left;
+              else if (dir.includes('e')) hLeft = b().right;
+              else hLeft = cx;
+
+              if (dir.includes('n')) hTop = b().top;
+              else if (dir.includes('s')) hTop = b().bottom;
+              else hTop = cy;
+
+              return (
+                <div 
+                  data-gizmo-handle={dir}
+                  onPointerDown={(e) => handleDrag(e, dir)}
+                  style={{
+                    position: 'absolute',
+                    left: `${hLeft}px`,
+                    top: `${hTop}px`,
+                    width: '8px',
+                    height: '8px',
+                    background: 'white',
+                    border: '1px solid #3b82f6',
+                    transform: 'translate(-50%, -50%)',
+                    "pointer-events": 'auto',
+                    cursor: `${dir}-resize`
+                  }} 
+                />
+              );
+            })}
+
+            {/* Line Handles */}
+            {b().isLine && (
+              <>
+                {b().p1 && (
+                  <div 
+                    data-gizmo-handle="line-start"
+                    onPointerDown={(e) => handleDrag(e, 'line-start')}
+                    title="Line Start"
+                    style={{
+                      position: 'absolute', left: `${b().p1!.x}px`, top: `${b().p1!.y}px`, width: '8px', height: '8px',
+                      background: 'white', border: '1px solid #3b82f6', transform: 'translate(-50%, -50%)',
+                      "pointer-events": 'auto', cursor: 'pointer'
+                    }} 
+                  />
+                )}
+                {b().p2 && (
+                  <div 
+                    data-gizmo-handle="line-end"
+                    onPointerDown={(e) => handleDrag(e, 'line-end')}
+                    title="Line End"
+                    style={{
+                      position: 'absolute', left: `${b().p2!.x}px`, top: `${b().p2!.y}px`, width: '8px', height: '8px',
+                      background: 'white', border: '1px solid #3b82f6', transform: 'translate(-50%, -50%)',
+                      "pointer-events": 'auto', cursor: 'pointer'
+                    }} 
+                  />
+                )}
+              </>
+            )}
+
+            {/* Leader Handles */}
+            {b().isLeader && (
+              <>
+                {b().pAnchor && (
+                  <div 
+                    data-gizmo-handle="leader-anchor"
+                    onPointerDown={(e) => handleDrag(e, 'leader-anchor')}
+                    title="Move Arrowhead"
+                    style={{
+                      position: 'absolute', left: `${b().pAnchor!.x}px`, top: `${b().pAnchor!.y}px`, width: '10px', height: '10px',
+                      background: '#3b82f6', border: '1.5px solid white', "border-radius": '50%', transform: 'translate(-50%, -50%)',
+                      "box-shadow": '0 2px 4px rgba(0,0,0,0.3)', "pointer-events": 'auto', cursor: 'crosshair'
+                    }} 
+                  />
+                )}
+                {b().pLanding && (
+                  <div 
+                    data-gizmo-handle="leader-landing"
+                    onPointerDown={(e) => handleDrag(e, 'leader-landing')}
+                    title="Move Note Landing"
+                    style={{
+                      position: 'absolute', left: `${b().pLanding!.x}px`, top: `${b().pLanding!.y}px`, width: '10px', height: '10px',
+                      background: 'white', border: '1.5px solid #3b82f6', "border-radius": '2px', transform: 'translate(-50%, -50%)',
+                      "box-shadow": '0 2px 4px rgba(0,0,0,0.3)', "pointer-events": 'auto', cursor: 'move'
+                    }} 
+                  />
+                )}
+              </>
+            )}
+
+            {/* Dimension Handles */}
+            {b().isDimension && (
+              <>
+                {b().pDim1 && (
+                  <div 
+                    data-gizmo-handle="dim-start"
+                    onPointerDown={(e) => handleDrag(e, 'dim-start')}
+                    title="Dimension Start"
+                    style={{
+                      position: 'absolute', left: `${b().pDim1!.x}px`, top: `${b().pDim1!.y}px`, width: '8px', height: '8px',
+                      background: 'white', border: '1.5px solid #06b6d4', transform: 'translate(-50%, -50%)',
+                      "pointer-events": 'auto', cursor: 'crosshair', "box-shadow": '0 1px 3px rgba(0,0,0,0.3)'
+                    }} 
+                  />
+                )}
+                {b().pDim2 && (
+                  <div 
+                    data-gizmo-handle="dim-end"
+                    onPointerDown={(e) => handleDrag(e, 'dim-end')}
+                    title="Dimension End"
+                    style={{
+                      position: 'absolute', left: `${b().pDim2!.x}px`, top: `${b().pDim2!.y}px`, width: '8px', height: '8px',
+                      background: 'white', border: '1.5px solid #06b6d4', transform: 'translate(-50%, -50%)',
+                      "pointer-events": 'auto', cursor: 'crosshair', "box-shadow": '0 1px 3px rgba(0,0,0,0.3)'
+                    }} 
+                  />
+                )}
+                {b().pDimOffset && (
+                  <div 
+                    data-gizmo-handle="dim-offset"
+                    onPointerDown={(e) => handleDrag(e, 'dim-offset')}
+                    title="Drag to Adjust Offset"
+                    style={{
+                      position: 'absolute', left: `${b().pDimOffset!.x}px`, top: `${b().pDimOffset!.y}px`, width: '10px', height: '10px',
+                      background: '#06b6d4', border: '1.5px solid white', transform: 'translate(-50%, -50%) rotate(45deg)',
+                      "pointer-events": 'auto', cursor: 'move', "box-shadow": '0 2px 4px rgba(0,0,0,0.3)'
+                    }} 
+                  />
+                )}
+              </>
+            )}
+
+            {/* Polyline Vertex & Midpoint Handles */}
+            {b().isPolyline && b().polyPoints && b().polyPoints!.length > 0 && (
+              <PolylineGrips
+                points={b().polyPoints!}
+                midpoints={b().polyMidpoints || []}
+                onDragVertex={(e, idx) => handleDrag(e, `poly-vertex-${idx}`)}
+                onDragMidpoint={(e, idx) => handleDrag(e, `poly-midpoint-${idx}`)}
+                onDeleteVertex={handleDeleteVertex}
+              />
+            )}
+          </Show>
         </div>
       )}
     </Show>
