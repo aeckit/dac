@@ -3,7 +3,7 @@
   "private": true,
   "displayName": "aeckit DaC",
   "description": "IDE extension for real-time visualization of parametric CAD details.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "aeckit",
   "icon": "icon.png",
   "repository": "https://github.com/aeckit/dac",
