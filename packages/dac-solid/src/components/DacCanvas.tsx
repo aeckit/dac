@@ -1,11 +1,14 @@
-import { createSignal, createEffect, onMount, untrack } from 'solid-js';
+import { createSignal, createEffect, onMount, untrack, Show } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
 import { SelectionGizmo } from './SelectionGizmo';
 
 export interface DacCanvasProps {
   autoFit?: boolean;
+  showGizmo?: boolean;
   showGizmoActions?: boolean;
+  showGizmoHandles?: boolean;
+  showGizmoBounds?: boolean;
 }
 
 export function DacCanvas(props?: DacCanvasProps) {
@@ -375,7 +378,13 @@ export function DacCanvas(props?: DacCanvasProps) {
           }
         `}
       </style>
-      <SelectionGizmo showActions={props?.showGizmoActions} />
+      <Show when={props?.showGizmo !== false}>
+        <SelectionGizmo
+          showActions={props?.showGizmoActions}
+          showHandles={props?.showGizmoHandles}
+          showBounds={props?.showGizmoBounds}
+        />
+      </Show>
     </div>
   );
 }
