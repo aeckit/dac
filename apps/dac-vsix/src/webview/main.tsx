@@ -1,6 +1,6 @@
 import { render } from 'solid-js/web';
 import { createSignal, onMount, Show } from 'solid-js';
-import { DacProvider, DacCanvas, DacInspector, DacToolbar, DacZoomControls } from '@aeckit/dac-solid';
+import { DacProvider, DacCanvas, DacInspector, DacToolbar, DacZoomControls, DacPlaybackControls } from '@aeckit/dac-solid';
 
 declare const acquireVsCodeApi: () => {
   postMessage: (message: any) => void;
@@ -98,10 +98,9 @@ try {
                     </div>
                   </div>
                   <div style={{ flex: 1 }} />
-                  <div style={{ display: 'flex', "justify-content": 'flex-start', "margin-left": '16px', "margin-bottom": '16px' }}>
-                    <div style={{ "pointer-events": 'auto' }}>
-                      <DacZoomControls />
-                    </div>
+                  <div style={{ display: 'flex', "flex-direction": 'column', "align-items": 'flex-start', "pointer-events": 'none', margin: '0 0 16px 16px', gap: '8px' }}>
+                    <DacPlaybackControls />
+                    <DacZoomControls style={{ margin: '0' }} />
                   </div>
                 </div>
                 
