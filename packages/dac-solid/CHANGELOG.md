@@ -1,5 +1,11 @@
 # @aeckit/dac-solid
 
+## 0.4.0
+
+### Minor Changes
+
+- d95f159: Add sequential geometry playback engine and collapsible `DacPlaybackControls` for `CAD::Detail` documents.
+
 ## 0.3.0
 
 ### Minor Changes
