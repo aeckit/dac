@@ -7,7 +7,42 @@ export function useDac() {
     throw new Error('useDac must be used within a DacProvider');
   }
 
-  const { doc, builder, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, setActiveSheetId, nestedDocs, canvasTheme, triggerFitView, fitView, solverWarnings, setSolverWarnings } = context;
+  const {
+    doc,
+    effectiveDoc,
+    nestedDocs,
+    builder,
+    selectionIds,
+    setSelectionIds,
+    zoom,
+    setZoom,
+    pan,
+    setPan,
+    activeSheetId,
+    setActiveSheetId,
+    canvasTheme,
+    triggerFitView,
+    fitView,
+    solverWarnings,
+    setSolverWarnings,
+    playbackStep,
+    setPlaybackStep,
+    isPlaying,
+    setIsPlaying,
+    playbackSpeed,
+    setPlaybackSpeed,
+    isLooping,
+    setIsLooping,
+    totalPlaybackSteps,
+    currentPlaybackElement,
+    play,
+    pause,
+    togglePlay,
+    resetPlayback,
+    stepForward,
+    stepBackward,
+    seekPlayback
+  } = context;
 
   const selectShape = (id: string, multi = false) => {
     if (multi) {
@@ -88,6 +123,7 @@ export function useDac() {
 
   return {
     doc,
+    effectiveDoc,
     nestedDocs,
     builder,
     selectionIds,
@@ -108,6 +144,46 @@ export function useDac() {
     triggerFitView,
     fitView,
     solverWarnings,
-    setSolverWarnings
+    setSolverWarnings,
+    playbackStep,
+    setPlaybackStep,
+    isPlaying,
+    setIsPlaying,
+    playbackSpeed,
+    setPlaybackSpeed,
+    isLooping,
+    setIsLooping,
+    totalPlaybackSteps,
+    currentPlaybackElement,
+    play,
+    pause,
+    togglePlay,
+    resetPlayback,
+    stepForward,
+    stepBackward,
+    seekPlayback
+  };
+}
+
+export function usePlayback() {
+  const dac = useDac();
+  return {
+    step: dac.playbackStep,
+    setStep: dac.setPlaybackStep,
+    isPlaying: dac.isPlaying,
+    speed: dac.playbackSpeed,
+    setSpeed: dac.setPlaybackSpeed,
+    isLooping: dac.isLooping,
+    setIsLooping: dac.setIsLooping,
+    totalSteps: dac.totalPlaybackSteps,
+    currentElement: dac.currentPlaybackElement,
+    effectiveDoc: dac.effectiveDoc,
+    play: dac.play,
+    pause: dac.pause,
+    togglePlay: dac.togglePlay,
+    reset: dac.resetPlayback,
+    stepForward: dac.stepForward,
+    stepBackward: dac.stepBackward,
+    seekTo: dac.seekPlayback
   };
 }

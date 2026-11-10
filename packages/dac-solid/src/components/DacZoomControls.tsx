@@ -1,6 +1,11 @@
 import { useDac } from '../hooks/useDac';
 
-export function DacZoomControls() {
+export interface DacZoomControlsProps {
+  class?: string;
+  style?: Record<string, any>;
+}
+
+export function DacZoomControls(props?: DacZoomControlsProps) {
   const { setZoom, zoom, fitView } = useDac();
 
   const buttonStyle = {
@@ -18,7 +23,23 @@ export function DacZoomControls() {
   };
 
   return (
-    <div style={{ "pointer-events": 'auto', display: 'flex', gap: '4px', padding: '6px', "background-color": 'var(--app-bg-panel, #1e293b)', "backdrop-filter": 'var(--app-backdrop)', border: '1px solid var(--app-border, #334155)', "align-items": 'center', margin: '8px 8px 16px 16px', "border-radius": '12px', "box-shadow": '0 4px 12px rgba(0,0,0,0.05)' }}>
+    <div
+      class={props?.class}
+      style={{
+        "pointer-events": 'auto',
+        display: 'flex',
+        gap: '4px',
+        padding: '6px',
+        "background-color": 'var(--app-bg-panel, #1e293b)',
+        "backdrop-filter": 'var(--app-backdrop)',
+        border: '1px solid var(--app-border, #334155)',
+        "align-items": 'center',
+        margin: '8px 8px 16px 16px',
+        "border-radius": '12px',
+        "box-shadow": '0 4px 12px rgba(0,0,0,0.05)',
+        ...props?.style,
+      }}
+    >
       <button style={buttonStyle} onClick={() => setZoom(z => z * 0.9)} title="Zoom Out">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       </button>

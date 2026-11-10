@@ -1,9 +1,10 @@
-import { createContext, createSignal, createEffect, onCleanup, ParentComponent, Accessor, Setter } from 'solid-js';
+import { createContext, createSignal, createEffect, createMemo, onCleanup, ParentComponent, Accessor, Setter } from 'solid-js';
 import { JsonBuilder } from '@aeckit/dac-json-builder';
 import { CadTheme } from '@aeckit/dac-renderer-svg';
 
 export interface DacContextValue {
   doc: Accessor<any>;
+  effectiveDoc: Accessor<any>;
   nestedDocs: Accessor<Map<string, any> | undefined>;
   builder: Accessor<JsonBuilder>;
   selectionIds: Accessor<string[]>;
@@ -19,6 +20,25 @@ export interface DacContextValue {
   fitView: () => void;
   solverWarnings: Accessor<any[]>;
   setSolverWarnings: Setter<any[]>;
+
+  // Playback state and actions
+  playbackStep: Accessor<number | null>;
+  setPlaybackStep: Setter<number | null>;
+  isPlaying: Accessor<boolean>;
+  setIsPlaying: Setter<boolean>;
+  playbackSpeed: Accessor<number>;
+  setPlaybackSpeed: Setter<number>;
+  isLooping: Accessor<boolean>;
+  setIsLooping: Setter<boolean>;
+  totalPlaybackSteps: Accessor<number>;
+  currentPlaybackElement: Accessor<any | null>;
+  play: () => void;
+  pause: () => void;
+  togglePlay: () => void;
+  resetPlayback: () => void;
+  stepForward: () => void;
+  stepBackward: () => void;
+  seekPlayback: (step: number) => void;
 }
 
 export const DacContext = createContext<DacContextValue>();
@@ -42,7 +62,128 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
   const [triggerFitView, setTriggerFitView] = createSignal<number>(0);
   const [solverWarnings, setSolverWarnings] = createSignal<any[]>([]);
 
+  // Playback signals
+  const [playbackStep, setPlaybackStep] = createSignal<number | null>(null);
+  const [isPlaying, setIsPlaying] = createSignal<boolean>(false);
+  const [playbackSpeed, setPlaybackSpeed] = createSignal<number>(1);
+  const [isLooping, setIsLooping] = createSignal<boolean>(false);
+
   const fitView = () => setTriggerFitView(v => v + 1);
+
+  const totalPlaybackSteps = createMemo(() => {
+    const d = docSignal();
+    if (d?.type !== 'CAD::Detail' || !Array.isArray(d?.geometry)) return 0;
+    return d.geometry.length;
+  });
+
+  const effectiveDoc = createMemo(() => {
+    const currentDoc = docSignal();
+    const step = playbackStep();
+    if (step === null || currentDoc?.type !== 'CAD::Detail' || !Array.isArray(currentDoc.geometry)) {
+      return currentDoc;
+    }
+    return {
+      ...currentDoc,
+      geometry: currentDoc.geometry.slice(0, step)
+    };
+  });
+
+  const currentPlaybackElement = createMemo(() => {
+    const step = playbackStep();
+    const currentDoc = docSignal();
+    if (step === null || step <= 0 || currentDoc?.type !== 'CAD::Detail' || !Array.isArray(currentDoc.geometry)) {
+      return null;
+    }
+    return currentDoc.geometry[step - 1] || null;
+  });
+
+  const play = () => {
+    const total = totalPlaybackSteps();
+    if (total === 0) return;
+    setSelectionIds([]);
+    setPlaybackStep(prev => (prev === null || prev >= total ? 0 : prev));
+    setIsPlaying(true);
+  };
+
+  const pause = () => {
+    setIsPlaying(false);
+  };
+
+  const togglePlay = () => {
+    if (isPlaying()) {
+      pause();
+    } else {
+      play();
+    }
+  };
+
+  const resetPlayback = () => {
+    setIsPlaying(false);
+    setPlaybackStep(null);
+  };
+
+  const stepForward = () => {
+    setIsPlaying(false);
+    const total = totalPlaybackSteps();
+    if (total === 0) return;
+    setPlaybackStep(prev => {
+      const current = prev === null ? 0 : prev;
+      return Math.min(total, current + 1);
+    });
+  };
+
+  const stepBackward = () => {
+    setIsPlaying(false);
+    const total = totalPlaybackSteps();
+    if (total === 0) return;
+    setPlaybackStep(prev => {
+      const current = prev === null ? total : prev;
+      return Math.max(0, current - 1);
+    });
+  };
+
+  const seekPlayback = (step: number) => {
+    const total = totalPlaybackSteps();
+    const clamped = Math.max(0, Math.min(total, Math.round(step)));
+    setPlaybackStep(clamped);
+  };
+
+  // Playback timer ticker
+  createEffect(() => {
+    if (!isPlaying()) return;
+    const total = totalPlaybackSteps();
+    if (total === 0) {
+      setIsPlaying(false);
+      return;
+    }
+
+    const speed = playbackSpeed() || 1;
+    const intervalMs = Math.max(100, Math.round(600 / speed));
+
+    const timer = setInterval(() => {
+      setPlaybackStep(prev => {
+        const current = prev === null ? 0 : prev;
+        if (current >= total) {
+          if (isLooping()) {
+            return 0;
+          } else {
+            setIsPlaying(false);
+            return total;
+          }
+        }
+        return current + 1;
+      });
+    }, intervalMs);
+
+    onCleanup(() => clearInterval(timer));
+  });
+
+  // Reset playback if incoming doc prop changes
+  createEffect(() => {
+    props.doc;
+    setIsPlaying(false);
+    setPlaybackStep(null);
+  });
 
   createEffect(() => {
     const b = builderSignal();
@@ -87,6 +228,7 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
 
   const value: DacContextValue = {
     doc: docSignal,
+    effectiveDoc,
     nestedDocs: nestedDocsSignal,
     builder: builderSignal,
     selectionIds,
@@ -101,7 +243,24 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
     triggerFitView,
     fitView,
     solverWarnings,
-    setSolverWarnings
+    setSolverWarnings,
+    playbackStep,
+    setPlaybackStep,
+    isPlaying,
+    setIsPlaying,
+    playbackSpeed,
+    setPlaybackSpeed,
+    isLooping,
+    setIsLooping,
+    totalPlaybackSteps,
+    currentPlaybackElement,
+    play,
+    pause,
+    togglePlay,
+    resetPlayback,
+    stepForward,
+    stepBackward,
+    seekPlayback
   };
 
   return (

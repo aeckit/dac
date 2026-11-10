@@ -9,7 +9,7 @@ export interface DacCanvasProps {
 }
 
 export function DacCanvas(props?: DacCanvasProps) {
-  const { doc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, canvasTheme, triggerFitView, fitView, setSolverWarnings } = useDac();
+  const { doc, effectiveDoc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, canvasTheme, triggerFitView, fitView, setSolverWarnings, isPlaying, setIsPlaying } = useDac();
   const [svgContent, setSvgContent] = createSignal('');
   let containerRef!: HTMLDivElement;
   let contentRef!: HTMLDivElement;
@@ -87,7 +87,7 @@ export function DacCanvas(props?: DacCanvasProps) {
   });
 
   createEffect(() => {
-    const document = doc();
+    const document = effectiveDoc();
     if (!document) return;
     const constructResolver = (id: string) => nestedDocs()?.get(id);
 
@@ -193,6 +193,9 @@ export function DacCanvas(props?: DacCanvasProps) {
 
     // 2. SELECTION (Left Click)
     if (e.button === 0) {
+      if (isPlaying()) {
+        setIsPlaying(false);
+      }
       const initialTarget = e.target as SVGElement;
       if (initialTarget.closest('[data-selection-gizmo]')) return;
       
