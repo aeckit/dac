@@ -1,231 +1,139 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
-import type { DetailDocument, ProjectDocument, SheetConfiguration as SheetDocument } from '@aeckit/dac-schema';
+import type { DetailDocument } from '@aeckit/dac-schema';
+import {
+  ConstructResolverHost,
+  resolveConstructFilePath,
+} from './constructResolver';
+import { parseAndLoadDacDocument, resolveDacPath } from './documentLoader';
+
+interface PanelState {
+  panel: vscode.WebviewPanel;
+  document: vscode.TextDocument;
+  lastWebviewDoc: DetailDocument | null;
+  lastNestedSnapshot: string;
+  isWebviewUpdating: boolean;
+  resolvedConstructPaths: Set<string>;
+  refreshTimer?: ReturnType<typeof setTimeout>;
+}
+
+function getWorkspaceRoots(): string[] {
+  return (vscode.workspace.workspaceFolders ?? []).map((f) => f.uri.fsPath);
+}
+
+function createResolverHost(): ConstructResolverHost {
+  return {
+    workspaceRoots: getWorkspaceRoots(),
+    findFiles: async (baseDir, globPattern, excludeSegments) => {
+      const exclude = `{${excludeSegments.map((s) => `**/${s}/**`).join(',')}}`;
+      const uris = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(vscode.Uri.file(baseDir), globPattern),
+        exclude
+      );
+      return uris.map((u) => u.fsPath);
+    },
+  };
+}
+
+function isConstructPath(filePath: string): boolean {
+  const posix = filePath.split(path.sep).join('/');
+  return (posix.includes('/constructs/') || posix.startsWith('constructs/')) && posix.endsWith('.json');
+}
+
+function isPathRelevantToPanel(filePath: string, state: PanelState): boolean {
+  const canonical = path.resolve(filePath);
+  if (state.resolvedConstructPaths.has(canonical)) return true;
+  if (isConstructPath(canonical)) return true;
+
+  const docDir = path.dirname(path.resolve(state.document.fileName));
+  return canonical.endsWith('.json') && path.dirname(canonical) === docDir;
+}
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('DAC Visualizer Extension is active!');
 
-  let activePanel: vscode.WebviewPanel | undefined = undefined;
-  let activeDocument: vscode.TextDocument | undefined = undefined;
-  let lastWebviewDoc: DetailDocument | null = null;
-  let isWebviewUpdating = false;
+  const openPanels = new Set<PanelState>();
 
-  function resolveDacPath(refPath: string, currentFileDir: string): string | null {
-    if (path.isAbsolute(refPath)) return fs.existsSync(refPath) ? refPath : null;
+  async function refreshPanel(
+    state: PanelState,
+    options?: { skipIfUnchanged?: boolean; forceFullLoad?: boolean; postErrorOnFail?: boolean }
+  ): Promise<void> {
+    const data = await parseAndLoadDacDocument(
+      state.document.getText(),
+      state.document.fileName,
+      createResolverHost()
+    );
 
-    let candidate = path.join(currentFileDir, refPath);
-    if (fs.existsSync(candidate)) return candidate;
-
-    let dir = currentFileDir;
-    while (dir && dir !== path.parse(dir).root) {
-      dir = path.dirname(dir);
-      candidate = path.join(dir, refPath);
-      if (fs.existsSync(candidate)) return candidate;
+    if (!data) {
+      if (options?.postErrorOnFail) {
+        state.panel.webview.postMessage({
+          type: 'error',
+          message: 'Failed to parse document or unrecognized DAC format.',
+        });
+      }
+      return;
     }
 
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (workspaceFolders) {
-      for (const folder of workspaceFolders) {
-        candidate = path.join(folder.uri.fsPath, refPath);
-        if (fs.existsSync(candidate)) return candidate;
-      }
-    }
-    return null;
-  }
+    state.resolvedConstructPaths = data.resolvedConstructPaths;
+    const nextNestedSnapshot = JSON.stringify({
+      v: data.viewportsMap,
+      t: data.titleBlockMap,
+      c: data.constructsMap,
+    });
 
-  function resolveLocalImages(doc: any, baseDir: string) {
-    if (!doc || !doc.geometry || !Array.isArray(doc.geometry)) return;
-    for (const geom of doc.geometry) {
-      if (geom.type === 'CAD::Annotation::Image' && geom.href && typeof geom.href === 'string') {
-        const href: string = geom.href;
-        if (!href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('data:')) {
-          try {
-            const imgPath = resolveDacPath(href, baseDir);
-            if (imgPath) {
-              const ext = path.extname(imgPath).toLowerCase().replace('.', '') || 'jpeg';
-              const mime = ext === 'jpg' ? 'jpeg' : ext === 'svg' ? 'svg+xml' : ext;
-              const base64 = fs.readFileSync(imgPath, 'base64');
-              geom.href = `data:image/${mime};base64,${base64}`;
-            }
-          } catch (e) {
-            console.error('Failed to load local image:', href, e);
-          }
-        }
-      }
-    }
-  }
+    const docMatchesLastWebview =
+      state.lastWebviewDoc !== null &&
+      JSON.stringify(data.doc) === JSON.stringify(state.lastWebviewDoc);
+    const nestedMatchesLast = nextNestedSnapshot === state.lastNestedSnapshot;
 
-  function resolveConstructs(geomDoc: any, baseDir: string, constructsMap: Record<string, any>) {
-    if (!geomDoc || !geomDoc.geometry || !Array.isArray(geomDoc.geometry)) return;
-    for (const shape of geomDoc.geometry) {
-      if (shape.type === 'ConstructReference' && shape.constructId) {
-        if (!constructsMap[shape.constructId]) {
-          try {
-            const cPath = resolveDacPath(shape.constructId, baseDir);
-            if (cPath) {
-              const content = fs.readFileSync(cPath, 'utf8');
-              const cDoc = JSON.parse(content);
-              constructsMap[shape.constructId] = cDoc;
-              resolveLocalImages(cDoc, path.dirname(cPath));
-              resolveConstructs(cDoc, path.dirname(cPath), constructsMap);
-            }
-          } catch (e) {
-            console.error('Failed to load construct:', shape.constructId, e);
-          }
-        }
-      }
+    if (options?.skipIfUnchanged && docMatchesLastWebview && nestedMatchesLast) {
+      return;
+    }
+
+    state.lastNestedSnapshot = nextNestedSnapshot;
+
+    if (docMatchesLastWebview && !options?.forceFullLoad) {
+      state.panel.webview.postMessage({
+        type: 'updateNestedDocs',
+        viewportsMap: data.viewportsMap,
+        titleBlockMap: data.titleBlockMap,
+        constructsMap: data.constructsMap,
+      });
+    } else {
+      state.panel.webview.postMessage({
+        type: 'loadConfig',
+        config: data.doc,
+        viewportsMap: data.viewportsMap,
+        titleBlockMap: data.titleBlockMap,
+        constructsMap: data.constructsMap,
+      });
     }
   }
 
-  function loadTitleBlock(refPath: string, baseDir: string, titleBlockMap: Record<string, any>) {
-    if (!refPath || titleBlockMap[refPath]) return;
-    try {
-      const tbPath = resolveDacPath(refPath, baseDir);
-      if (tbPath) {
-        const tbContent = fs.readFileSync(tbPath, "utf8");
-        titleBlockMap[refPath] = JSON.parse(tbContent);
-        resolveLocalImages(titleBlockMap[refPath], path.dirname(tbPath));
-      }
-    } catch (e) {
-      console.error("Failed to load title block:", refPath);
+  function scheduleRefreshPanel(state: PanelState, options?: { skipIfUnchanged?: boolean }): void {
+    if (state.refreshTimer) {
+      clearTimeout(state.refreshTimer);
+    }
+    state.refreshTimer = setTimeout(() => {
+      state.refreshTimer = undefined;
+      void refreshPanel(state, options);
+    }, 50);
+  }
+
+  function scheduleRefreshAllPanels(): void {
+    for (const state of openPanels) {
+      scheduleRefreshPanel(state, { skipIfUnchanged: true });
     }
   }
 
-  function resolveSheetDependencies(
-    sheet: any, 
-    sheetBaseDir: string, 
-    viewportsMap: Record<string, any>, 
-    titleBlockMap: Record<string, any>, 
-    constructsMap: Record<string, any>
-  ) {
-    resolveLocalImages(sheet, sheetBaseDir);
-
-    // Load title blocks (handles both standalone sheets and project overrides)
-    if (typeof sheet.titleBlockRef === 'string') {
-      loadTitleBlock(sheet.titleBlockRef, sheetBaseDir, titleBlockMap);
-    }
-    if (typeof sheet.titleBlockOverride === 'string') {
-      loadTitleBlock(sheet.titleBlockOverride, sheetBaseDir, titleBlockMap);
-    }
-
-    // Load viewports
-    if (sheet.viewports) {
-      for (const vp of sheet.viewports) {
-        if (typeof vp.detail === 'string' && !viewportsMap[vp.detail]) {
-          try {
-            const vpPath = resolveDacPath(vp.detail, sheetBaseDir);
-            if (vpPath) {
-              const vpContent = fs.readFileSync(vpPath, 'utf8');
-              viewportsMap[vp.detail] = JSON.parse(vpContent);
-              resolveLocalImages(viewportsMap[vp.detail], path.dirname(vpPath));
-            } else {
-              console.error('Failed to locate viewport detail:', vp.detail);
-            }
-          } catch (e) {
-            console.error('Failed to load viewport detail:', vp.detail);
-          }
-        }
-        
-        if (typeof vp.detail === 'string' && viewportsMap[vp.detail]) {
-          resolveConstructs(viewportsMap[vp.detail], sheetBaseDir, constructsMap);
-        }
-      }
-    }
-  }
-
-  // Helper to parse the JSON drawing document and load dependencies if it's a Project or Sheet
-  async function parseAndLoadDocument(document: vscode.TextDocument): Promise<{ doc: any, viewportsMap?: Record<string, any>, titleBlockMap?: Record<string, any>, constructsMap?: Record<string, any> } | null> {
-    const text = document.getText();
-    try {
-      const doc = JSON.parse(text);
-      if (!doc || typeof doc !== 'object') return null;
-      
-      const baseDir = path.dirname(document.fileName);
-      const constructsMap: Record<string, any> = {};
-
-      if (doc.type === 'CAD::Project') {
-        const ds = doc as ProjectDocument;
-        const viewportsMap: Record<string, any> = {};
-        const titleBlockMap: Record<string, any> = {};
-        
-        // Load default title block for the project
-        if (typeof ds.defaultTitleBlockRef === 'string') {
-          loadTitleBlock(ds.defaultTitleBlockRef, baseDir, titleBlockMap);
-        }
-        
-        // Load sheets
-        for (let i = 0; i < ds.sheets.length; i++) {
-          let sheet = ds.sheets[i];
-          let sheetBaseDir = baseDir;
-          
-          if (typeof sheet === 'string') {
-            try {
-              const sheetPath = resolveDacPath(sheet, baseDir);
-              if (sheetPath) {
-                sheetBaseDir = path.dirname(sheetPath);
-                const sheetContent = fs.readFileSync(sheetPath, 'utf8');
-                sheet = JSON.parse(sheetContent) as SheetDocument;
-                ds.sheets[i] = sheet; // Inline it for the webview
-              } else {
-                console.error('Failed to locate sheet:', sheet);
-                continue;
-              }
-            } catch (e) {
-              console.error('Failed to load sheet:', sheet);
-              continue;
-            }
-          }
-          
-          if (typeof sheet !== 'string') {
-            resolveSheetDependencies(sheet, sheetBaseDir, viewportsMap, titleBlockMap, constructsMap);
-          }
-        }
-        
-        // Also resolve constructs for the titleblocks
-        for (const tbKey of Object.keys(titleBlockMap)) {
-           resolveConstructs(titleBlockMap[tbKey], baseDir, constructsMap); 
-        }
-
-        return { doc: ds, viewportsMap, titleBlockMap, constructsMap };
-        
-      } else if (doc.type === 'CAD::SheetConfiguration') {
-        const viewportsMap: Record<string, any> = {};
-        const titleBlockMap: Record<string, any> = {};
-        
-        resolveSheetDependencies(doc, baseDir, viewportsMap, titleBlockMap, constructsMap);
-        
-        // Also resolve constructs for the titleblocks
-        for (const tbKey of Object.keys(titleBlockMap)) {
-           resolveConstructs(titleBlockMap[tbKey], baseDir, constructsMap); 
-        }
-        
-        return { doc, viewportsMap, titleBlockMap, constructsMap };
-        
-      } else if (doc.type === 'CAD::Detail' || doc.type === 'CAD::Construct' || doc.type === 'CAD::TitleBlock' || doc.geometry) {
-        resolveLocalImages(doc, baseDir);
-        resolveConstructs(doc, baseDir, constructsMap);
-        return { doc, constructsMap };
-      }
-      return null;
-    } catch (err) {
-      console.error('Failed to parse JSON:', err);
-      return null;
-    }
-  }
-
-  // Register command to open visualizer
   const openVisualizerCommand = vscode.commands.registerCommand(
     'dac.openPreview',
-    async (uri: vscode.Uri) => {
-      let document: vscode.TextDocument | undefined = undefined;
+    async (uri?: vscode.Uri) => {
+      let document: vscode.TextDocument | undefined;
       if (uri) {
         document = await vscode.workspace.openTextDocument(uri);
       } else {
-        const activeEditor = vscode.window.activeTextEditor;
-        if (activeEditor) {
-          document = activeEditor.document;
-        }
+        document = vscode.window.activeTextEditor?.document;
       }
 
       if (!document) {
@@ -239,9 +147,6 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      activeDocument = document;
-
-      // Create Webview Panel next to current editor
       const panel = vscode.window.createWebviewPanel(
         'structuralDetailVisualizer',
         `DAC Preview: ${path.basename(document.fileName)}`,
@@ -249,110 +154,138 @@ export function activate(context: vscode.ExtensionContext) {
         {
           enableScripts: true,
           retainContextWhenHidden: true,
-          localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'dist'))]
+          localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'dist'))],
         }
       );
 
-      activePanel = panel;
+      const state: PanelState = {
+        panel,
+        document,
+        lastWebviewDoc: null,
+        lastNestedSnapshot: '',
+        isWebviewUpdating: false,
+        resolvedConstructPaths: new Set<string>(),
+      };
+      openPanels.add(state);
 
-      // Load HTML template
       panel.webview.html = getWebviewHtml(panel.webview, context);
 
-      // Listen to messages from Webview
-      panel.webview.onDidReceiveMessage(async (message) => {
+      const messageDisposable = panel.webview.onDidReceiveMessage(async (message) => {
         if (message.type === 'ready') {
-          const data = await parseAndLoadDocument(document!);
-          if (data) {
-            panel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap, constructsMap: data.constructsMap });
-          } else {
-            panel.webview.postMessage({ type: 'error', message: 'Failed to parse document or unrecognized DAC format.' });
-          }
+          await refreshPanel(state, { forceFullLoad: true, postErrorOnFail: true });
         } else if (message.type === 'updateConfig') {
           const updatedDoc = message.config as DetailDocument;
-          lastWebviewDoc = updatedDoc;
+          state.lastWebviewDoc = updatedDoc;
+          state.isWebviewUpdating = true;
 
-          if (document) {
-            isWebviewUpdating = true;
-            // Apply workspace edit to update active JSON document in editor buffer
-            const edit = new vscode.WorkspaceEdit();
-            const fullRange = new vscode.Range(
-              document.positionAt(0),
-              document.positionAt(document.getText().length)
-            );
-            edit.replace(
-              document.uri,
-              fullRange,
-              JSON.stringify(updatedDoc, null, 2)
-            );
-            try {
-              const success = await vscode.workspace.applyEdit(edit);
-              if (!success) {
-                isWebviewUpdating = false;
-              }
-            } catch (err) {
-              isWebviewUpdating = false;
-              console.error('Failed to apply workspace edit from webview:', err);
+          const edit = new vscode.WorkspaceEdit();
+          const fullRange = new vscode.Range(
+            state.document.positionAt(0),
+            state.document.positionAt(state.document.getText().length)
+          );
+          edit.replace(
+            state.document.uri,
+            fullRange,
+            JSON.stringify(updatedDoc, null, 2)
+          );
+          try {
+            const success = await vscode.workspace.applyEdit(edit);
+            if (!success) {
+              state.isWebviewUpdating = false;
             }
+          } catch (err) {
+            state.isWebviewUpdating = false;
+            console.error('Failed to apply workspace edit from webview:', err);
           }
         } else if (message.type === 'openFile') {
-          const baseDir = document ? path.dirname(document.fileName) : '';
-          const resolvedPath = resolveDacPath(message.filename, baseDir);
-          
+          const baseDir = path.dirname(state.document.fileName);
+          const resolvedPath =
+            resolveDacPath(message.filename, baseDir, getWorkspaceRoots()) ??
+            (await resolveConstructFilePath(message.filename, baseDir, createResolverHost()));
+
           if (resolvedPath) {
             const targetUri = vscode.Uri.file(resolvedPath);
-            vscode.workspace.openTextDocument(targetUri).then(doc => {
-              // Open in the first editor column so it doesn't overwrite the visualizer panel
-              vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One, preview: false });
-            }, err => {
-              vscode.window.showErrorMessage(`Could not open file: ${err.message}`);
-            });
+            vscode.workspace.openTextDocument(targetUri).then(
+              (doc) => {
+                vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One, preview: false });
+              },
+              (err) => {
+                vscode.window.showErrorMessage(`Could not open file: ${err.message}`);
+              }
+            );
           } else {
             vscode.window.showErrorMessage(`File not found: ${message.filename}`);
           }
         }
       });
 
-      // Handle panel disposal
       panel.onDidDispose(() => {
-        if (activePanel === panel) {
-          activePanel = undefined;
-          activeDocument = undefined;
+        if (state.refreshTimer) {
+          clearTimeout(state.refreshTimer);
         }
+        messageDisposable.dispose();
+        openPanels.delete(state);
       });
     }
   );
 
-  context.subscriptions.push(openVisualizerCommand);
-  // File watcher: updates visualizer on editor changes/saves
-  const onSaveSubscription = vscode.workspace.onDidSaveTextDocument(async (document) => {
-    if (activePanel && activeDocument && document.uri.toString() === activeDocument.uri.toString()) {
-      const data = await parseAndLoadDocument(document);
-      if (data) {
-        // Prevent refresh cycles if changes originated from webview itself
-        if (JSON.stringify(data.doc) !== JSON.stringify(lastWebviewDoc)) {
-          activePanel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap, constructsMap: data.constructsMap });
-        }
+  // Watch constructs/** across workspace for create/change/delete events
+  const constructWatcher = vscode.workspace.createFileSystemWatcher('**/constructs/**/*.json');
+  const onConstructCreate = constructWatcher.onDidCreate(() => scheduleRefreshAllPanels());
+  const onConstructChange = constructWatcher.onDidChange(() => scheduleRefreshAllPanels());
+  const onConstructDelete = constructWatcher.onDidDelete(() => scheduleRefreshAllPanels());
+
+  // Refresh open panels when the active document or any referenced construct is saved
+  const onSaveSubscription = vscode.workspace.onDidSaveTextDocument((savedDoc) => {
+    for (const state of openPanels) {
+      if (savedDoc.uri.toString() === state.document.uri.toString()) {
+        scheduleRefreshPanel(state, { skipIfUnchanged: true });
+      } else if (isPathRelevantToPanel(savedDoc.fileName, state)) {
+        scheduleRefreshPanel(state, { skipIfUnchanged: true });
       }
     }
   });
 
+  // Refresh when the active document buffer changes in the editor
   const onChangeSubscription = vscode.workspace.onDidChangeTextDocument(async (event) => {
-    if (activePanel && activeDocument && event.document.uri.toString() === activeDocument.uri.toString()) {
-      if (isWebviewUpdating) {
-        isWebviewUpdating = false;
-        return;
-      }
-      const data = await parseAndLoadDocument(event.document);
-      if (data) {
-        if (JSON.stringify(data.doc) !== JSON.stringify(lastWebviewDoc)) {
-          activePanel.webview.postMessage({ type: 'loadConfig', config: data.doc, viewportsMap: data.viewportsMap, titleBlockMap: data.titleBlockMap, constructsMap: data.constructsMap });
+    for (const state of openPanels) {
+      if (event.document.uri.toString() === state.document.uri.toString()) {
+        if (state.isWebviewUpdating) {
+          state.isWebviewUpdating = false;
+          continue;
         }
+        await refreshPanel(state, { skipIfUnchanged: true });
       }
     }
   });
 
-  context.subscriptions.push(onSaveSubscription);
-  context.subscriptions.push(onChangeSubscription);
+  // Refresh when sibling or referenced JSON files are created/deleted/renamed via Explorer
+  const handleFileListEvent = (uris: readonly vscode.Uri[]) => {
+    for (const state of openPanels) {
+      if (uris.some((u) => isPathRelevantToPanel(u.fsPath, state))) {
+        scheduleRefreshPanel(state, { skipIfUnchanged: true });
+      }
+    }
+  };
+
+  const onCreateFiles = vscode.workspace.onDidCreateFiles((e) => handleFileListEvent(e.files));
+  const onDeleteFiles = vscode.workspace.onDidDeleteFiles((e) => handleFileListEvent(e.files));
+  const onRenameFiles = vscode.workspace.onDidRenameFiles((e) =>
+    handleFileListEvent(e.files.flatMap((f) => [f.oldUri, f.newUri]))
+  );
+
+  context.subscriptions.push(
+    openVisualizerCommand,
+    constructWatcher,
+    onConstructCreate,
+    onConstructChange,
+    onConstructDelete,
+    onSaveSubscription,
+    onChangeSubscription,
+    onCreateFiles,
+    onDeleteFiles,
+    onRenameFiles
+  );
 }
 
 function getWebviewHtml(webview: vscode.Webview, context: vscode.ExtensionContext): string {

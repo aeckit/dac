@@ -9,6 +9,25 @@ declare const acquireVsCodeApi: () => {
 try {
   const vscode = acquireVsCodeApi();
 
+  function buildNestedDocsMap(message: any): Map<string, any> {
+    const mergedNested = new Map<string, any>();
+
+    if (message.viewportsMap) {
+      Object.entries(message.viewportsMap).forEach(([k, v]) => mergedNested.set(k, v));
+    }
+    if (message.titleBlockMap) {
+      Object.entries(message.titleBlockMap).forEach(([k, v]) => mergedNested.set(k, v));
+    }
+    if (message.constructsMap) {
+      Object.entries(message.constructsMap).forEach(([k, v]) => mergedNested.set(k, v));
+    }
+    if (Array.isArray(message.nestedDocsEntries)) {
+      message.nestedDocsEntries.forEach(([k, v]: [string, any]) => mergedNested.set(k, v));
+    }
+
+    return mergedNested;
+  }
+
   function App() {
     const [doc, setDoc] = createSignal<any>(null);
     const [nestedDocs, setNestedDocs] = createSignal<Map<string, any>>(new Map());
@@ -19,22 +38,12 @@ try {
         try {
           const message = event.data;
           if (message.type === 'loadConfig') {
-            const config = message.config;
-            const mergedNested = new Map<string, any>();
-            
-            if (message.viewportsMap) {
-              Object.entries(message.viewportsMap).forEach(([k, v]) => mergedNested.set(k, v));
-            }
-            if (message.titleBlockMap) {
-              Object.entries(message.titleBlockMap).forEach(([k, v]) => mergedNested.set(k, v));
-            }
-            if (message.constructsMap) {
-              Object.entries(message.constructsMap).forEach(([k, v]) => mergedNested.set(k, v));
-            }
-            
-            setDoc(config);
+            const mergedNested = buildNestedDocsMap(message);
+            setDoc(message.config);
             setNestedDocs(mergedNested);
             setErrorMsg(null);
+          } else if (message.type === 'updateNestedDocs') {
+            setNestedDocs(buildNestedDocsMap(message));
           } else if (message.type === 'error') {
             setErrorMsg(message.message);
           }
