@@ -1,6 +1,15 @@
 import { createSignal, onMount, onCleanup, Show } from 'solid-js';
+import { resolveDocumentParameters } from '@aeckit/dac-json-solver';
 import { useDac } from '../hooks/useDac';
 import { PolylineGrips } from './PolylineGrips';
+import {
+  computeConstructLengthEndpointSvg,
+  computeNextConstructLength,
+  inferConstructLengthAnchoring,
+  isExpressionString,
+  isNumericParameter,
+  toFiniteNumber,
+} from '../utils/gizmoMath';
 
 export interface SelectionGizmoProps {
   showActions?: boolean;
@@ -9,7 +18,7 @@ export interface SelectionGizmoProps {
 }
 
 export function SelectionGizmo(props?: SelectionGizmoProps) {
-  const { selectionIds, deleteShape, updateShape, selectedShape, zoom } = useDac();
+  const { selectionIds, deleteShape, updateShape, selectedShape, doc, nestedDocs } = useDac();
   const showActions = () => props?.showActions !== false;
   const showHandles = () => props?.showHandles !== false;
   const showBounds = () => props?.showBounds !== false;
@@ -30,7 +39,9 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     pDimOffset?: {x: number, y: number},
     isPolyline?: boolean,
     polyPoints?: { x: number; y: number; index: number }[],
-    polyMidpoints?: { x: number; y: number; index: number }[]
+    polyMidpoints?: { x: number; y: number; index: number }[],
+    isConstruct?: boolean,
+    pConstructLength?: { x: number; y: number; isExpressionDriven?: boolean }
   } | null>(null);
 
   let reqId: number;
@@ -44,17 +55,74 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     // Capture initial state
     const shape = selectedShape();
     if (!shape) return;
+    const globalParams = resolveDocumentParameters(doc());
     const isCircleShape = shape.type === 'Circle' || shape.type === 'CAD::Shape::Circle';
     const isPolylineShape = shape.type === 'Polyline' || shape.type === 'CAD::Shape::Polyline';
+    const isConstructShape = shape.type === 'ConstructReference';
     const initial = { 
-      x: Number(shape.x ?? 0), y: Number(shape.y ?? 0), w: Number(shape.width ?? 0), h: Number(shape.height ?? 0),
-      x1: Number(shape.x1 ?? 0), y1: Number(shape.y1 ?? 0), x2: Number(shape.x2 ?? 0), y2: Number(shape.y2 ?? 0),
-      cx: Number(shape.cx ?? 0), cy: Number(shape.cy ?? 0), r: Number(shape.r ?? 0),
-      dx: Number(shape.dx ?? 10), dy: Number(shape.dy ?? 10),
-      offset: Number(shape.offset ?? 20),
+      x: toFiniteNumber(shape.x, globalParams, 0),
+      y: toFiniteNumber(shape.y, globalParams, 0),
+      w: toFiniteNumber(shape.width, globalParams, 0),
+      h: toFiniteNumber(shape.height, globalParams, 0),
+      x1: toFiniteNumber(shape.x1, globalParams, 0),
+      y1: toFiniteNumber(shape.y1, globalParams, 0),
+      x2: toFiniteNumber(shape.x2, globalParams, 0),
+      y2: toFiniteNumber(shape.y2, globalParams, 0),
+      cx: toFiniteNumber(shape.cx, globalParams, 0),
+      cy: toFiniteNumber(shape.cy, globalParams, 0),
+      r: toFiniteNumber(shape.r, globalParams, 0),
+      dx: toFiniteNumber(shape.dx, globalParams, 10),
+      dy: toFiniteNumber(shape.dy, globalParams, 10),
+      offset: toFiniteNumber(shape.offset, globalParams, 20),
       cropX: shape.cropX, cropY: shape.cropY,
       points: Array.isArray(shape.points) ? JSON.parse(JSON.stringify(shape.points)) : []
     };
+
+    let constructLengthMeta: {
+      initialLength: number;
+      rotDeg: number;
+      scaleFactor: number;
+      min?: number;
+      max?: number;
+      step?: number;
+    } | null = null;
+
+    if (mode === 'construct-length' && isConstructShape && shape.constructId) {
+      const constructDoc = nestedDocs()?.get(shape.constructId);
+      const lengthParam = constructDoc?.parameters?.length;
+      if (constructDoc && isNumericParameter(lengthParam)) {
+        const rawLength =
+          shape.parameterOverrides?.length !== undefined
+            ? shape.parameterOverrides.length
+            : lengthParam.value !== undefined
+              ? lengthParam.value
+              : lengthParam.default;
+        const initialLength = toFiniteNumber(
+          rawLength,
+          globalParams,
+          toFiniteNumber(lengthParam.default, globalParams, 0)
+        );
+        const rawRot =
+          shape.rotation !== undefined
+            ? shape.rotation
+            : shape.parameterOverrides?.rotation;
+        const rotDeg = toFiniteNumber(rawRot, globalParams, 0);
+        const anchoring = inferConstructLengthAnchoring(
+          constructDoc,
+          initialLength,
+          globalParams,
+          shape.parameterOverrides
+        );
+        constructLengthMeta = {
+          initialLength,
+          rotDeg,
+          scaleFactor: anchoring.scaleFactor,
+          min: typeof lengthParam.min === 'number' ? lengthParam.min : undefined,
+          max: typeof lengthParam.max === 'number' ? lengthParam.max : undefined,
+          step: typeof (lengthParam as any).step === 'number' ? (lengthParam as any).step : undefined,
+        };
+      }
+    }
 
     const container = document.querySelector('[data-canvas-container]') as HTMLElement;
     const rootSvg = container?.querySelector('svg');
@@ -65,8 +133,15 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     const ctm = parentEl.getScreenCTM();
     if (!ctm) return;
     const inverse = ctm.inverse();
+    let hasMoved = false;
 
     const onMove = (moveEvt: PointerEvent) => {
+      if (!hasMoved) {
+        const screenDist = Math.hypot(moveEvt.clientX - startX, moveEvt.clientY - startY);
+        if (screenDist <= 2) return;
+        hasMoved = true;
+      }
+
       const ptStart = rootSvg.createSVGPoint();
       ptStart.x = startX;
       ptStart.y = startY;
@@ -95,14 +170,36 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
           updateShape(shape.componentId, { cx: initial.cx + dx, cy: initial.cy - dy }, true);
         } else if (isPolylineShape) {
           const newPoints = initial.points.map((pt: any) => {
-            const px = typeof pt[0] === 'number' ? pt[0] + dx : pt[0];
-            const py = typeof pt[1] === 'number' ? pt[1] - dy : pt[1];
+            const px = toFiniteNumber(pt[0], globalParams, 0) + dx;
+            const py = toFiniteNumber(pt[1], globalParams, 0) - dy;
             return [px, py];
           });
           updateShape(shape.componentId, { points: newPoints }, true);
         } else {
           updateShape(shape.componentId, { x: initial.x + dx, y: initial.y - dy }, true);
         }
+      } else if (mode === 'construct-length') {
+        if (!constructLengthMeta) return;
+        const nextLength = computeNextConstructLength({
+          initialLength: constructLengthMeta.initialLength,
+          dx,
+          dy,
+          rotDeg: constructLengthMeta.rotDeg,
+          scaleFactor: constructLengthMeta.scaleFactor,
+          min: constructLengthMeta.min,
+          max: constructLengthMeta.max,
+          step: constructLengthMeta.step,
+        });
+        updateShape(
+          shape.componentId,
+          {
+            parameterOverrides: {
+              ...(shape.parameterOverrides || {}),
+              length: nextLength,
+            },
+          },
+          true
+        );
       } else if (mode === 'line-start') {
         updateShape(shape.componentId, { x1: initial.x1 + dx, y1: initial.y1 - dy }, true);
       } else if (mode === 'line-end') {
@@ -116,8 +213,8 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
         if (!isNaN(vIdx) && initial.points[vIdx]) {
           const newPoints = initial.points.map((pt: any, i: number) => {
             if (i === vIdx) {
-              const px = typeof pt[0] === 'number' ? pt[0] + dx : pt[0];
-              const py = typeof pt[1] === 'number' ? pt[1] - dy : pt[1];
+              const px = toFiniteNumber(pt[0], globalParams, 0) + dx;
+              const py = toFiniteNumber(pt[1], globalParams, 0) - dy;
               return [Math.round(px * 100) / 100, Math.round(py * 100) / 100];
             }
             return pt;
@@ -130,8 +227,8 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
           const pA = initial.points[segIdx];
           const nextIdx = (segIdx + 1) % initial.points.length;
           const pB = initial.points[nextIdx];
-          const mx = (Number(pA[0]) + Number(pB[0])) / 2;
-          const my = (Number(pA[1]) + Number(pB[1])) / 2;
+          const mx = (toFiniteNumber(pA[0], globalParams, 0) + toFiniteNumber(pB[0], globalParams, 0)) / 2;
+          const my = (toFiniteNumber(pA[1], globalParams, 0) + toFiniteNumber(pB[1], globalParams, 0)) / 2;
           
           const insertedIdx = segIdx + 1;
           const clonedPts = [...initial.points];
@@ -167,6 +264,7 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
           dy: initial.dy - dy 
         }, true);
       } else {
+        if (isConstructShape) return;
         if (isCircleShape) {
           let dr = 0;
           if (mode.includes('e')) dr = dx;
@@ -210,7 +308,11 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
             newH = minSize;
           }
 
-          const updatePayload: any = { x: newX, y: newY, width: newW, height: newH };
+          const updatePayload: any = {};
+          if (mode.includes('w')) updatePayload.x = newX;
+          if (mode.includes('s')) updatePayload.y = newY;
+          if (mode.includes('w') || mode.includes('e')) updatePayload.width = newW;
+          if (mode.includes('n') || mode.includes('s')) updatePayload.height = newH;
           
           if (isViewport) {
             let scale = 1;
@@ -230,11 +332,13 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
             if (mode.includes('w')) cropX += effDx / scale;
             if (mode.includes('s')) cropY -= effDy / scale;
             
-            updatePayload.cropX = cropX;
-            updatePayload.cropY = cropY;
+            if (mode.includes('w')) updatePayload.cropX = cropX;
+            if (mode.includes('s')) updatePayload.cropY = cropY;
           }
 
-          updateShape(shape.componentId, updatePayload, true);
+          if (Object.keys(updatePayload).length > 0) {
+            updateShape(shape.componentId, updatePayload, true);
+          }
         }
       }
     };
@@ -242,8 +346,10 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
-      // Finalize transient state
-      updateShape(shape.componentId, {}, false);
+      if (hasMoved) {
+        // Finalize transient state
+        updateShape(shape.componentId, {}, false);
+      }
     };
 
     document.addEventListener('pointermove', onMove);
@@ -286,6 +392,8 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     let isPolyline = false;
     let polyPoints: { x: number; y: number; index: number }[] = [];
     let polyMidpoints: { x: number; y: number; index: number }[] = [];
+    let isConstruct = false;
+    let pConstructLength: { x: number; y: number; isExpressionDriven?: boolean } | undefined;
 
     ids.forEach(id => {
       const el = rootSvg.querySelector(`[data-component-id="${id}"]`) as SVGGraphicsElement;
@@ -293,6 +401,67 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
       
       const type = el.getAttribute('data-component-type');
       const screenCTM = el.getScreenCTM();
+
+      if (type === 'ConstructReference') {
+        isConstruct = true;
+        if (ids.length === 1 && screenCTM) {
+          const shape = selectedShape();
+          const constructId = shape?.constructId;
+          const constructDoc = constructId ? nestedDocs()?.get(constructId) : undefined;
+          const lengthParam = constructDoc?.parameters?.length;
+          if (shape && constructDoc && isNumericParameter(lengthParam)) {
+            const globalParams = resolveDocumentParameters(doc());
+            const rawLength =
+              shape.parameterOverrides?.length !== undefined
+                ? shape.parameterOverrides.length
+                : lengthParam.value !== undefined
+                  ? lengthParam.value
+                  : lengthParam.default;
+            const resolvedLength = toFiniteNumber(
+              rawLength,
+              globalParams,
+              toFiniteNumber(lengthParam.default, globalParams, 0)
+            );
+            const rawRot =
+              shape.rotation !== undefined
+                ? shape.rotation
+                : shape.parameterOverrides?.rotation;
+            const rotDeg = toFiniteNumber(rawRot, globalParams, 0);
+            const refX = toFiniteNumber(shape.x, globalParams, 0);
+            const refY = toFiniteNumber(shape.y, globalParams, 0);
+            const anchoring = inferConstructLengthAnchoring(
+              constructDoc,
+              resolvedLength,
+              globalParams,
+              shape.parameterOverrides
+            );
+            const vbAttr = rootSvg.getAttribute('viewBox');
+            const vbHeight =
+              (rootSvg as any).viewBox?.baseVal?.height ||
+              (vbAttr ? parseFloat(vbAttr.split(/[\s,]+/)[3]) : 0) ||
+              18;
+            const { svgX, svgY } = computeConstructLengthEndpointSvg({
+              refX,
+              refY,
+              rotDeg,
+              localEndX: anchoring.localEndX,
+              localEndY: anchoring.localEndY,
+              canvasHeight: vbHeight,
+            });
+            const pt = rootSvg.createSVGPoint();
+            pt.x = svgX;
+            pt.y = svgY;
+            if (typeof pt.matrixTransform === 'function') {
+              const mPt = pt.matrixTransform(screenCTM);
+              pConstructLength = {
+                x: mPt.x - containerRect.left,
+                y: mPt.y - containerRect.top,
+                isExpressionDriven: isExpressionString(shape.parameterOverrides?.length),
+              };
+            }
+          }
+        }
+      }
 
       if (ids.length === 1 && (type === 'Polyline' || type === 'CAD::Shape::Polyline')) {
         isPolyline = true;
@@ -457,7 +626,9 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
         isDimension, pDim1, pDim2, pDimOffset,
         isPolyline,
         polyPoints,
-        polyMidpoints
+        polyMidpoints,
+        isConstruct,
+        pConstructLength
       });
     } else {
       setBox(null);
@@ -545,8 +716,8 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
           </Show>
 
           <Show when={showHandles()}>
-            {/* 8 Resize Handles (only for standard 2D shapes) */}
-            {!b().isLine && !b().isLeader && !b().isDimension && !b().isPolyline && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
+            {/* 8 Resize Handles (only for standard 2D shapes, never ConstructReference) */}
+            {!b().isLine && !b().isLeader && !b().isDimension && !b().isPolyline && !b().isConstruct && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((dir) => {
               let hLeft = 0, hTop = 0;
               const cx = (b().left + b().right) / 2;
               const cy = (b().top + b().bottom) / 2;
@@ -689,6 +860,34 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
                 onDragVertex={(e, idx) => handleDrag(e, `poly-vertex-${idx}`)}
                 onDragMidpoint={(e, idx) => handleDrag(e, `poly-midpoint-${idx}`)}
                 onDeleteVertex={handleDeleteVertex}
+              />
+            )}
+
+            {/* ConstructReference Length Handle */}
+            {b().isConstruct && b().pConstructLength && (
+              <div
+                data-gizmo-handle="construct-length"
+                data-expression-driven={b().pConstructLength!.isExpressionDriven ? 'true' : undefined}
+                onPointerDown={(e) => handleDrag(e, 'construct-length')}
+                title={
+                  b().pConstructLength!.isExpressionDriven
+                    ? 'Drag to override expression-driven length'
+                    : 'Drag to adjust length'
+                }
+                style={{
+                  position: 'absolute',
+                  left: `${b().pConstructLength!.x}px`,
+                  top: `${b().pConstructLength!.y}px`,
+                  width: '10px',
+                  height: '10px',
+                  background: b().pConstructLength!.isExpressionDriven ? '#f59e0b' : '#10b981',
+                  border: '1.5px solid white',
+                  "border-radius": '50%',
+                  transform: 'translate(-50%, -50%)',
+                  "pointer-events": 'auto',
+                  cursor: 'ew-resize',
+                  "box-shadow": '0 2px 4px rgba(0,0,0,0.3)',
+                }}
               />
             )}
           </Show>

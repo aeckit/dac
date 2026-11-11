@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
 import { DacProvider, DacCanvas, SelectionGizmo, useDac, type DacCanvasProps, type SelectionGizmoProps } from '../index';
-import type { DetailDocument } from '@aeckit/dac-schema';
+import type { ConstructDocument, DetailDocument } from '@aeckit/dac-schema';
 
 function installSvgMocks() {
   const win = window as any;
@@ -368,6 +368,295 @@ describe('@aeckit/dac-solid SelectionGizmo & DacCanvas gizmo visibility props', 
       expect(hiddenGizmo.container.querySelector('[data-selection-gizmo="true"]')).toBeNull();
     } finally {
       hiddenGizmo.cleanup();
+    }
+  });
+
+  it('hides 8-way resize handles on ConstructReference without length parameter and emits no warnings', async () => {
+    const woodSectionDoc: ConstructDocument = {
+      type: 'CAD::Construct',
+      version: '1.0',
+      parameters: {
+        lumberSize: {
+          type: 'string',
+          default: '2x4',
+          options: [{ label: '2x4', value: '2x4', variables: { w: 1.5, h: 3.5 } }],
+        },
+      },
+      geometry: [
+        {
+          type: 'CAD::Shape::Rectangle',
+          componentId: 'stud',
+          x: 0,
+          y: 0,
+          width: '{parameters.lumberSize.w}',
+          height: '{parameters.lumberSize.h}',
+        },
+      ],
+    };
+
+    const detailDoc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: [
+        {
+          type: 'ConstructReference',
+          componentId: 'stud_1',
+          constructId: 'wood-section',
+          x: 2,
+          y: 3,
+        },
+      ],
+    };
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    let warningsRef: () => any[] = () => [];
+
+    function Helper() {
+      const { setSelectionIds, solverWarnings } = useDac();
+      warningsRef = solverWarnings;
+      setSelectionIds(['stud_1']);
+      return null;
+    }
+
+    const dispose = render(() =>
+      createComponent(DacProvider, {
+        doc: detailDoc,
+        nestedDocs: new Map([['wood-section', woodSectionDoc]]),
+        get children() {
+          return [createComponent(DacCanvas, {}), createComponent(Helper, {})];
+        },
+      }),
+      container
+    );
+
+    try {
+      await waitForGizmoFrame();
+      expect(warningsRef()).toEqual([]);
+      expect(container.querySelector('[data-gizmo-bounds="true"]')).not.toBeNull();
+      expect(container.querySelectorAll('[data-gizmo-handle]')).toHaveLength(0);
+    } finally {
+      dispose();
+      container.remove();
+    }
+  });
+
+  it('renders construct-length handle for constructs with length parameter, prevents zero-drag mutation, and updates parameterOverrides.length on drag', async () => {
+    const breaklineDoc: ConstructDocument = {
+      type: 'CAD::Construct',
+      version: '1.0',
+      parameters: {
+        length: { type: 'number', default: 6, min: 1, max: 20, step: 0.5 },
+      },
+      geometry: [
+        {
+          type: 'CAD::Shape::Polyline',
+          componentId: 'line',
+          points: [
+            ['-{parameters.length} / 2', 0],
+            ['{parameters.length} / 2', 0],
+          ],
+          closed: false,
+        },
+      ],
+    };
+
+    const detailDoc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: [
+        {
+          type: 'ConstructReference',
+          componentId: 'brk_1',
+          constructId: 'breakline',
+          x: 6,
+          y: 8,
+          rotation: 90,
+        },
+      ],
+    };
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const onChangeSpy = vi.fn();
+    let getWarnings: () => any[] = () => [];
+
+    function Helper() {
+      const { setSelectionIds, solverWarnings } = useDac();
+      getWarnings = solverWarnings;
+      setSelectionIds(['brk_1']);
+      return null;
+    }
+
+    const dispose = render(() =>
+      createComponent(DacProvider, {
+        doc: detailDoc,
+        nestedDocs: new Map([['breakline', breaklineDoc]]),
+        onChange: onChangeSpy,
+        get children() {
+          return [createComponent(DacCanvas, {}), createComponent(Helper, {})];
+        },
+      }),
+      container
+    );
+
+    try {
+      await waitForGizmoFrame();
+      expect(getWarnings()).toEqual([]);
+
+      // Only construct-length handle should be rendered (no 8-way handles)
+      const handles = container.querySelectorAll('[data-gizmo-handle]');
+      expect(handles).toHaveLength(1);
+      const lengthHandle = container.querySelector('[data-gizmo-handle="construct-length"]') as HTMLElement;
+      expect(lengthHandle).not.toBeNull();
+      // At rotation 90 deg, local +X=(3,0) maps to world (6, 8+3)=(6, 11) -> svg (6, 7)
+      expect(lengthHandle.style.left).toBe('6px');
+      expect(lengthHandle.style.top).toBe('7px');
+
+      // 1. Click without moving past drag threshold -> must NOT call onChange
+      lengthHandle.dispatchEvent(new PointerEvent('pointerdown', { clientX: 6, clientY: 7, bubbles: true }));
+      document.dispatchEvent(new PointerEvent('pointermove', { clientX: 7, clientY: 7, bubbles: true }));
+      document.dispatchEvent(new PointerEvent('pointerup', { clientX: 7, clientY: 7, bubbles: true }));
+      expect(onChangeSpy).not.toHaveBeenCalled();
+
+      // 2. Drag upward by 4px in SVG (-Y = +4 Cartesian along 90deg rotated local X; centered scaleFactor=2 -> 6 + 2*4 = 14)
+      lengthHandle.dispatchEvent(new PointerEvent('pointerdown', { clientX: 6, clientY: 7, bubbles: true }));
+      document.dispatchEvent(new PointerEvent('pointermove', { clientX: 6, clientY: 3, bubbles: true }));
+      document.dispatchEvent(new PointerEvent('pointerup', { clientX: 6, clientY: 3, bubbles: true }));
+
+      expect(onChangeSpy).toHaveBeenCalled();
+      const latestDoc = onChangeSpy.mock.calls[onChangeSpy.mock.calls.length - 1][0];
+      const updatedShape = latestDoc.geometry[0];
+      expect(updatedShape.parameterOverrides?.length).toBe(14);
+      expect(updatedShape.x).toBe(6);
+      expect(updatedShape.y).toBe(8);
+      expect(updatedShape.width).toBeUndefined();
+      expect(updatedShape.height).toBeUndefined();
+      expect(getWarnings()).toEqual([]);
+    } finally {
+      dispose();
+      container.remove();
+    }
+  });
+
+  it('hides construct-length handle when showGizmoHandles is false and preserves expression-driven coordinates on unmodified resize axes', async () => {
+    const breaklineDoc: ConstructDocument = {
+      type: 'CAD::Construct',
+      version: '1.0',
+      parameters: { length: { type: 'number', default: 6 } },
+      geometry: [
+        {
+          type: 'CAD::Shape::Polyline',
+          componentId: 'line',
+          points: [['-{parameters.length} / 2', 0], ['{parameters.length} / 2', 0]],
+          closed: false,
+        },
+      ],
+    };
+
+    const readOnlyDetail: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: [
+        {
+          type: 'ConstructReference',
+          componentId: 'brk_ro',
+          constructId: 'breakline',
+          x: 4,
+          y: 4,
+        },
+      ],
+    };
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    function Selector() {
+      const { setSelectionIds } = useDac();
+      setSelectionIds(['brk_ro']);
+      return null;
+    }
+
+    const disposeReadOnly = render(() =>
+      createComponent(DacProvider, {
+        doc: readOnlyDetail,
+        nestedDocs: new Map([['breakline', breaklineDoc]]),
+        get children() {
+          return [
+            createComponent(DacCanvas, { showGizmoActions: false, showGizmoHandles: false }),
+            createComponent(Selector, {}),
+          ];
+        },
+      }),
+      container
+    );
+
+    try {
+      await waitForGizmoFrame();
+      expect(container.querySelector('[data-gizmo-bounds="true"]')).not.toBeNull();
+      expect(container.querySelector('[data-gizmo-actions="true"]')).toBeNull();
+      expect(container.querySelectorAll('[data-gizmo-handle]')).toHaveLength(0);
+    } finally {
+      disposeReadOnly();
+      container.remove();
+    }
+
+    // Verify dragging 'e' handle preserves expression-driven x on Rectangle
+    const exprDoc: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      parameters: { originX: { type: 'number', default: 2 } },
+      geometry: [
+        {
+          type: 'CAD::Shape::Rectangle',
+          componentId: 'expr_rect',
+          x: '{parameters.originX}',
+          y: 3,
+          width: 5,
+          height: 4,
+        },
+      ],
+    };
+
+    const exprContainer = document.createElement('div');
+    document.body.appendChild(exprContainer);
+    const onChangeExpr = vi.fn();
+    function ExprSelector() {
+      const { setSelectionIds } = useDac();
+      setSelectionIds(['expr_rect']);
+      return null;
+    }
+
+    const disposeExpr = render(() =>
+      createComponent(DacProvider, {
+        doc: exprDoc,
+        onChange: onChangeExpr,
+        get children() {
+          return [createComponent(DacCanvas, {}), createComponent(ExprSelector, {})];
+        },
+      }),
+      exprContainer
+    );
+
+    try {
+      await waitForGizmoFrame();
+      const eastHandle = exprContainer.querySelector('[data-gizmo-handle="e"]') as HTMLElement;
+      expect(eastHandle).not.toBeNull();
+      eastHandle.dispatchEvent(new PointerEvent('pointerdown', { clientX: 60, clientY: 30, bubbles: true }));
+      document.dispatchEvent(new PointerEvent('pointermove', { clientX: 70, clientY: 30, bubbles: true }));
+      document.dispatchEvent(new PointerEvent('pointerup', { clientX: 70, clientY: 30, bubbles: true }));
+
+      expect(onChangeExpr).toHaveBeenCalled();
+      const updatedRect = onChangeExpr.mock.calls[onChangeExpr.mock.calls.length - 1][0].geometry[0];
+      expect(updatedRect.x).toBe('{parameters.originX}');
+      expect(updatedRect.y).toBe(3);
+      expect(updatedRect.width).toBe(15);
+    } finally {
+      disposeExpr();
+      exprContainer.remove();
     }
   });
 });
