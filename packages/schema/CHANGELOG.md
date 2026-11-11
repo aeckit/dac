@@ -1,5 +1,11 @@
 # @aeckit/dac-schema
 
+## 0.4.1
+
+### Patch Changes
+
+- d8e4b01: Support parametric expressions on `ConstructReference` coordinates, disable invalid 8-way resize handles on `ConstructReference`, guard against zero-drag and NaN mutations, and add a dedicated `length` grabber handle for constructs defining a numeric `length` parameter.
+
 ## 0.4.0
 
 ### Minor Changes
