@@ -1,4 +1,4 @@
-import { For, Switch, Match, createSignal, createMemo, createEffect, onCleanup } from 'solid-js';
+import { For, Switch, Match, createSignal, createMemo, createEffect, onCleanup, type JSX } from 'solid-js';
 
 function FileIcon(props: { type: string, color: string }) {
   return (
@@ -43,6 +43,23 @@ function FileIcon(props: { type: string, color: string }) {
         </Match>
       </Switch>
     </svg>
+  );
+}
+
+/** External action link rendered in the workspace sidebar footer. */
+function SidebarFooterLink(props: { href: string; icon: JSX.Element; label: string }) {
+  return (
+    <a
+      href={props.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '6px', color: 'var(--app-text-muted)', "text-decoration": 'none', "font-size": '13px', padding: '6px 12px', 'border-radius': '4px', border: '1px solid var(--app-border)', background: 'var(--app-bg-main)', cursor: 'pointer' }}
+      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--app-text)'; e.currentTarget.style.borderColor = 'var(--app-text-muted)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--app-text-muted)'; e.currentTarget.style.borderColor = 'var(--app-border)'; }}
+    >
+      {props.icon}
+      {props.label}
+    </a>
   );
 }
 
@@ -211,20 +228,28 @@ export function WorkspaceSidebar(props: {
           }}
         </For>
       </div>
-      <div style={{ padding: '12px', "border-top": '1px solid var(--app-border)', display: 'flex', 'justify-content': 'center' }}>
-        <a 
-          href="https://github.com/aeckit/dac" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--app-text-muted)', "text-decoration": 'none', "font-size": '13px', padding: '6px 12px', 'border-radius': '4px', border: '1px solid var(--app-border)', background: 'var(--app-bg-main)', cursor: 'pointer' }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--app-text)'; e.currentTarget.style.borderColor = 'var(--app-text-muted)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--app-text-muted)'; e.currentTarget.style.borderColor = 'var(--app-border)'; }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-          </svg>
-          Star on GitHub
-        </a>
+      <div style={{ padding: '12px', "border-top": '1px solid var(--app-border)', display: 'flex', 'flex-direction': 'column', gap: '8px' }}>
+        <SidebarFooterLink
+          href="https://aeckit.github.io/dac-catalog/"
+          label="DAC Catalog"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+              <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+              <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+              <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+            </svg>
+          }
+        />
+        <SidebarFooterLink
+          href="https://github.com/aeckit/dac"
+          label="Star on GitHub"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          }
+        />
       </div>
     </div>
   );
