@@ -14,6 +14,7 @@ export const ParameterDefinitionSchema = z.object({
   componentId: z.string().optional(),
   min: z.number().optional(),
   max: z.number().optional(),
+  step: z.number().optional(),
   label: z.string().optional(),
   options: z.array(ParameterOptionSchema).optional(),
 });

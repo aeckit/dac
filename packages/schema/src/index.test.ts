@@ -107,4 +107,28 @@ describe('@aeckit/dac-schema contract verification', () => {
     expect(jsonSchema).toBeDefined();
     expect((jsonSchema as any).definitions?.DrawingAsCodeDocument || (jsonSchema as any).$ref).toBeDefined();
   });
+
+  it('validates ConstructReference with parametric x/y/rotation strings while rejecting width/height strictly', async () => {
+    const { ConstructReferenceSchema } = await import('./index');
+    const valid = ConstructReferenceSchema.safeParse({
+      type: 'ConstructReference',
+      componentId: 'ref-1',
+      constructId: 'breakline',
+      x: '{parameters.originX}',
+      y: '{parameters.originY}',
+      rotation: '{parameters.angle}',
+      parameterOverrides: { length: 12 }
+    });
+    expect(valid.success).toBe(true);
+
+    const invalid = ConstructReferenceSchema.safeParse({
+      type: 'ConstructReference',
+      componentId: 'ref-1',
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 5
+    });
+    expect(invalid.success).toBe(false);
+  });
 });

@@ -99,8 +99,8 @@ export const PolylineSchema = BaseShapeSchema.extend({
 
 export const ConstructReferenceSchema = BaseShapeSchema.extend({
   type: z.literal('ConstructReference'),
-  x: z.number().default(0),
-  y: z.number().default(0),
+  x: z.union([z.number(), z.string()]).default(0),
+  y: z.union([z.number(), z.string()]).default(0),
   constructId: z.string().optional(),
   parameterOverrides: z.record(z.any()).optional(),
 }).strict();
