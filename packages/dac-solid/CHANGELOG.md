@@ -1,5 +1,18 @@
 # @aeckit/dac-solid
 
+## 0.5.0
+
+### Minor Changes
+
+- 6e49f8e: Add `showHandles` and `showBounds` props to `SelectionGizmo`, and `showGizmoHandles`, `showGizmoBounds`, and `showGizmo` props to `DacCanvas` so read-only viewers can hide interactive geometry grabbers while keeping element selection enabled.
+
+### Patch Changes
+
+- d8e4b01: Support parametric expressions on `ConstructReference` coordinates, disable invalid 8-way resize handles on `ConstructReference`, guard against zero-drag and NaN mutations, and add a dedicated `length` grabber handle for constructs defining a numeric `length` parameter.
+- Updated dependencies [d8e4b01]
+  - @aeckit/dac-schema@0.4.1
+  - @aeckit/dac-json-solver@0.3.1
+
 ## 0.4.0
 
 ### Minor Changes

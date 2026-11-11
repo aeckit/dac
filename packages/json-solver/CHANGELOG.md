@@ -1,5 +1,13 @@
 # @aeckit/dac-json-solver
 
+## 0.3.1
+
+### Patch Changes
+
+- d8e4b01: Support parametric expressions on `ConstructReference` coordinates, disable invalid 8-way resize handles on `ConstructReference`, guard against zero-drag and NaN mutations, and add a dedicated `length` grabber handle for constructs defining a numeric `length` parameter.
+- Updated dependencies [d8e4b01]
+  - @aeckit/dac-schema@0.4.1
+
 ## 0.3.0
 
 ### Minor Changes
