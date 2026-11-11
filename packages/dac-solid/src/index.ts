@@ -3,6 +3,7 @@ export * from './hooks/useDac';
 export { DacCanvas, type DacCanvasProps } from './components/DacCanvas';
 export { DacInspector } from './components/DacInspector';
 export { DocumentParametersInspector, ConstructReferenceInspector } from './components/ParametersInspector';
+export { NotesInspector, type NotesInspectorProps } from './components/NotesInspector';
 export { DacToolbar } from './components/DacToolbar';
 export { DacZoomControls } from './components/DacZoomControls';
 export { DacPlaybackControls, type DacPlaybackControlsProps } from './components/DacPlaybackControls';

@@ -2,6 +2,8 @@ import { Show, For, createEffect } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 import { resolveDocumentParameters } from '@aeckit/dac-json-solver';
 import { DocumentParametersInspector, ConstructReferenceInspector } from './ParametersInspector';
+import { NotesInspector } from './NotesInspector';
+import { ELEMENT_EXCLUDED_PROPERTY_KEYS } from './notesUtils';
 import { PropertyField } from './PropertyField';
 import { inspectorStyles } from './inspectorStyles';
 
@@ -99,7 +101,7 @@ export function DacInspector() {
               
               <div style={{ "margin-top": '16px', "margin-bottom": '16px' }}>
                 <For each={Object.keys(doc() || {}).filter(k => {
-                  if (k === 'type' || k === 'geometry' || k === 'viewports' || k === 'titleblocks' || typeof (doc() || {})[k] === 'object') return false;
+                  if (k === 'type' || k === 'geometry' || k === 'viewports' || k === 'titleblocks' || k === 'notes' || k === 'note' || typeof (doc() || {})[k] === 'object') return false;
                   const docType = doc()?.type;
                   if (docType && UI_CONFIG[docType]?.hiddenFields.includes(k)) return false;
                   return true;
@@ -119,27 +121,9 @@ export function DacInspector() {
                 builder={builder}
               />
 
-              <div style={{ "margin-top": '16px' }}>
-                <Show when={doc()?.geometry && doc().geometry.length > 0}>
-                  <p style={inspectorStyles.sectionTitle}>Geometries</p>
-                  <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px', "margin-bottom": '16px' }}>
-                    <For each={doc()?.geometry || []}>
-                      {(geom: any, index) => {
-                        const id = geom.componentId || `shape_${index()}`;
-                        return (
-                          <div 
-                            onClick={() => selectShape(id)}
-                            style={inspectorStyles.cardItem}
-                          >
-                            <div style={{ "font-size": '11px', "font-weight": '600', color: 'var(--app-text, inherit)' }}>{geom.type}</div>
-                            <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{id}</div>
-                          </div>
-                        );
-                      }}
-                    </For>
-                  </div>
-                </Show>
+              <NotesInspector mode="document" doc={doc} />
 
+              <div style={{ "margin-top": '16px' }}>
                 <Show when={doc()?.viewports && doc().viewports.length > 0}>
                   <p style={inspectorStyles.sectionTitle}>Viewports</p>
                   <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px', "margin-bottom": '16px' }}>
@@ -165,6 +149,26 @@ export function DacInspector() {
                   <div style={{ ...inspectorStyles.cardItem, "margin-bottom": '16px', cursor: 'default' }}>
                     <div style={{ "font-size": '11px', "font-weight": '600', color: 'var(--app-text, inherit)' }}>Reference</div>
                     <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{doc()?.titleBlockRef}</div>
+                  </div>
+                </Show>
+
+                <Show when={doc()?.geometry && doc().geometry.length > 0}>
+                  <p style={inspectorStyles.sectionTitle}>Geometries</p>
+                  <div style={{ display: 'flex', "flex-direction": 'column', gap: '8px', "margin-bottom": '16px' }}>
+                    <For each={doc()?.geometry || []}>
+                      {(geom: any, index) => {
+                        const id = geom.componentId || `shape_${index()}`;
+                        return (
+                          <div 
+                            onClick={() => selectShape(id)}
+                            style={inspectorStyles.cardItem}
+                          >
+                            <div style={{ "font-size": '11px', "font-weight": '600', color: 'var(--app-text, inherit)' }}>{geom.type}</div>
+                            <div style={{ "font-size": '10px', color: 'var(--app-text-muted, #94a3b8)' }}>{id}</div>
+                          </div>
+                        );
+                      }}
+                    </For>
                   </div>
                 </Show>
               </div>
@@ -201,7 +205,15 @@ export function DacInspector() {
                 if (!rawKeys.includes(k)) rawKeys.push(k);
               });
             }
-            return rawKeys.filter(k => k !== 'type' && k !== 'componentId' && k !== 'id' && k !== 'componentType' && (k === 'points' || typeof (s as any)[k] !== 'object'));
+            return rawKeys.filter(
+              k =>
+                k !== 'type' &&
+                k !== 'componentId' &&
+                k !== 'id' &&
+                k !== 'componentType' &&
+                !ELEMENT_EXCLUDED_PROPERTY_KEYS.has(k) &&
+                (k === 'points' || typeof (s as any)[k] !== 'object')
+            );
           };
 
           const resolvedParams = () => resolveDocumentParameters(doc());
@@ -248,6 +260,8 @@ export function DacInspector() {
                   updateShape={updateShape}
                 />
               </Show>
+
+              <NotesInspector mode="element" shape={shape} />
             </div>
           );
         }}
