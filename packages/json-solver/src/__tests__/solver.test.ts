@@ -336,7 +336,7 @@ describe('@aeckit/dac-json-solver parametric math and layout engine', () => {
     expect(resolved.length).toBe(1);
     expect(resolved[0].componentId).toBe('inst_path');
 
-    const pts = resolved[0].points;
+    const pts = (resolved[0] as any).points;
     expect(pts).toHaveLength(3);
     // [0, 0] rotated 90 around (0,0) -> [0, 0] + (5, 10) = [5, 10]
     expect(pts[0][0]).toBeCloseTo(5);
@@ -379,5 +379,75 @@ describe('@aeckit/dac-json-solver parametric math and layout engine', () => {
     const shape = group.shapes[0];
     expect(shape.closed).toBe(true);
     expect(shape.hatch).toBe('Concrete');
+  });
+
+  it('evaluates parametric x, y, and rotation on ConstructReference without warnings while still flagging unrecognized width/height', () => {
+    const constructDoc: ConstructDocument = {
+      type: 'CAD::Construct',
+      version: '1.0',
+      parameters: {
+        length: { type: 'number', default: 6 }
+      },
+      geometry: [
+        {
+          type: 'CAD::Shape::Line',
+          componentId: 'seg',
+          x1: '-{parameters.length} / 2',
+          y1: 0,
+          x2: '{parameters.length} / 2',
+          y2: 0
+        }
+      ]
+    };
+
+    const validDetail: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      parameters: {
+        posX: { type: 'number', default: 4 },
+        posY: { type: 'number', default: 8 },
+        angle: { type: 'number', default: 90 }
+      },
+      geometry: [
+        {
+          type: 'ConstructReference',
+          componentId: 'brk_1',
+          constructId: 'breakline',
+          x: '{parameters.posX}',
+          y: '{parameters.posY}',
+          rotation: '{parameters.angle}',
+          parameterOverrides: { length: 10 }
+        }
+      ]
+    };
+
+    const resolver = (id: string) => id === 'breakline' ? constructDoc : undefined;
+    const validLayout = solveDetailDocument(validDetail, 24, 18, resolver);
+    expect(validLayout.groups).toHaveLength(1);
+    expect(validLayout.groups[0].warnings).toEqual([]);
+    expect(validLayout.groups[0].shapes[0].x1).toBeCloseTo(4);
+    expect(validLayout.groups[0].shapes[0].y1).toBeCloseTo(3);
+    expect(validLayout.groups[0].shapes[0].x2).toBeCloseTo(4);
+    expect(validLayout.groups[0].shapes[0].y2).toBeCloseTo(13);
+
+    const invalidDetail: DetailDocument = {
+      type: 'CAD::Detail',
+      version: '1.0',
+      scale: '1:1',
+      geometry: [
+        {
+          type: 'ConstructReference',
+          componentId: 'brk_bad',
+          constructId: 'breakline',
+          x: 0,
+          y: 0,
+          width: 10,
+          height: 5
+        } as any
+      ]
+    };
+    const invalidLayout = solveDetailDocument(invalidDetail, 24, 18, resolver);
+    expect(invalidLayout.groups[0].warnings?.length).toBeGreaterThan(0);
   });
 });

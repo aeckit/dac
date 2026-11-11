@@ -41,7 +41,14 @@ export function solveDocumentGeometry(
     }
 
     if (shape.type === 'ConstructReference') {
-      const validationResult = ConstructReferenceSchema.safeParse(shape);
+      const sRef: any = shape;
+      const evaluatedRef = {
+        ...sRef,
+        ...(sRef.x !== undefined ? { x: evaluateExpression(sRef.x, resolvedParams) } : {}),
+        ...(sRef.y !== undefined ? { y: evaluateExpression(sRef.y, resolvedParams) } : {}),
+        ...(sRef.rotation !== undefined ? { rotation: evaluateExpression(sRef.rotation, resolvedParams) } : {}),
+      };
+      const validationResult = ConstructReferenceSchema.safeParse(evaluatedRef);
       if (!validationResult.success) {
         for (const err of validationResult.error.issues) {
           shapeWarnings.push({ message: `${err.path.join('.')}: ${err.message}` });
