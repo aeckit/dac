@@ -1,5 +1,11 @@
 # @aeckit/dac-solid
 
+## 0.6.0
+
+### Minor Changes
+
+- 2fccf92: Add context-aware Notes & metadata summary section to `DacInspector` (document and selected-element views) and order `Geometries` last in the document inspector view.
+
 ## 0.5.0
 
 ### Minor Changes
