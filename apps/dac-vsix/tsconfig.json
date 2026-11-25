@@ -4,8 +4,10 @@
     "outDir": "dist",
     "rootDir": "src",
     "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "jsx": "preserve",
-    "jsxImportSource": "solid-js",
+    "jsxImportSource": "@solidjs/web",
     "noEmit": true
   },
   "include": ["src/**/*"]

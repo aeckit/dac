@@ -1,5 +1,5 @@
-import { render } from 'solid-js/web';
-import { createSignal, onMount, Show } from 'solid-js';
+import { render } from '@solidjs/web';
+import { createSignal, onSettled, Show } from 'solid-js';
 import { DacProvider, DacCanvas, DacInspector, DacToolbar, DacZoomControls, DacPlaybackControls } from '@aeckit/dac-solid';
 
 declare const acquireVsCodeApi: () => {
@@ -33,7 +33,7 @@ try {
     const [nestedDocs, setNestedDocs] = createSignal<Map<string, any>>(new Map());
     const [errorMsg, setErrorMsg] = createSignal<string | null>(null);
 
-    onMount(() => {
+    onSettled(() => {
       const handleMessage = (event: MessageEvent) => {
         try {
           const message = event.data;

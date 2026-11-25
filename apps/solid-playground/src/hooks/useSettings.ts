@@ -1,4 +1,4 @@
-import { createSignal, createEffect } from 'solid-js';
+import { createSignal, createTrackedEffect } from 'solid-js';
 import { BlueprintTheme, PaperTheme, CadTheme } from '@aeckit/dac-renderer-svg';
 
 export interface AppSettings {
@@ -28,7 +28,7 @@ export function useSettings() {
     isInitialized = true;
   }
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     localStorage.setItem('dac_settings', JSON.stringify(settings()));
   });
 

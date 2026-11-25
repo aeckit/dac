@@ -1,7 +1,21 @@
 const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
-const { solidPlugin } = require('esbuild-plugin-solid');
+const { transform } = require('@solidjs/compiler');
+
+const solid2Plugin = {
+  name: 'solid2',
+  setup(build) {
+    build.onLoad({ filter: /\.(tsx|jsx)$/ }, async (args) => {
+      const text = await fs.promises.readFile(args.path, 'utf8');
+      const { code } = transform(text, { filename: args.path, generate: 'dom' });
+      return {
+        contents: code,
+        loader: args.path.endsWith('.tsx') ? 'ts' : 'js',
+      };
+    });
+  },
+};
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -62,7 +76,7 @@ async function main() {
     platform: 'browser',
     target: 'es2020',
     logLevel: 'silent',
-    plugins: [solidPlugin(), esbuildLogPlugin('webview')],
+    plugins: [solid2Plugin, esbuildLogPlugin('webview')],
   });
 
   if (watch) {

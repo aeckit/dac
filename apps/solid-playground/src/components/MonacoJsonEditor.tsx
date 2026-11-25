@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onMount, onCleanup } from 'solid-js';
+import { createTrackedEffect, createSignal, onSettled } from 'solid-js';
 import * as monaco from 'monaco-editor';
 
 import { useSettings } from '../hooks/useSettings';
@@ -29,7 +29,7 @@ export function MonacoJsonEditor(props: { value: string; onChange: (value: strin
   const [isTyping, setIsTyping] = createSignal(false);
   const { settings } = useSettings();
 
-  onMount(() => {
+  onSettled(() => {
     if (!containerRef) return;
     const ed = monaco.editor.create(containerRef, {
       value: props.value,
@@ -49,19 +49,19 @@ export function MonacoJsonEditor(props: { value: string; onChange: (value: strin
 
     const blurDisposable = ed.onDidBlurEditorText(() => setIsTyping(false));
 
-    onCleanup(() => {
+    return () => {
       disposable.dispose();
       blurDisposable.dispose();
       ed.dispose();
-    });
+    };
   });
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     const currentTheme = settings().appTheme === 'light' ? 'solarized-light' : 'vs-dark';
     monaco.editor.setTheme(currentTheme);
   });
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     const ed = editor();
     if (ed && !isTyping()) {
       const current = ed.getValue();
@@ -75,7 +75,7 @@ export function MonacoJsonEditor(props: { value: string; onChange: (value: strin
     }
   });
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     const ed = editor();
     if (ed && props.selectedId) {
       const model = ed.getModel();

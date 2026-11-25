@@ -1,4 +1,5 @@
-import { For, Switch, Match, createSignal, createMemo, createEffect, onCleanup, type JSX } from 'solid-js';
+import { For, Switch, Match, createSignal, createMemo, createTrackedEffect } from 'solid-js';
+import type { JSX } from '@solidjs/web';
 
 function FileIcon(props: { type: string, color: string }) {
   return (
@@ -76,23 +77,29 @@ export function WorkspaceSidebar(props: {
   let menuRef: HTMLDivElement | undefined;
   let sortRef: HTMLDivElement | undefined;
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     if (showAddMenu()) {
       const handleClick = (e: MouseEvent) => {
         if (menuRef && !menuRef.contains(e.target as Node)) setShowAddMenu(false);
       };
-      setTimeout(() => document.addEventListener('click', handleClick), 0);
-      onCleanup(() => document.removeEventListener('click', handleClick));
+      const id = setTimeout(() => document.addEventListener('click', handleClick), 0);
+      return () => {
+        clearTimeout(id);
+        document.removeEventListener('click', handleClick);
+      };
     }
   });
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     if (showSortMenu()) {
       const handleClick = (e: MouseEvent) => {
         if (sortRef && !sortRef.contains(e.target as Node)) setShowSortMenu(false);
       };
-      setTimeout(() => document.addEventListener('click', handleClick), 0);
-      onCleanup(() => document.removeEventListener('click', handleClick));
+      const id = setTimeout(() => document.addEventListener('click', handleClick), 0);
+      return () => {
+        clearTimeout(id);
+        document.removeEventListener('click', handleClick);
+      };
     }
   });
 

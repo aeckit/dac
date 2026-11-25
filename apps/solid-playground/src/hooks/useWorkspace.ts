@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { createSignal, createEffect } from 'solid-js';
+import { createSignal, createTrackedEffect } from 'solid-js';
 import LZString from 'lz-string';
 
 const modules = import.meta.glob('../demo/*.json', { eager: true });
@@ -17,7 +17,7 @@ export function useWorkspace() {
   const [activeFileId, setActiveFileId] = createSignal<string>('welcome-sheet.json');
   
   // Load from local storage or URL hash
-  createEffect(() => {
+  createTrackedEffect(() => {
     if (window.location.hash) {
       try {
         const hashPayload = window.location.hash.substring(1);
@@ -47,7 +47,7 @@ export function useWorkspace() {
   });
 
   // Save to local storage
-  createEffect(() => {
+  createTrackedEffect(() => {
     localStorage.setItem('dac_workspace', JSON.stringify(files()));
   });
 
