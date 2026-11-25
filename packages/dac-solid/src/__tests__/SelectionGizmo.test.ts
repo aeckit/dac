@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createComponent } from 'solid-js';
-import { render } from 'solid-js/web';
+import { render } from '@solidjs/web';
 import { DacProvider, DacCanvas, SelectionGizmo, useDac, type DacCanvasProps, type SelectionGizmoProps } from '../index';
 import type { ConstructDocument, DetailDocument } from '@aeckit/dac-schema';
 
@@ -57,7 +57,7 @@ function renderWithSelection(
 
   function SelectionTrigger() {
     const { setSelectionIds } = useDac();
-    setSelectionIds([selectedId]);
+    queueMicrotask(() => setSelectionIds([selectedId]));
     return null;
   }
 
@@ -416,7 +416,7 @@ describe('@aeckit/dac-solid SelectionGizmo & DacCanvas gizmo visibility props', 
     function Helper() {
       const { setSelectionIds, solverWarnings } = useDac();
       warningsRef = solverWarnings;
-      setSelectionIds(['stud_1']);
+      queueMicrotask(() => setSelectionIds(['stud_1']));
       return null;
     }
 
@@ -486,7 +486,7 @@ describe('@aeckit/dac-solid SelectionGizmo & DacCanvas gizmo visibility props', 
     function Helper() {
       const { setSelectionIds, solverWarnings } = useDac();
       getWarnings = solverWarnings;
-      setSelectionIds(['brk_1']);
+      queueMicrotask(() => setSelectionIds(['brk_1']));
       return null;
     }
 
@@ -575,7 +575,7 @@ describe('@aeckit/dac-solid SelectionGizmo & DacCanvas gizmo visibility props', 
     document.body.appendChild(container);
     function Selector() {
       const { setSelectionIds } = useDac();
-      setSelectionIds(['brk_ro']);
+      queueMicrotask(() => setSelectionIds(['brk_ro']));
       return null;
     }
 
@@ -626,7 +626,7 @@ describe('@aeckit/dac-solid SelectionGizmo & DacCanvas gizmo visibility props', 
     const onChangeExpr = vi.fn();
     function ExprSelector() {
       const { setSelectionIds } = useDac();
-      setSelectionIds(['expr_rect']);
+      queueMicrotask(() => setSelectionIds(['expr_rect']));
       return null;
     }
 

@@ -1,6 +1,6 @@
 import { createSignal, createMemo, Show } from 'solid-js';
 import { usePlayback } from '../hooks/useDac';
-import { Play, Pause, SkipBack, SkipForward, RotateCcw, Repeat, ChevronRight, ChevronLeft } from 'lucide-solid';
+import { Play, Pause, SkipBack, SkipForward, RotateCcw, Repeat, ChevronRight, ChevronLeft } from './icons';
 
 export interface DacPlaybackControlsProps {
   class?: string;
@@ -93,7 +93,7 @@ export function DacPlaybackControls(props: DacPlaybackControlsProps) {
           ...props.style,
         }}
         data-playback-controls="true"
-        data-expanded={isExpanded()}
+        data-expanded={String(isExpanded())}
       >
         {/* Play / Pause Primary Button */}
         <button

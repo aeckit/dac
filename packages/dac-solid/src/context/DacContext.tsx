@@ -1,4 +1,4 @@
-import { createContext, createSignal, createEffect, createMemo, onCleanup, ParentComponent, Accessor, Setter } from 'solid-js';
+import { createContext, createSignal, createTrackedEffect, createMemo, onSettled, ParentComponent, Accessor, Setter } from 'solid-js';
 import { JsonBuilder } from '@aeckit/dac-json-builder';
 import { CadTheme } from '@aeckit/dac-renderer-svg';
 
@@ -54,7 +54,23 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
   const [docSignal, setDocSignal] = createSignal<any>(props.doc, { equals: false });
   const [nestedDocsSignal, setNestedDocsSignal] = createSignal<Map<string, any> | undefined>(props.nestedDocs, { equals: false });
   const [canvasThemeSignal, setCanvasThemeSignal] = createSignal<CadTheme | undefined>(props.canvasTheme);
-  const [builderSignal] = createSignal<JsonBuilder>(new JsonBuilder());
+  const builderInstance = new JsonBuilder();
+  builderInstance.setDocument(props.doc, props.nestedDocs, true);
+  const [builderSignal] = createSignal<JsonBuilder>(builderInstance);
+
+  const handleChanged = (e: any) => {
+    setDocSignal({ ...e.detail.document });
+    setNestedDocsSignal(e.detail.nestedDocs ? new Map<string, any>(e.detail.nestedDocs) : undefined);
+    if (props.onChange) {
+      props.onChange(e.detail.document, e.detail.nestedDocs, e.detail.isTransient);
+    }
+  };
+  builderInstance.addEventListener('document_changed', handleChanged);
+  onSettled(() => {
+    return () => {
+      builderInstance.removeEventListener('document_changed', handleChanged);
+    };
+  });
   const [selectionIds, setSelectionIds] = createSignal<string[]>([]);
   const [activeSheetId, setActiveSheetId] = createSignal<string | null>(null);
   const [zoom, setZoom] = createSignal<number>(1);
@@ -149,7 +165,7 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
   };
 
   // Playback timer ticker
-  createEffect(() => {
+  createTrackedEffect(() => {
     if (!isPlaying()) return;
     const total = totalPlaybackSteps();
     if (total === 0) {
@@ -175,55 +191,45 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
       });
     }, intervalMs);
 
-    onCleanup(() => clearInterval(timer));
+    return () => clearInterval(timer);
   });
 
-  // Reset playback if incoming doc prop changes
-  createEffect(() => {
-    props.doc;
-    setIsPlaying(false);
-    setPlaybackStep(null);
+  let prevDoc = props.doc;
+  let prevNestedDocs = props.nestedDocs;
+
+  // Sync external doc prop updates and reset playback when doc changes
+  createTrackedEffect(() => {
+    const currentDoc = props.doc;
+    const currentNested = props.nestedDocs;
+    if (currentDoc !== prevDoc || currentNested !== prevNestedDocs) {
+      prevDoc = currentDoc;
+      prevNestedDocs = currentNested;
+      setIsPlaying(false);
+      setPlaybackStep(null);
+      const b = builderSignal();
+      b.setDocument(currentDoc, currentNested, true);
+      setDocSignal(currentDoc);
+      setNestedDocsSignal(currentNested);
+    }
   });
 
-  createEffect(() => {
-    const b = builderSignal();
-    b.setDocument(props.doc, props.nestedDocs, true);
-    setDocSignal(props.doc);
-    setNestedDocsSignal(props.nestedDocs);
-  });
-
-  createEffect(() => {
+  createTrackedEffect(() => {
     const b = builderSignal();
     b.setActiveSheetId(activeSheetId());
   });
 
-  createEffect(() => {
-    const b = builderSignal();
-    const handleChanged = (e: any) => {
-      setDocSignal({ ...e.detail.document });
-      setNestedDocsSignal(e.detail.nestedDocs ? new Map<string, any>(e.detail.nestedDocs) : undefined);
-      if (props.onChange) {
-        props.onChange(e.detail.document, e.detail.nestedDocs, e.detail.isTransient);
-      }
-    };
-    b.addEventListener('document_changed', handleChanged);
-    onCleanup(() => {
-      b.removeEventListener('document_changed', handleChanged);
-    });
-  });
-
-  createEffect(() => {
+  createTrackedEffect(() => {
     setCanvasThemeSignal(props.canvasTheme);
   });
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectionIds([]);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    onCleanup(() => window.removeEventListener('keydown', handleKeyDown));
+    return () => window.removeEventListener('keydown', handleKeyDown);
   });
 
   const value: DacContextValue = {
@@ -264,8 +270,8 @@ export const DacProvider: ParentComponent<DacProviderProps> = (props) => {
   };
 
   return (
-    <DacContext.Provider value={value}>
+    <DacContext value={value}>
       {props.children}
-    </DacContext.Provider>
+    </DacContext>
   );
 };

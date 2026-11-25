@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onMount, untrack, Show } from 'solid-js';
+import { createSignal, createTrackedEffect, createMemo, onSettled, untrack, Show } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 import { renderDetail, renderSheet } from '@aeckit/dac-renderer-svg';
 import { SelectionGizmo } from './SelectionGizmo';
@@ -13,11 +13,10 @@ export interface DacCanvasProps {
 
 export function DacCanvas(props?: DacCanvasProps) {
   const { doc, effectiveDoc, nestedDocs, selectionIds, setSelectionIds, zoom, setZoom, pan, setPan, activeSheetId, canvasTheme, triggerFitView, fitView, setSolverWarnings, isPlaying, setIsPlaying } = useDac();
-  const [svgContent, setSvgContent] = createSignal('');
   let containerRef!: HTMLDivElement;
   let contentRef!: HTMLDivElement;
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     if (props?.autoFit) {
       const _ = doc();
       setTimeout(() => fitView(), 50);
@@ -25,7 +24,7 @@ export function DacCanvas(props?: DacCanvasProps) {
     }
   });
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     // Dependency on triggerFitView so it runs when triggered
     const trigger = triggerFitView();
     if (trigger > 0) {
@@ -89,9 +88,9 @@ export function DacCanvas(props?: DacCanvasProps) {
     }
   });
 
-  createEffect(() => {
+  const renderedResult = createMemo(() => {
     const document = effectiveDoc();
-    if (!document) return;
+    if (!document) return { svg: '', warnings: [] as any[] };
     const constructResolver = (id: string) => nestedDocs()?.get(id);
 
     try {
@@ -110,13 +109,10 @@ export function DacCanvas(props?: DacCanvasProps) {
              }
              const titleBlockDoc = sheet.titleBlockRef ? nestedDocs()?.get(sheet.titleBlockRef) : (document.defaultTitleBlockRef ? nestedDocs()?.get(document.defaultTitleBlockRef) : undefined);
              const paperSize = sheet.paperSize || document.defaultPaperSize || 'ARCH D';
-             const { svg, warnings } = renderSheet(sheet, document.titleBlockParameters, viewportsMap, titleBlockDoc, 0, 0, paperSize, constructResolver, canvasTheme());
-             setSvgContent(svg);
-             if (setSolverWarnings) setSolverWarnings(warnings);
-             return;
+             return renderSheet(sheet, document.titleBlockParameters, viewportsMap, titleBlockDoc, 0, 0, paperSize, constructResolver, canvasTheme());
           }
         }
-        setSvgContent('<svg><text x="50" y="50" fill="white">Select a sheet to view</text></svg>');
+        return { svg: '<svg><text x="50" y="50" fill="white">Select a sheet to view</text></svg>', warnings: [] as any[] };
       } else if (document.type === 'CAD::SheetConfiguration') {
         const viewportsMap = new Map();
         if (document.viewports) {
@@ -127,27 +123,33 @@ export function DacCanvas(props?: DacCanvasProps) {
         }
         const titleBlockDoc = document.titleBlockRef ? nestedDocs()?.get(document.titleBlockRef) : undefined;
         const paperSize = document.paperSize || 'ARCH D';
-        const { svg, warnings } = renderSheet(document, undefined, viewportsMap, titleBlockDoc, 0, 0, paperSize, constructResolver, canvasTheme());
-        setSvgContent(svg);
-        if (setSolverWarnings) setSolverWarnings(warnings);
+        return renderSheet(document, undefined, viewportsMap, titleBlockDoc, 0, 0, paperSize, constructResolver, canvasTheme());
       } else {
-        const { svg, warnings } = renderDetail(document as any, 24, 18, constructResolver, canvasTheme());
-        setSvgContent(svg);
-        if (setSolverWarnings) setSolverWarnings(warnings);
+        return renderDetail(document as any, 24, 18, constructResolver, canvasTheme());
       }
     } catch (e: any) {
       console.error('Render error:', e);
-      setSvgContent(`<svg><text x="50" y="50" fill="red">Render Error: ${e.message}</text></svg>`);
-      if (setSolverWarnings) setSolverWarnings([{ message: `Render Error: ${e.message}` }]);
+      return {
+        svg: `<svg><text x="50" y="50" fill="red">Render Error: ${e.message}</text></svg>`,
+        warnings: [{ message: `Render Error: ${e.message}` }]
+      };
     }
   });
 
-  onMount(() => {
+  const svgContent = () => renderedResult().svg;
+
+  createTrackedEffect(() => {
+    const warnings = renderedResult().warnings;
+    if (setSolverWarnings) {
+      setSolverWarnings(warnings || []);
+    }
+  });
+
+  onSettled(() => {
     if (!containerRef) return;
 
-    containerRef.addEventListener('contextmenu', (e) => e.preventDefault());
-
-    containerRef.addEventListener('wheel', (e) => {
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
 
       const rect = containerRef.getBoundingClientRect();
@@ -166,7 +168,15 @@ export function DacCanvas(props?: DacCanvasProps) {
         x: mouseX - worldX * newZoom,
         y: mouseY - worldY * newZoom
       });
-    }, { passive: false });
+    };
+
+    containerRef.addEventListener('contextmenu', handleContextMenu);
+    containerRef.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      containerRef?.removeEventListener('contextmenu', handleContextMenu);
+      containerRef?.removeEventListener('wheel', handleWheel);
+    };
   });
 
   const handlePointerDown = (e: PointerEvent) => {

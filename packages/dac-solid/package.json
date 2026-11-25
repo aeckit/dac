@@ -19,18 +19,18 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "solid-js": "^1.8.0"
+    "solid-js": "^2.0.0"
   },
   "dependencies": {
     "@aeckit/dac-json-builder": "^0.3.0",
     "@aeckit/dac-json-solver": "^0.3.1",
     "@aeckit/dac-renderer-svg": "^0.3.0",
-    "@aeckit/dac-schema": "^0.4.1",
-    "lucide-solid": "^0.378.0"
+    "@aeckit/dac-schema": "^0.4.1"
   },
   "devDependencies": {
-    "esbuild-plugin-solid": "^0.6.0",
-    "solid-js": "^1.8.17",
+    "@solidjs/compiler": "^2.0.3",
+    "@solidjs/web": "^2.0.4",
+    "solid-js": "^2.0.4",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },

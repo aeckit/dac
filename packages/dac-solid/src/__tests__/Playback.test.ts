@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createComponent, createEffect } from 'solid-js';
-import { render } from 'solid-js/web';
+import { render } from '@solidjs/web';
 import { DacProvider, DacCanvas, DacPlaybackControls, useDac, usePlayback } from '../index';
 import type { DetailDocument } from '@aeckit/dac-schema';
 
@@ -37,7 +37,7 @@ describe('@aeckit/dac-solid Playback unit tests', () => {
     ],
   };
 
-  it('slices geometry in effectiveDoc according to playbackStep', () => {
+  it('slices geometry in effectiveDoc according to playbackStep', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
@@ -67,12 +67,14 @@ describe('@aeckit/dac-solid Playback unit tests', () => {
 
     // Step 0: empty geometry
     dacApi!.seekPlayback(0);
+    await Promise.resolve();
     expect(dacApi!.playbackStep()).toBe(0);
     expect(dacApi!.effectiveDoc().geometry.length).toBe(0);
     expect(dacApi!.currentPlaybackElement()).toBeNull();
 
     // Step 1: 1 geometry (concrete_foundation)
     dacApi!.stepForward();
+    await Promise.resolve();
     expect(dacApi!.playbackStep()).toBe(1);
     expect(dacApi!.effectiveDoc().geometry.length).toBe(1);
     expect(dacApi!.effectiveDoc().geometry[0].componentId).toBe('concrete_foundation');
@@ -80,27 +82,32 @@ describe('@aeckit/dac-solid Playback unit tests', () => {
 
     // Step 2: 2 geometries (foundation + sill_plate)
     dacApi!.stepForward();
+    await Promise.resolve();
     expect(dacApi!.playbackStep()).toBe(2);
     expect(dacApi!.effectiveDoc().geometry.length).toBe(2);
     expect(dacApi!.currentPlaybackElement()?.componentId).toBe('sill_plate');
 
     // Step backward: back to 1
     dacApi!.stepBackward();
+    await Promise.resolve();
     expect(dacApi!.playbackStep()).toBe(1);
     expect(dacApi!.effectiveDoc().geometry.length).toBe(1);
 
     // Seek to max
     dacApi!.seekPlayback(3);
+    await Promise.resolve();
     expect(dacApi!.playbackStep()).toBe(3);
     expect(dacApi!.effectiveDoc().geometry.length).toBe(3);
     expect(dacApi!.currentPlaybackElement()?.componentId).toBe('stud');
 
     // Seek clamped beyond max
     dacApi!.seekPlayback(10);
+    await Promise.resolve();
     expect(dacApi!.playbackStep()).toBe(3);
 
     // Reset playback: back to full doc
     dacApi!.resetPlayback();
+    await Promise.resolve();
     expect(dacApi!.playbackStep()).toBeNull();
     expect(dacApi!.effectiveDoc().geometry.length).toBe(3);
 
@@ -108,7 +115,7 @@ describe('@aeckit/dac-solid Playback unit tests', () => {
     container.remove();
   });
 
-  it('renders DacPlaybackControls and triggers play/pause', () => {
+  it('renders DacPlaybackControls and triggers play/pause', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
@@ -136,14 +143,17 @@ describe('@aeckit/dac-solid Playback unit tests', () => {
     expect(playbackApi!.isPlaying()).toBe(false);
 
     playbackApi!.play();
+    await Promise.resolve();
     expect(playbackApi!.isPlaying()).toBe(true);
     expect(playbackApi!.step()).toBe(0);
 
     playbackApi!.pause();
+    await Promise.resolve();
     expect(playbackApi!.isPlaying()).toBe(false);
     expect(playbackApi!.step()).toBe(0);
 
     playbackApi!.stepForward();
+    await Promise.resolve();
     expect(playbackApi!.step()).toBe(1);
 
     // Initial state is collapsed
@@ -154,6 +164,7 @@ describe('@aeckit/dac-solid Playback unit tests', () => {
     const expandBtn = container.querySelector('button[title="Expand playback controls"]') as HTMLButtonElement;
     expect(expandBtn).not.toBeNull();
     expandBtn.click();
+    await Promise.resolve();
     expect(controls!.getAttribute('data-expanded')).toBe('true');
     expect(container.querySelector('input[type="range"]')).not.toBeNull();
 
@@ -161,6 +172,7 @@ describe('@aeckit/dac-solid Playback unit tests', () => {
     const collapseBtn = container.querySelector('button[title="Collapse playback controls"]') as HTMLButtonElement;
     expect(collapseBtn).not.toBeNull();
     collapseBtn.click();
+    await Promise.resolve();
     expect(controls!.getAttribute('data-expanded')).toBe('false');
     expect(container.querySelector('input[type="range"]')).toBeNull();
 

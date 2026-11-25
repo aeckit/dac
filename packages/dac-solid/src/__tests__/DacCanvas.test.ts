@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createComponent } from 'solid-js';
-import { render } from 'solid-js/web';
+import { render } from '@solidjs/web';
 import { DacProvider, DacCanvas, useDac } from '../index';
 import type { DetailDocument } from '@aeckit/dac-schema';
 
@@ -137,7 +137,7 @@ describe('@aeckit/dac-solid DacCanvas unit tests', () => {
 
     function SelectionTrigger() {
       const { setSelectionIds } = useDac();
-      setSelectionIds(['plate']);
+      queueMicrotask(() => setSelectionIds(['plate']));
       return null;
     }
 
@@ -205,7 +205,7 @@ describe('@aeckit/dac-solid DacCanvas unit tests', () => {
 
     function SelectionTrigger() {
       const { setSelectionIds } = useDac();
-      setSelectionIds(['plate']);
+      queueMicrotask(() => setSelectionIds(['plate']));
       return null;
     }
 

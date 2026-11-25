@@ -1,4 +1,4 @@
-import { createEffect } from 'solid-js';
+import { createTrackedEffect } from 'solid-js';
 import { evaluateExpression } from '@aeckit/dac-json-solver';
 import { inspectorStyles } from './inspectorStyles';
 import { PointsField } from './PointsField';
@@ -28,7 +28,7 @@ export function PropertyField(props: {
 
   let inputRef!: HTMLInputElement;
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     const v = val();
     if (inputRef && document.activeElement !== inputRef) {
       inputRef.value = v ?? '';

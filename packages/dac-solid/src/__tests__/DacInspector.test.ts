@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createComponent } from 'solid-js';
-import { render } from 'solid-js/web';
+import { render } from '@solidjs/web';
 import { DacProvider, DacInspector, useDac } from '../index';
 import {
   collectNotes,
@@ -242,7 +242,7 @@ describe('@aeckit/dac-solid DacInspector component tests', () => {
     container.remove();
   });
 
-  it('renders selected-element Notes at bottom with badge, avoids PropertyField duplication, and handles empty state', () => {
+  it('renders selected-element Notes at bottom with badge, avoids PropertyField duplication, and handles empty state', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
@@ -322,6 +322,7 @@ describe('@aeckit/dac-solid DacInspector component tests', () => {
 
     // Select sill_plate
     dacApi!.selectShape('sill_plate');
+    await Promise.resolve();
 
     const elNotes = container.querySelector('[data-notes-section="element"]');
     expect(elNotes).not.toBeNull();
@@ -349,6 +350,7 @@ describe('@aeckit/dac-solid DacInspector component tests', () => {
 
     // Select ConstructReference and verify Notes renders below Construct Parameters
     dacApi!.selectShape('rebar_ref');
+    await Promise.resolve();
     const pTitles = Array.from(container.querySelectorAll('p')).map((p) => p.textContent?.trim());
     expect(pTitles.indexOf('Notes')).toBeGreaterThan(pTitles.indexOf('Construct Parameters'));
     expect(container.querySelector('[data-notes-badge="true"]')?.textContent).toBe('rebar_ref');
@@ -356,6 +358,7 @@ describe('@aeckit/dac-solid DacInspector component tests', () => {
 
     // Select plain_bolt with no notes/metadata and verify empty state
     dacApi!.selectShape('plain_bolt');
+    await Promise.resolve();
     expect(container.querySelector('[data-notes-badge="true"]')?.textContent).toBe('plain_bolt');
     expect(container.querySelector('[data-notes-section="element"]')?.textContent).toContain('No notes for plain_bolt');
 

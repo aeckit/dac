@@ -1,4 +1,4 @@
-import { Show, For, createEffect } from 'solid-js';
+import { Show, For, createTrackedEffect } from 'solid-js';
 import { useDac } from '../hooks/useDac';
 import { resolveDocumentParameters } from '@aeckit/dac-json-solver';
 import { DocumentParametersInspector, ConstructReferenceInspector } from './ParametersInspector';
@@ -24,7 +24,7 @@ function DocumentField(props: {
   const isBool = () => typeof val() === 'boolean';
   let inputRef!: HTMLInputElement;
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     const v = val();
     if (inputRef && document.activeElement !== inputRef) {
       inputRef.value = v ?? '';

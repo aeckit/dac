@@ -1,4 +1,4 @@
-import { createEffect, For } from 'solid-js';
+import { createTrackedEffect, For } from 'solid-js';
 import { inspectorStyles, MONO_FONT } from './inspectorStyles';
 
 export interface PointsFieldProps {
@@ -14,7 +14,7 @@ function CoordinateInput(props: {
 }) {
   let ref!: HTMLInputElement;
 
-  createEffect(() => {
+  createTrackedEffect(() => {
     const v = props.value();
     if (ref && document.activeElement !== ref) {
       ref.value = v !== undefined && v !== null ? String(v) : '';
@@ -25,6 +25,7 @@ function CoordinateInput(props: {
     <input
       ref={ref}
       type="text"
+      value={props.value() !== undefined && props.value() !== null ? String(props.value()) : ''}
       placeholder={props.placeholder || '0'}
       onInput={(e) => {
         const raw = e.currentTarget.value.trim();

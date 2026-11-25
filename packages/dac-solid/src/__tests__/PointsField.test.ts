@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createComponent, createSignal } from 'solid-js';
-import { render } from 'solid-js/web';
+import { render } from '@solidjs/web';
 import { PointsField } from '../components/PointsField';
 
 describe('PointsField component unit tests', () => {
@@ -57,7 +57,7 @@ describe('PointsField component unit tests', () => {
     container.remove();
   });
 
-  it('adds and deletes points in the table', () => {
+  it('adds and deletes points in the table', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
@@ -84,6 +84,7 @@ describe('PointsField component unit tests', () => {
     const addBtn = container.querySelector('button[title="Add Point"]') as HTMLButtonElement;
     addBtn.click();
     expect(updateShape).toHaveBeenCalled();
+    await Promise.resolve();
 
     // Verify delete button
     const deleteBtns = container.querySelectorAll('button[title*="Delete vertex"]') as NodeListOf<HTMLButtonElement>;

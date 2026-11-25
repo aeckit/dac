@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createComponent } from 'solid-js';
-import { render } from 'solid-js/web';
+import { render } from '@solidjs/web';
 import { PolylineGrips } from '../components/PolylineGrips';
 
 describe('PolylineGrips unit tests', () => {

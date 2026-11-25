@@ -1,4 +1,4 @@
-import { createSignal, onMount, onCleanup, Show } from 'solid-js';
+import { createSignal, createTrackedEffect, Show } from 'solid-js';
 import { resolveDocumentParameters } from '@aeckit/dac-json-solver';
 import { useDac } from '../hooks/useDac';
 import { PolylineGrips } from './PolylineGrips';
@@ -637,12 +637,11 @@ export function SelectionGizmo(props?: SelectionGizmoProps) {
     reqId = requestAnimationFrame(updateBounds);
   };
 
-  onMount(() => {
+  createTrackedEffect(() => {
     reqId = requestAnimationFrame(updateBounds);
-  });
-
-  onCleanup(() => {
-    cancelAnimationFrame(reqId);
+    return () => {
+      cancelAnimationFrame(reqId);
+    };
   });
 
   return (
