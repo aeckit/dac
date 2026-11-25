@@ -59,7 +59,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@aeckit/dac-solid": "^0.6.0",
+    "@aeckit/dac-solid": "^1.0.0",
     "@solidjs/compiler": "^2.0.3",
     "@solidjs/web": "^2.0.4",
     "solid-js": "^2.0.4"
