@@ -25,13 +25,18 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
+    "@rolldown/binding-darwin-arm64": "1.2.19",
+    "@solidjs/vite-plugin": "^3.0.1",
+    "@solidjs/web": "^2.0.4",
     "happy-dom": "^20.11.1",
     "jsdom": "^27.0.1",
+    "solid-js": "^2.0.4",
     "turbo": "^2.10.12",
     "typescript": "^5.3.3",
     "vitest": "^4.1.10"
   },
   "overrides": {
-    "human-id": "4.1.1"
+    "human-id": "4.1.1",
+    "solid-js": "$solid-js"
   }
 }
